@@ -4,14 +4,30 @@ This document describes the process for creating a new release of the Globus Go 
 
 ## Pre-Release Checklist
 
-Before creating a new release, ensure the following:
+Before creating a new release, ensure the following **REQUIRED** prerequisites:
 
 1. All targeted features are implemented and working correctly
-2. All tests are passing on all platforms
-3. Linting passes with no errors or warnings
-4. Documentation is up-to-date
-5. CHANGELOG.md is updated with all notable changes since the last release
-6. Version number is updated in `cmd/root.go` (if version is stored there)
+2. **ALL** tests are passing on all platforms:
+   ```bash
+   # Run all unit tests
+   make test
+
+   # Run all linting checks
+   make lint
+
+   # Verify GitHub Actions CI checks are passing
+   # Check the GitHub Actions tab in the repository
+   ```
+3. All linting checks must pass with no errors or warnings
+4. Security scans must pass with no critical issues
+5. Cross-platform testing must pass on Linux, macOS, and Windows
+
+Additional requirements:
+1. Documentation is up-to-date
+2. CHANGELOG.md is updated with all notable changes since the last release
+3. Version number is updated in `cmd/root.go`
+
+**IMPORTANT**: No release should be tagged or published until all tests and checks are passing. This is a strict requirement to maintain quality and stability.
 
 ## Creating a Release
 

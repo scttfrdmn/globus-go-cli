@@ -107,8 +107,12 @@ This document outlines the requirements to bring the Globus Go CLI to a pre-rele
 
 ## Pre-Release Checklist
 
-### Final Verification
-- [ ] All tests passing on all platforms
+### Final Verification (REQUIRED BEFORE TAGGING)
+- [ ] **REQUIRED**: All linting checks pass (`make lint`)
+- [ ] **REQUIRED**: All unit tests pass (`make test`)
+- [ ] **REQUIRED**: All integration tests pass
+- [ ] **REQUIRED**: Cross-platform testing (Linux, macOS, Windows) passing
+- [ ] **REQUIRED**: Security scan passing
 - [x] Documentation reviewed and updated
 - [x] Release notes prepared
 - [x] Version numbers and API versions confirmed
@@ -121,6 +125,8 @@ This document outlines the requirements to bring the Globus Go CLI to a pre-rele
 - [x] Performance benchmarks reviewed
 - [x] Security review completed
 - [x] Installation process tested from scratch
+
+**IMPORTANT NOTE:** No release should be tagged until ALL required tests pass. The CI pipeline should validate tests on all platforms before a release is created.
 
 ## Next Steps After 0.9 Release
 
