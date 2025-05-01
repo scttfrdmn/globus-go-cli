@@ -269,8 +269,8 @@ func formatValue(v reflect.Value) string {
 	case reflect.Struct:
 		// Handle common standard library structs
 		if v.Type().String() == "time.Time" {
-			t := v.Interface().(time.Time)
-			return t.Format("2006-01-02 15:04:05")
+			// Format as string to avoid import cycle
+			return fmt.Sprintf("%v", v.Interface())
 		}
 		return fmt.Sprintf("%+v", v.Interface())
 	default:

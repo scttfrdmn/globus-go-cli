@@ -21,9 +21,12 @@ token management, and identity operations.`,
 	// Add auth subcommands
 	authCmd.AddCommand(
 		auth.LoginCmd(),
+		auth.DeviceCmd(),
 		auth.LogoutCmd(),
+		auth.RefreshCmd(),
 		auth.WhoamiCmd(),
 		auth.TokensCmd(),
+		auth.IdentitiesCmd(),
 	)
 
 	return authCmd
