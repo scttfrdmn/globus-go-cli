@@ -21,6 +21,9 @@ lint:
 test:
 	go test -v -cover ./...
 
+test-integration:
+	go test -v -tags=integration ./...
+
 test-coverage:
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html

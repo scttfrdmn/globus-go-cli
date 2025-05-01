@@ -28,4 +28,5 @@ vendor/
 
 # Config files with potential secrets
 .env
+.env.test
 ~/.globus-cli/

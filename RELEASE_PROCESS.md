@@ -7,10 +7,17 @@ This document describes the process for creating a new release of the Globus Go 
 Before creating a new release, ensure the following **REQUIRED** prerequisites:
 
 1. All targeted features are implemented and working correctly
-2. **ALL** tests are passing on all platforms:
+2. **ALL** tests are passing on all platforms, including tests with real credentials:
    ```bash
+   # Set up test credentials
+   cp .env.test.example .env.test
+   # Edit .env.test with real test credentials
+
    # Run all unit tests
    make test
+
+   # Run integration tests with real credentials
+   make test-integration
 
    # Run all linting checks
    make lint

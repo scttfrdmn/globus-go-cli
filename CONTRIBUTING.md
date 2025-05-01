@@ -14,8 +14,30 @@ Thank you for your interest in contributing to the Globus Go CLI! This document 
 2. Make your changes
 3. Run tests: `make test`
 4. Run linters: `make lint`
-5. Commit your changes following the [conventional commits](https://www.conventionalcommits.org/) format
-6. Push your branch and create a pull request
+5. Run integration tests (requires credentials): `make test-integration`
+6. Commit your changes following the [conventional commits](https://www.conventionalcommits.org/) format
+7. Push your branch and create a pull request
+
+### Integration Testing
+
+Integration tests are crucial for validating that our code works with real Globus services. To run these tests:
+
+1. Copy the example credentials file:
+   ```
+   cp .env.test.example .env.test
+   ```
+
+2. Edit `.env.test` and add your test credentials:
+   - `GLOBUS_TEST_CLIENT_ID` and `GLOBUS_TEST_CLIENT_SECRET`: Required for all integration tests
+   - `GLOBUS_TEST_SOURCE_ENDPOINT` and `GLOBUS_TEST_DESTINATION_ENDPOINT`: Required for transfer tests
+   - `GLOBUS_TEST_USERNAME` and `GLOBUS_TEST_PASSWORD`: Required for full authentication tests
+
+3. Run the integration tests:
+   ```
+   make test-integration
+   ```
+
+Integration tests are tagged with `//go:build integration` and will only run when explicitly requested. They are skipped if required credentials are missing.
 
 ## Coding Standards
 
