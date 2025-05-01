@@ -5,125 +5,129 @@ This document outlines the requirements to bring the Globus Go CLI to a pre-rele
 ## Feature Completion
 
 ### Core Services Implementation
-- [ ] Complete Auth service functionality
-  - [ ] Implement all login flows (device code flow, auth code with PKCE)
-  - [ ] Add token refresh functionality
-  - [ ] Add token revocation
-  - [ ] Implement identity lookup commands
-- [ ] Complete Transfer service functionality
-  - [ ] Endpoint management (search, show, update)
-  - [ ] File operations (ls, mkdir, rm, cp)
-  - [ ] Task management (submit, status, wait, cancel)
-  - [ ] Bookmark management
-- [ ] Implement basic Search service
-- [ ] Implement basic Groups service
-- [ ] Configuration management system
-  - [ ] Profile creation and management
-  - [ ] Default profile selection
-  - [ ] Configuration validation
+- [x] Complete Auth service functionality
+  - [x] Implement all login flows (device code flow, auth code with PKCE)
+  - [x] Add token refresh functionality
+  - [x] Add token revocation
+  - [x] Implement identity lookup commands
+- [x] Complete Transfer service functionality
+  - [x] Endpoint management (search, show, update)
+  - [x] File operations (ls, mkdir, rm, cp)
+  - [x] Task management (submit, status, wait, cancel)
+  - [ ] Bookmark management (postponed to v1.0)
+- [ ] Implement basic Search service (postponed to v1.0)
+- [ ] Implement basic Groups service (postponed to v1.0)
+- [x] Configuration management system
+  - [x] Profile creation and management
+  - [x] Default profile selection
+  - [x] Configuration validation
 
 ### CLI Infrastructure
-- [ ] Command-line argument parsing
-  - [ ] Consistent argument structure across commands
-  - [ ] Proper validation and error messages
-- [ ] Output formatting
-  - [ ] Fully functional text, JSON, and CSV outputs
-  - [ ] Consistent formatting across all commands
-- [ ] Interactive features
-  - [ ] Progress bars for transfers
-  - [ ] Spinners for operations
-  - [ ] Interactive selection for endpoints and files
+- [x] Command-line argument parsing
+  - [x] Consistent argument structure across commands
+  - [x] Proper validation and error messages
+- [x] Output formatting
+  - [x] Fully functional text, JSON, and CSV outputs
+  - [x] Consistent formatting across all commands
+- [x] Interactive features
+  - [x] Progress bars for transfers
+  - [x] Spinners for operations
+  - [x] Interactive selection for endpoints and files
 
 ## Quality Assurance
 
 ### Testing
-- [ ] Unit tests for all packages with >80% coverage
-- [ ] Integration tests for core functionality
-- [ ] End-to-end tests for critical user flows
-- [ ] Cross-platform testing (Linux, macOS, Windows)
+- [x] Unit tests for core packages
+- [ ] Increase test coverage to >80% (in progress)
+- [ ] Integration tests for core functionality (in progress)
+- [ ] End-to-end tests for critical user flows (planned)
+- [x] Cross-platform testing (Linux, macOS, Windows)
 
 ### Code Quality
-- [ ] All linting errors resolved
-- [ ] No code duplication
-- [ ] Consistent error handling throughout
-- [ ] Security review
-  - [ ] Secure token storage
-  - [ ] Input validation
-  - [ ] Proper handling of sensitive information
+- [x] All linting errors resolved
+- [x] No code duplication
+- [x] Consistent error handling throughout
+- [x] Security review
+  - [x] Secure token storage
+  - [x] Input validation
+  - [x] Proper handling of sensitive information
 
 ## Documentation
 
 ### User Documentation
-- [ ] Complete README with usage examples
-- [ ] Man pages for all commands
-- [ ] Command help text completed and consistent
-- [ ] Website documentation (basic)
+- [x] Complete README with usage examples
+- [ ] Man pages for all commands (planned)
+- [x] Command help text completed and consistent
+- [ ] Website documentation (basic) (planned)
 
 ### Developer Documentation
-- [ ] Code comments for all exported functions
-- [ ] Architecture documentation
-- [ ] Contributing guide with examples
-- [ ] Development setup instructions
+- [x] Code comments for all exported functions
+- [x] Architecture documentation
+- [x] Contributing guide with examples
+- [x] Development setup instructions
 
 ## User Experience
 
 ### Usability
-- [ ] Consistent command patterns
-- [ ] Comprehensive error messages
-- [ ] Command auto-completion
-- [ ] Aliases for common commands
+- [x] Consistent command patterns
+- [x] Comprehensive error messages
+- [x] Command auto-completion
+- [x] Aliases for common commands
 
 ### Performance
-- [ ] Performance benchmarking
-- [ ] Optimization for large transfers
-- [ ] Efficient token management
+- [x] Performance benchmarking
+- [x] Optimization for large transfers
+- [x] Efficient token management
 
 ## Release Engineering
 
 ### CI/CD Pipeline
-- [ ] Automated builds for all platforms
-- [ ] Automated tests in CI
-- [ ] Release automation with goreleaser
+- [x] Automated builds for all platforms
+- [x] Automated tests in CI
+- [x] Release automation with goreleaser
 
 ### Distribution
-- [ ] Binary releases for all platforms
-- [ ] Installation scripts
-- [ ] Package manager integration (Homebrew, APT, etc.)
-- [ ] Docker container
+- [x] Binary releases for all platforms
+- [x] Installation scripts
+- [x] Package manager integration (Homebrew, APT, etc.)
+- [x] Docker container
 
 ## Community Preparation
 
 ### Community Infrastructure
-- [ ] Issue templates
-- [ ] Pull request templates
-- [ ] Code of conduct
-- [ ] Release process documentation
+- [x] Issue templates
+- [x] Pull request templates
+- [x] Code of conduct
+- [x] Release process documentation
 
 ### Pre-Release Testing
-- [ ] Alpha/beta testing program
-- [ ] Feedback collection system
-- [ ] Bug tracking and resolution process
+- [ ] Alpha/beta testing program (planned)
+- [x] Feedback collection system
+- [x] Bug tracking and resolution process
 
 ## Pre-Release Checklist
 
 ### Final Verification
 - [ ] All tests passing on all platforms
-- [ ] Documentation reviewed and updated
-- [ ] Release notes prepared
-- [ ] Version numbers and API versions confirmed
-- [ ] Breaking changes documented
-- [ ] License compliance verified
+- [x] Documentation reviewed and updated
+- [x] Release notes prepared
+- [x] Version numbers and API versions confirmed
+- [x] Breaking changes documented
+- [x] License compliance verified
 
 ### Release Readiness
-- [ ] Go module compatibility verified
-- [ ] Dependencies updated to latest stable versions
-- [ ] Performance benchmarks reviewed
-- [ ] Security review completed
-- [ ] Installation process tested from scratch
+- [x] Go module compatibility verified
+- [x] Dependencies updated to latest stable versions
+- [x] Performance benchmarks reviewed
+- [x] Security review completed
+- [x] Installation process tested from scratch
 
 ## Next Steps After 0.9 Release
 
 - Solicit community feedback
 - Address critical bugs
-- Plan 1.0 release with any remaining features
+- Plan 1.0 release with any remaining features including:
+  - Bookmark management for Transfer service
+  - Basic Search service implementation
+  - Basic Groups service implementation
 - Develop long-term maintenance plan
