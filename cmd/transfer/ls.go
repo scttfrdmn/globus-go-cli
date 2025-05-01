@@ -4,66 +4,73 @@ package transfer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 	"text/tabwriter"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-cli/pkg/output"
 )
 
 var (
-	// Options for ls command
-	recursiveFlag  bool
-	longFormatFlag bool
-	showHiddenFlag bool
+	lsRecursive bool
+	lsLongFormat bool
+	lsShowHidden bool
 )
 
 // LsCmd returns the ls command
 func LsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ls ENDPOINT_ID[:PATH]",
-		Short: "List contents of a Globus endpoint directory",
-		Long: `List the contents of a directory on a Globus endpoint.
+		Short: "List directory contents on an endpoint",
+		Long: `List directory contents on a Globus endpoint.
 
-This command lists files and directories at the specified path on a Globus endpoint.
-If no path is provided, the endpoint's default directory is used.
+This command lists the contents of a directory on the specified Globus endpoint.
+The PATH is optional and defaults to the home directory or root of the endpoint.
 
 Examples:
-  globus transfer ls endpoint_id                # List contents of the default directory
-  globus transfer ls endpoint_id:/path/to/dir   # List contents of a specific directory
-  globus transfer ls endpoint_id:/path -l       # List in long format
-  globus transfer ls endpoint_id:/path -r       # List recursively`,
+  globus transfer ls ddb59aef-6d04-11e5-ba46-22000b92c6ec
+  globus transfer ls ddb59aef-6d04-11e5-ba46-22000b92c6ec:/path/to/directory`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return listFiles(cmd, args[0])
+			// Parse endpoint ID and path
+			endpointID, path := parseEndpointAndPath(args[0])
+			
+			return listDirectory(cmd, endpointID, path)
 		},
 	}
 
 	// Add flags
-	cmd.Flags().BoolVarP(&recursiveFlag, "recursive", "r", false, "List directories recursively")
-	cmd.Flags().BoolVarP(&longFormatFlag, "long", "l", false, "Use long listing format")
-	cmd.Flags().BoolVarP(&showHiddenFlag, "all", "a", false, "Show hidden files")
+	cmd.Flags().BoolVarP(&lsRecursive, "recursive", "r", false, "List directories recursively")
+	cmd.Flags().BoolVarP(&lsLongFormat, "long", "l", false, "List in long format with details")
+	cmd.Flags().BoolVarP(&lsShowHidden, "all", "a", false, "Show hidden files")
 
 	return cmd
 }
 
-// listFiles lists files and directories at the specified path on a Globus endpoint
-func listFiles(cmd *cobra.Command, arg string) error {
-	// Parse the endpoint ID and path
-	endpointID, path, err := parseEndpointPath(arg)
-	if err != nil {
-		return err
+// parseEndpointAndPath parses an endpoint ID and path from a string
+func parseEndpointAndPath(s string) (endpointID, path string) {
+	parts := strings.SplitN(s, ":", 2)
+	endpointID = parts[0]
+	
+	if len(parts) > 1 {
+		path = parts[1]
+	} else {
+		path = "/"
 	}
+	
+	return endpointID, path
+}
 
+// listDirectory lists the contents of a directory on an endpoint
+func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 	// Get current profile
 	profile := viper.GetString("profile")
 	
@@ -96,160 +103,92 @@ func listFiles(cmd *cobra.Command, arg string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	// Prepare options
-	options := &pkg.ListFileOptions{
-		ShowHidden: showHiddenFlag,
-		Recursive:  recursiveFlag,
+	// Prepare listing options
+	options := &pkg.ListOptions{
+		Path:      path,
+		Recursive: lsRecursive,
+		ShowHidden: lsShowHidden,
 	}
 
-	// List the files
-	fileList, err := transferClient.ListFiles(ctx, endpointID, path, options)
+	// Get the directory listing
+	listing, err := transferClient.ListDirectory(ctx, endpointID, options)
 	if err != nil {
-		return fmt.Errorf("failed to list files: %w", err)
+		return fmt.Errorf("failed to list directory: %w", err)
 	}
 
 	// Get output format
 	format := viper.GetString("format")
-	if format == "" {
-		format = "text"
+	
+	// Format and display the results
+	formatter := output.NewFormatter(format, cmd.OutOrStdout())
+	
+	// Define the headers based on format
+	var headers []string
+	if lsLongFormat {
+		headers = []string{"Type", "Permissions", "User", "Group", "Size", "LastModified", "Name"}
+	} else {
+		headers = []string{"Type", "Name"}
 	}
-
-	// Display the results based on format
-	switch strings.ToLower(format) {
-	case "json":
-		// Output as JSON
-		jsonData, err := json.MarshalIndent(fileList, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to format JSON: %w", err)
-		}
-		fmt.Println(string(jsonData))
-	case "csv":
-		// Output as CSV
-		fmt.Println("name,type,size,last_modified,permissions")
-		for _, file := range fileList.Data {
-			lastModified := file.LastModified
-			if lastModified == "" {
-				lastModified = "N/A"
-			}
-			fmt.Printf("%s,%s,%d,%s,%s\n",
-				strings.ReplaceAll(file.Name, ",", " "),
-				file.Type,
-				file.Size,
-				lastModified,
-				file.Permissions,
-			)
-		}
-	default:
-		// Output as text
-		fmt.Printf("Contents of %s:%s\n\n", endpointID, fileList.Path)
-
-		if longFormatFlag {
-			// Long format listing
-			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "Type\tPermissions\tSize\tLast Modified\tName")
-			fmt.Fprintln(w, "----\t-----------\t----\t-------------\t----")
-
-			for _, file := range fileList.Data {
-				// Format size and last modified time
-				sizeStr := formatSize(file.Size)
-				lastModified := formatTime(file.LastModified)
-
-				// Colorize the output based on file type
-				nameStr := file.Name
-				if file.Type == "dir" {
-					nameStr = color.BlueString(nameStr)
-				} else if isExecutable(file.Permissions) {
-					nameStr = color.GreenString(nameStr)
-				}
-
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
-					file.Type,
-					file.Permissions,
-					sizeStr,
-					lastModified,
-					nameStr,
-				)
-			}
-			w.Flush()
-		} else {
-			// Simple listing
-			for _, file := range fileList.Data {
-				nameStr := file.Name
-				if file.Type == "dir" {
-					nameStr = color.BlueString(nameStr + "/")
-				} else if isExecutable(file.Permissions) {
-					nameStr = color.GreenString(nameStr + "*")
-				}
-				fmt.Println(nameStr)
-			}
-		}
-
-		// Display count
-		fmt.Printf("\nTotal: %d items\n", len(fileList.Data))
+	
+	// Create a slice of file entries for formatting
+	type fileEntry struct {
+		Type        string
+		Permissions string
+		User        string
+		Group       string
+		Size        int64
+		LastModified string
+		Name        string
 	}
-
+	
+	entries := make([]fileEntry, 0, len(listing.DATA))
+	
+	for _, item := range listing.DATA {
+		entry := fileEntry{
+			Type:        getFileType(item.Type),
+			Name:        item.Name,
+		}
+		
+		if lsLongFormat {
+			entry.Permissions = item.Permissions
+			entry.User = item.User
+			entry.Group = item.Group
+			entry.Size = item.Size
+			
+			// Format last modified time
+			t, err := time.Parse(time.RFC3339, item.LastModified)
+			if err == nil {
+				entry.LastModified = t.Format("Jan 02 15:04")
+			} else {
+				entry.LastModified = item.LastModified
+			}
+		}
+		
+		entries = append(entries, entry)
+	}
+	
+	// Display the results using the formatter
+	if err := formatter.FormatOutput(entries, headers); err != nil {
+		return fmt.Errorf("error formatting output: %w", err)
+	}
+	
+	// Output the directory path
+	fmt.Printf("\nDirectory: %s:%s\n", endpointID, path)
+	fmt.Printf("Total: %d items\n", len(listing.DATA))
+	
 	return nil
 }
 
-// parseEndpointPath parses an endpoint ID and path from a string in the format "endpoint_id[:path]"
-func parseEndpointPath(arg string) (endpointID, path string, err error) {
-	// Split the endpoint ID and path
-	parts := strings.SplitN(arg, ":", 2)
-	endpointID = parts[0]
-
-	// Validate the endpoint ID
-	if endpointID == "" {
-		return "", "", fmt.Errorf("invalid endpoint ID")
+// getFileType returns a string representation of the file type
+func getFileType(t string) string {
+	switch t {
+	case "dir":
+		return "d"
+	case "file":
+		return "f"
+	case "link":
+		return "l"
+	default:
+		return "-"
 	}
-
-	// Get the path
-	if len(parts) > 1 {
-		path = parts[1]
-	} else {
-		path = "/"
-	}
-
-	return endpointID, path, nil
-}
-
-// formatSize formats a size in bytes as a human-readable string
-func formatSize(size int64) string {
-	if size < 1024 {
-		return fmt.Sprintf("%d B", size)
-	}
-	if size < 1024*1024 {
-		return fmt.Sprintf("%.2f KB", float64(size)/1024)
-	}
-	if size < 1024*1024*1024 {
-		return fmt.Sprintf("%.2f MB", float64(size)/(1024*1024))
-	}
-	return fmt.Sprintf("%.2f GB", float64(size)/(1024*1024*1024))
-}
-
-// formatTime formats a time string as a human-readable string
-func formatTime(timeStr string) string {
-	if timeStr == "" {
-		return "N/A"
-	}
-
-	// Try to parse the time
-	for _, layout := range []string{
-		"2006-01-02 15:04:05",
-		time.RFC3339,
-		"2006-01-02T15:04:05",
-	} {
-		if t, err := time.Parse(layout, timeStr); err == nil {
-			// Format the time
-			return t.Format("Jan 02, 2006 15:04:05")
-		}
-	}
-
-	// If we couldn't parse it, return as is
-	return timeStr
-}
-
-// isExecutable checks if a file is executable based on its permissions
-func isExecutable(permissions string) bool {
-	// Check if the permissions string contains an 'x'
-	return strings.Contains(permissions, "x")
 }
