@@ -8,9 +8,10 @@ A command-line interface for Globus services, built in Go using the [Globus Go S
 ## Features
 
 - Modern CLI implementation with Cobra and Viper
+- Fast and lightweight with no Python dependencies
 - Comprehensive coverage of Globus services:
-  - Auth
-  - Transfer (in development)
+  - Auth (complete)
+  - Transfer (complete)
   - Groups (planned)
   - Search (planned)
   - Flows (planned)
@@ -20,8 +21,28 @@ A command-line interface for Globus services, built in Go using the [Globus Go S
 - Interactive features with progress visualization
 - Multiple configuration profiles
 - Cross-platform support (Linux, macOS, Windows)
+- Shell completion for Bash, Zsh, Fish, and PowerShell
 
 ## Installation
+
+### Using Homebrew (macOS and Linux)
+
+```bash
+# Install from Homebrew
+brew tap scttfrdmn/globus
+brew install globus-go-cli
+```
+
+### Using Docker
+
+```bash
+# Run using Docker
+docker run --rm -it scttfrdmn/globus-go-cli:latest auth whoami
+```
+
+### From Binary Releases
+
+Download the latest release for your platform from the [Releases page](https://github.com/scttfrdmn/globus-go-cli/releases).
 
 ### From Source
 
@@ -31,29 +52,40 @@ git clone https://github.com/scttfrdmn/globus-go-cli.git
 cd globus-go-cli
 
 # Build the binary
+make build
+# or
 go build -o globus
 
 # Install the binary
 mv globus /usr/local/bin/
 ```
 
-## Usage
+## Quick Start
 
 ```bash
 # Login to Globus
 globus auth login
 
+# Or login without a browser
+globus auth device
+
 # Show information about the current user
 globus auth whoami
 
-# List tokens
-globus auth tokens show
+# List your endpoints
+globus transfer endpoint list
 
-# Logout
+# List files on an endpoint
+globus transfer ls ENDPOINT_ID:/path
+
+# Transfer files between endpoints
+globus transfer cp SOURCE_ENDPOINT:/source/path DEST_ENDPOINT:/dest/path
+
+# Check transfer status
+globus transfer task show TASK_ID
+
+# Logout when done
 globus auth logout
-
-# Get help
-globus --help
 ```
 
 ## Configuration
@@ -64,15 +96,9 @@ The CLI stores its configuration and tokens in `~/.globus-cli/`:
 - `~/.globus-cli/tokens/`: OAuth tokens for different profiles
 - `~/.globus-cli/profiles/`: Named configuration profiles
 
-You can initialize the configuration with:
-
-```bash
-globus config init
-```
-
 ### Configuration Profiles
 
-You can use multiple configuration profiles:
+You can use multiple configuration profiles to work with different Globus accounts:
 
 ```bash
 # Create a new profile
@@ -80,36 +106,113 @@ globus config profile create myprofile
 
 # Use a specific profile
 globus --profile=myprofile auth login
+
+# List all profiles
+globus config profile list
 ```
 
-## Commands
+### Output Formats
+
+Most commands support different output formats:
+
+```bash
+# Default text format
+globus transfer endpoint list
+
+# JSON output for scripting
+globus transfer endpoint list --format=json
+
+# CSV output for importing into spreadsheets
+globus transfer endpoint list --format=csv
+```
+
+## Detailed Command Reference
 
 ### Auth Commands
 
-- `globus auth login`: Log in to Globus
-- `globus auth logout`: Log out from Globus
-- `globus auth whoami`: Show current user information
-- `globus auth tokens show`: Show token information
-- `globus auth tokens revoke`: Revoke tokens
-- `globus auth tokens introspect`: Introspect token
+```bash
+# Log in using browser
+globus auth login
 
-### Transfer Commands (Coming Soon)
+# Log in with device code (no browser)
+globus auth device
 
-- `globus transfer endpoint list`: List endpoints
-- `globus transfer ls <endpoint> <path>`: List files and directories
-- `globus transfer mkdir <endpoint> <path>`: Create directory
-- `globus transfer cp <source> <destination>`: Transfer files
-- `globus transfer rm <endpoint> <path>`: Delete files
-- `globus transfer task show <task_id>`: Show task status
+# Show current user info
+globus auth whoami
 
-### Configuration Commands
+# List tokens
+globus auth tokens show
 
-- `globus config show`: Show current configuration
-- `globus config init`: Initialize configuration
+# Refresh tokens
+globus auth refresh
+
+# Revoke tokens
+globus auth tokens revoke --type=access
+
+# Look up identities
+globus auth identities lookup user@example.com
+
+# Log out
+globus auth logout
+```
+
+### Transfer Commands
+
+```bash
+# List endpoints
+globus transfer endpoint list
+
+# Search for endpoints
+globus transfer endpoint search "my data"
+
+# Show endpoint details
+globus transfer endpoint show ENDPOINT_ID
+
+# List files on endpoint
+globus transfer ls ENDPOINT_ID:/path
+globus transfer ls -l ENDPOINT_ID:/path  # long format
+
+# Create directory
+globus transfer mkdir ENDPOINT_ID:/new/directory
+globus transfer mkdir -p ENDPOINT_ID:/nested/directory  # create parents
+
+# Delete files/directories
+globus transfer rm ENDPOINT_ID:/path/to/file
+globus transfer rm -r ENDPOINT_ID:/directory  # recursive
+
+# Transfer files
+globus transfer cp SOURCE_EP:/file DEST_EP:/path
+globus transfer cp -r SOURCE_EP:/dir DEST_EP:/path  # recursive
+
+# List tasks
+globus transfer task list
+
+# View task details
+globus transfer task show TASK_ID
+
+# Wait for task completion
+globus transfer task wait TASK_ID
+
+# Cancel task
+globus transfer task cancel TASK_ID
+```
+
+### Shell Completion
+
+```bash
+# Generate shell completion scripts
+globus completion bash > ~/.bash_completion.d/globus
+globus completion zsh > "${fpath[1]}/_globus"
+globus completion fish > ~/.config/fish/completions/globus.fish
+```
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Release Process
+
+For information about the release process, see [RELEASE_PROCESS.md](RELEASE_PROCESS.md).
 
 ## License
 

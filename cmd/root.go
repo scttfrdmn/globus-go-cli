@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	cfgFile     string
-	profileName string
-	verbose     bool
+	cfgFile      string
+	profileName  string
+	verbose      bool
 	outputFormat string
 )
 
@@ -23,10 +23,32 @@ var rootCmd = &cobra.Command{
 	Use:   "globus",
 	Short: "Globus CLI - Command line interface for Globus services",
 	Long: `Globus CLI - A command line interface for interacting with Globus services.
-	
+
 This CLI provides access to Globus services including Auth, Transfer, Search,
-Groups, Flows, Compute, and Timers.`,
-	Version: "0.1.0",
+Groups, Flows, Compute, and Timers. It is designed to be a fast, modern
+alternative to the Python-based Globus CLI.
+
+Basic Usage:
+  globus auth login                  Log in to Globus
+  globus auth whoami                 Show current user information
+  globus transfer endpoint list      List available Globus endpoints
+  globus transfer ls ENDPOINT:PATH   List files on an endpoint
+  globus transfer cp SOURCE DEST     Transfer files between endpoints
+  globus transfer task show TASK_ID  Show status of a transfer task
+
+Configuration:
+  The CLI stores its configuration in ~/.globus-cli/ directory.
+  You can use multiple profiles with the --profile flag.
+  
+Output Formats:
+  Most commands support different output formats using the --format flag:
+  --format=text                      Human-readable text (default)
+  --format=json                      JSON format for programmatic use
+  --format=csv                       CSV format for importing into spreadsheets
+
+For more information and examples, visit: 
+https://github.com/scttfrdmn/globus-go-cli`,
+	Version: "0.9.0",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
