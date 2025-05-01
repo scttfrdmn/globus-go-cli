@@ -1,0 +1,41 @@
+class GlobusGoCli < Formula
+  desc "Command-line interface for Globus services, built in Go"
+  homepage "https://github.com/scttfrdmn/globus-go-cli"
+  version "{{ .Version }}"
+  license "Apache-2.0"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "{{ .MacArmURL }}"
+      sha256 "{{ .MacArmSHA }}"
+    else
+      url "{{ .MacIntelURL }}"
+      sha256 "{{ .MacIntelSHA }}"
+    end
+  end
+
+  on_linux do
+    if Hardware::CPU.arm?
+      url "{{ .LinuxArmURL }}"
+      sha256 "{{ .LinuxArmSHA }}"
+    else
+      url "{{ .LinuxIntelURL }}"
+      sha256 "{{ .LinuxIntelSHA }}"
+    end
+  end
+
+  def install
+    bin.install "globus"
+    # Generate and install shell completions
+    output = Utils.popen_read("#{bin}/globus completion bash")
+    (bash_completion/"globus").write output
+    output = Utils.popen_read("#{bin}/globus completion zsh")
+    (zsh_completion/"_globus").write output
+    output = Utils.popen_read("#{bin}/globus completion fish")
+    (fish_completion/"globus.fish").write output
+  end
+
+  test do
+    assert_match "Globus CLI", shell_output("#{bin}/globus --version")
+  end
+end
