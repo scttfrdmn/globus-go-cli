@@ -4,7 +4,6 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/testhelpers"
