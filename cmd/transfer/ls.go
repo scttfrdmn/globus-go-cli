@@ -14,6 +14,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
@@ -91,27 +93,32 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create SDK config
-	sdkConfig := pkg.NewConfig().
-		WithClientID(clientCfg.ClientID).
-		WithClientSecret(clientCfg.ClientSecret)
+	// Create a simple static token authorizer
+	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
 
 	// Create transfer client
-	transferClient := sdkConfig.NewTransferClient(tokenInfo.AccessToken)
+	transferOptions := []transfer.Option{
+		transfer.WithAuthorizer(tokenAuthorizer),
+	}
+	
+	transferClient, err := transfer.NewClient(transferOptions...)
+	if err != nil {
+		return fmt.Errorf("failed to create transfer client: %w", err)
+	}
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	// Prepare listing options
-	options := &pkg.ListOptions{
-		Path:      path,
-		Recursive: lsRecursive,
+	options := &transfer.ListDirectoryOptions{
+		EndpointID: endpointID,
+		Path:       path,
 		ShowHidden: lsShowHidden,
 	}
 
 	// Get the directory listing
-	listing, err := transferClient.ListDirectory(ctx, endpointID, options)
+	listing, err := transferClient.ListDirectory(ctx, options)
 	if err != nil {
 		return fmt.Errorf("failed to list directory: %w", err)
 	}
