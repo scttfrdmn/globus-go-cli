@@ -3,7 +3,7 @@ module github.com/scttfrdmn/globus-go-cli
 go 1.20
 
 require (
-	github.com/scttfrdmn/globus-go-sdk v0.1.0
+	github.com/scttfrdmn/globus-go-sdk v0.9.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	github.com/fatih/color v1.15.0

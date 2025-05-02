@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 )
 
@@ -86,14 +87,17 @@ func login(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create SDK config
-	sdkConfig := pkg.NewConfig().
-		WithClientID(clientCfg.ClientID).
-		WithClientSecret(clientCfg.ClientSecret)
-
-	// Create auth client
-	authClient := sdkConfig.NewAuthClient()
-
+	// Create auth client directly
+	authOptions := []auth.ClientOption{
+		auth.WithClientID(clientCfg.ClientID),
+		auth.WithClientSecret(clientCfg.ClientSecret),
+	}
+	
+	authClient, err := auth.NewClient(authOptions...)
+	if err != nil {
+		return fmt.Errorf("failed to create auth client: %w", err)
+	}
+	
 	// Determine which scopes to request
 	var scopes []string
 	if len(loginScopes) > 0 {
@@ -112,7 +116,7 @@ func login(cmd *cobra.Command) error {
 }
 
 // loginWithLocalServer performs login using a local server for the callback
-func loginWithLocalServer(authClient *pkg.AuthClient, profile string, scopes []string) error {
+func loginWithLocalServer(authClient *auth.Client, profile string, scopes []string) error {
 	// Create channels for auth code or error
 	authCode := make(chan string, 1)
 	authErr := make(chan error, 1)
@@ -169,13 +173,16 @@ func loginWithLocalServer(authClient *pkg.AuthClient, profile string, scopes []s
 	}()
 
 	// Set the redirect URL
-	authClient.SetRedirectURL("http://localhost:8888/callback")
+	authClient.RedirectURL = "http://localhost:8888/callback"
 
 	// Generate a random state parameter
 	state := fmt.Sprintf("globus-cli-%d", time.Now().Unix())
 
 	// Get the authorization URL
-	authURL := authClient.GetAuthorizationURL(state, scopes...)
+	authURL, err := authClient.GetAuthorizationURL(context.Background(), state, scopes)
+	if err != nil {
+		return fmt.Errorf("failed to get authorization URL: %w", err)
+	}
 
 	// Print the URL for the user to open
 	fmt.Println("Please open the following URL in your browser:")
@@ -237,7 +244,7 @@ func loginWithLocalServer(authClient *pkg.AuthClient, profile string, scopes []s
 }
 
 // loginWithoutLocalServer performs login without using a local server
-func loginWithoutLocalServer(authClient *pkg.AuthClient, profile string, scopes []string) error {
+func loginWithoutLocalServer(authClient *auth.Client, profile string, scopes []string) error {
 	// Use device code flow or manual copy-paste
 	return fmt.Errorf("login without local server is not yet implemented")
 }
