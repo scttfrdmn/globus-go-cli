@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 )
@@ -74,20 +76,31 @@ func createDirectory(cmd *cobra.Command, endpointID, path string) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create SDK config
-	sdkConfig := pkg.NewConfig().
-		WithClientID(clientCfg.ClientID).
-		WithClientSecret(clientCfg.ClientSecret)
+	// Create a simple static token authorizer
+	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
 
 	// Create transfer client
-	transferClient := sdkConfig.NewTransferClient(tokenInfo.AccessToken)
+	transferOptions := []transfer.Option{
+		transfer.WithAuthorizer(tokenAuthorizer),
+	}
+	
+	transferClient, err := transfer.NewClient(transferOptions...)
+	if err != nil {
+		return fmt.Errorf("failed to create transfer client: %w", err)
+	}
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Create directory options
+	options := &transfer.CreateDirectoryOptions{
+		EndpointID: endpointID,
+		Path:       path,
+	}
+
 	// Create the directory
-	err = transferClient.MakeDir(ctx, endpointID, path, mkdirRecursive)
+	err = transferClient.CreateDirectory(ctx, options)
 	if err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
