@@ -3,7 +3,7 @@
 
 # Globus Go CLI
 
-A command-line interface for Globus services, built in Go using the [Globus Go SDK](https://github.com/scttfrdmn/globus-go-sdk).
+A command-line interface for Globus services, built in Go using the [Globus Go SDK](https://github.com/scttfrdmn/globus-go-sdk) v0.9.0.
 
 ## Features
 
@@ -205,6 +205,10 @@ globus completion bash > ~/.bash_completion.d/globus
 globus completion zsh > "${fpath[1]}/_globus"
 globus completion fish > ~/.config/fish/completions/globus.fish
 ```
+
+## Known Issues
+
+- The current integration with Globus Go SDK v0.9.0 has a dependency issue with a missing internal package `pkg/core/interfaces`. This is a transitional issue as we adapt to the SDK's evolving API.
 
 ## Contributing
 
