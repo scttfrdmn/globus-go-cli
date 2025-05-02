@@ -15,6 +15,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 )
@@ -91,48 +93,43 @@ func transferFiles(cmd *cobra.Command, sourceEndpointID, sourcePath, destEndpoin
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create SDK config
-	sdkConfig := pkg.NewConfig().
-		WithClientID(clientCfg.ClientID).
-		WithClientSecret(clientCfg.ClientSecret)
+	// Create a simple static token authorizer
+	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
 
 	// Create transfer client
-	transferClient := sdkConfig.NewTransferClient(tokenInfo.AccessToken)
+	transferOptions := []transfer.Option{
+		transfer.WithAuthorizer(tokenAuthorizer),
+	}
+	
+	transferClient, err := transfer.NewClient(transferOptions...)
+	if err != nil {
+		return fmt.Errorf("failed to create transfer client: %w", err)
+	}
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Create transfer options
-	transferOptions := &pkg.TransferOptions{
-		Label:             transferLabel,
-		Recursive:         transferRecursive,
-		SyncLevel:         transferSync,
-		PreserveTimestamp: transferPreserveTime,
-		Verify:            transferVerify,
-		DryRun:            transferDryRun,
-	}
-
 	// Parse deadline if provided
+	var deadline *time.Time
 	if transferDeadline != "" {
-		deadline, err := time.Parse("2006-01-02", transferDeadline)
+		parsedDeadline, err := time.Parse("2006-01-02", transferDeadline)
 		if err != nil {
 			return fmt.Errorf("invalid deadline format, use YYYY-MM-DD: %w", err)
 		}
-		transferOptions.Deadline = deadline
+		deadline = &parsedDeadline
 	}
 
-	// Create transfer task
-	task := &pkg.TransferTask{
-		SourceEndpointID:      sourceEndpointID,
-		DestinationEndpointID: destEndpointID,
-		Options:               transferOptions,
-		Items: []pkg.TransferItem{
-			{
-				SourcePath:      sourcePath,
-				DestinationPath: destPath,
-			},
-		},
+	// Create transfer options map
+	optionsMap := map[string]interface{}{
+		"recursive":      transferRecursive,
+		"sync_level":     transferSync,
+		"preserve_mtime": transferPreserveTime,
+		"verify_checksum": transferVerify,
+	}
+	
+	if deadline != nil {
+		optionsMap["deadline"] = deadline
 	}
 
 	// Show transfer details and confirm if not in dry run mode
@@ -161,7 +158,13 @@ func transferFiles(cmd *cobra.Command, sourceEndpointID, sourcePath, destEndpoin
 	s.Start()
 
 	// Submit the transfer
-	taskResponse, err := transferClient.SubmitTransfer(ctx, task)
+	taskResponse, err := transferClient.SubmitTransfer(
+		ctx,
+		sourceEndpointID, sourcePath,
+		destEndpointID, destPath,
+		transferLabel,
+		optionsMap,
+	)
 	s.Stop()
 	
 	if err != nil {
