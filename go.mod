@@ -9,7 +9,7 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/joho/godotenv v1.5.1
 	github.com/manifoldco/promptui v0.9.0
-	github.com/scttfrdmn/globus-go-sdk v0.9.1
+	github.com/scttfrdmn/globus-go-sdk v0.9.10
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 )
