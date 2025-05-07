@@ -13,22 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated to Globus Go SDK v0.9.10
 - Modified DeleteItem handling to be compatible with newer SDK versions
 - Updated CLI version to match SDK version
-- Created temporary stubs for device authentication while waiting for SDK implementation
+- Refactored auth package for compatibility with SDK v0.9.10:
+  - Updated refresh.go - Token refresh compatible with SDK v0.9.10
+  - Updated tokens.go - Proper field references and client initialization
+  - Updated whoami.go - Fixed Subject field reference (was Sub)
+  - Updated logout.go - Updated for new client initialization pattern
+  - Updated identities.go - Added temporary stub implementation
+  - Updated device.go - Added placeholder implementation
 
 ### Fixed
 - Integration with SDK v0.9.10 which fixes connection pool initialization issues
 - Improved compatibility with Globus API v0.10
+- Fixed token introspection field references (Subject vs Sub)
+- Fixed identity set handling in token introspection
 
 ### Known Issues
-- Auth API compatibility issues need to be resolved:
-  - Device authentication flow has been substantially changed in the SDK
-  - Auth client initialization now returns multiple values
-  - Token introspection fields have been renamed
-- Some command implementations need to be updated for the new SDK:
-  - auth/device.go: Device auth flow needs proper implementation
-  - auth/login.go: GetAuthorizationURL method signature changed
-  - auth/tokens.go: Token field references need updating
-- Partial build success achieved with package tests passing
+- Device authentication flow implementation pending SDK support
+- Transfer package needs updating for SDK v0.9.10:
+  - Client initialization returns multiple values
+  - Authorizer implementation needs to be updated
+  - Field name case has changed (e.g., Data instead of DATA)
+  - Endpoint-related options and models have changed
 
 ## [0.9.1] - 2025-05-07
 

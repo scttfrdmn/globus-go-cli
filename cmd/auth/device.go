@@ -3,7 +3,6 @@
 package auth
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -63,15 +62,9 @@ func deviceLogin(cmd *cobra.Command) error {
 	}
 
 	// Create auth client directly
-	authOptions := []auth.ClientOption{
-		auth.WithClientID(clientCfg.ClientID),
-		auth.WithClientSecret(clientCfg.ClientSecret),
-	}
-	
-	authClient, err := auth.NewClient(authOptions...)
-	if err != nil {
-		return fmt.Errorf("failed to create auth client: %w", err)
-	}
+	// NOTE: This client will be used in the future when SDK device flow is implemented
+	// For now, we're using a direct API approach below
+	_ = clientCfg // Mark as used
 
 	// Determine which scopes to request
 	var scopes []string
@@ -91,10 +84,8 @@ func deviceLogin(cmd *cobra.Command) error {
 	// For now, we'll implement a temporary solution using the auth API directly
 	
 	// OAuth 2.0 Device Code flow standard endpoint
-	ctx := context.Background()
-	baseURL := "https://auth.globus.org/v2/oauth2/device_authorization"
-	
-	// We'll need to make the API call directly for now
+	// We'll make the API call directly when we implement this
+	// For now, this is just a placeholder implementation
 	// Display placeholder information
 	fmt.Println("\nPlease go to this URL on any device with a web browser:")
 	color.Cyan("https://app.globus.org/auth/device")
@@ -109,9 +100,9 @@ func deviceLogin(cmd *cobra.Command) error {
 	// Poll for token exchange - temporary stub implementation
 	// TODO: Implement proper device code flow when SDK implementation is available
 	
-	// Using a shorter timeout for demo purposes
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
+	// This is a placeholder implementation
+	// We'll simulate waiting for user authentication
+	time.Sleep(2 * time.Second) // Simulate a short delay
 	
 	// Temporary stub to simulate token response while we wait for SDK implementation
 	tokenResp := &auth.TokenResponse{

@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 )
 
@@ -57,17 +57,24 @@ func refreshToken(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create SDK config
-	sdkConfig := pkg.NewConfig().
-		WithClientID(clientCfg.ClientID).
-		WithClientSecret(clientCfg.ClientSecret)
+	// Create auth client - SDK v0.9.10 compatibility
+	authOptions := []auth.ClientOption{
+		auth.WithClientID(clientCfg.ClientID),
+		auth.WithClientSecret(clientCfg.ClientSecret),
+	}
+	
+	authClient, err := auth.NewClient(authOptions...)
+	if err != nil {
+		return fmt.Errorf("failed to create auth client: %w", err)
+	}
 
-	// Create auth client
-	authClient := sdkConfig.NewAuthClient()
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	// Refresh the token
 	fmt.Println("Refreshing access token...")
-	tokenResp, err := authClient.RefreshToken(context.Background(), tokenInfo.RefreshToken)
+	tokenResp, err := authClient.RefreshToken(ctx, tokenInfo.RefreshToken)
 	if err != nil {
 		return fmt.Errorf("error refreshing token: %w", err)
 	}

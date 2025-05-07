@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 )
@@ -92,7 +91,7 @@ invalidating them with Globus Auth.`,
 				return fmt.Errorf("failed to load client configuration: %w", err)
 			}
 
-			// Create auth client directly
+			// Create auth client - SDK v0.9.10 compatibility
 			authOptions := []auth.ClientOption{
 				auth.WithClientID(clientCfg.ClientID),
 				auth.WithClientSecret(clientCfg.ClientSecret),
@@ -171,7 +170,7 @@ by introspecting it with Globus Auth.`,
 				return fmt.Errorf("failed to load client configuration: %w", err)
 			}
 
-			// Create auth client directly
+			// Create auth client - SDK v0.9.10 compatibility
 			authOptions := []auth.ClientOption{
 				auth.WithClientID(clientCfg.ClientID),
 				auth.WithClientSecret(clientCfg.ClientSecret),
@@ -191,20 +190,24 @@ by introspecting it with Globus Auth.`,
 				return fmt.Errorf("failed to introspect token: %w", err)
 			}
 
-			// Print token introspection
+			// Print token introspection - SDK v0.9.10 compatibility
+			// Field names may have changed in the TokenInfo struct
 			fmt.Println("\nToken Introspection:")
 			fmt.Printf("  Active: %t\n", introspection.Active)
 			fmt.Printf("  Scope: %s\n", introspection.Scope)
 			fmt.Printf("  Client ID: %s\n", introspection.ClientID)
 			fmt.Printf("  Username: %s\n", introspection.Username)
 			fmt.Printf("  Email: %s\n", introspection.Email)
-			fmt.Printf("  Subject: %s\n", introspection.Sub)
+			
+			// Updated field names for Subject in v0.9.10
+			fmt.Printf("  Subject: %s\n", introspection.Subject)
 			fmt.Printf("  Expires At: %d\n", introspection.Exp)
 			
-			if len(introspection.Aud) > 0 {
-				fmt.Println("  Audiences:")
-				for _, aud := range introspection.Aud {
-					fmt.Printf("    - %s\n", aud)
+			// IdentitySet field in v0.9.10 replaces Audiences
+			if len(introspection.IdentitySet) > 0 {
+				fmt.Println("  Identity Set:")
+				for _, identity := range introspection.IdentitySet {
+					fmt.Printf("    - %s\n", identity)
 				}
 			}
 			

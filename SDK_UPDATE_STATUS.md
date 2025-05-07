@@ -18,17 +18,29 @@ We have successfully updated to SDK v0.9.10, which fixes many of the previous is
 - The v0.9.10 release fixes the previously reported issue with `httppool.NewHttpConnectionPoolManager`
 - Our package tests now pass with the v0.9.10 SDK
 
-#### Remaining API Compatibility Issues
-We still have compatibility issues to resolve in the Auth package:
+#### Progress and Remaining Issues
+
+### Auth Package Updates
+We've successfully updated the following auth-related files to work with SDK v0.9.10:
+- refresh.go - Updated client initialization and token refresh
+- tokens.go - Updated field references and client initialization
+- whoami.go - Updated field references (Subject instead of Sub, IdentitySet instead of IdentitiesSets)
+- logout.go - Updated client initialization
+- identities.go - Updated with a temporary stub implementation
+- device.go - Added placeholder implementation pending SDK device flow support
+
+### Transfer Package Issues
+The transfer package still requires updates:
 
 ```
-cmd/auth/device.go:89:32: authClient.GetDeviceCode undefined (type *"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth".Client has no field or method GetDeviceCode)
-cmd/auth/device.go:110:31: authClient.PollDeviceCode undefined (type *"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth".Client has no field or method PollDeviceCode)
-cmd/auth/identities.go:106:18: assignment mismatch: 1 variable but sdkConfig.NewAuthClient returns 2 values
-cmd/auth/login.go:182:18: assignment mismatch: 2 variables but authClient.GetAuthorizationURL returns 1 value
-cmd/auth/login.go:182:49: cannot use context.Background() (value of interface type context.Context) as string value in argument to authClient.GetAuthorizationURL
-cmd/auth/login.go:182:78: cannot use scopes (variable of type []string) as string value in argument to authClient.GetAuthorizationURL
-cmd/auth/tokens.go:201:48: introspection.Sub undefined (type *"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth".TokenInfo has no field or method Sub)
+cmd/transfer/cp.go:91:2: declared and not used: clientCfg
+cmd/transfer/cp.go:101:27: cannot use tokenAuthorizer (variable of type *authorizers.StaticTokenAuthorizer) as "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth".Authorizer value in argument to transfer.WithAuthorizer
+cmd/transfer/endpoint.go:150:20: assignment mismatch: 1 variable but sdkConfig.NewTransferClient returns 2 values
+cmd/transfer/endpoint.go:157:18: undefined: pkg.EndpointListOptions
+cmd/transfer/endpoint.go:272:20: assignment mismatch: 1 variable but sdkConfig.NewTransferClient returns 2 values
+cmd/transfer/ls.go:91:2: declared and not used: clientCfg
+cmd/transfer/ls.go:101:27: cannot use tokenAuthorizer as "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth".Authorizer value in argument
+cmd/transfer/ls.go:151:46: listing.DATA undefined (type has no field or method DATA, but does have field Data)
 ```
 
 ### 2. API Changes Between SDK Versions
@@ -58,12 +70,14 @@ This indicates a circular dependency in the SDK that affects all versions.
 8. Updated CHANGELOG.md and SDK_UPDATE_STATUS.md to document progress and remaining issues
 
 ## Next Steps
-1. **Update Auth Package Implementation**: Refactor the auth-related commands to work with the new SDK:
-   - Update method signatures for device flow authentication
-   - Handle multi-return values from client initialization
-   - Update token information structure field references
-2. **Integration Testing**: After fixing auth package, perform integration testing with Globus services
-3. **Incremental Deployment**: Consider deploying feature branches with partial functionality until all commands are updated
+1. **Update Transfer Package Implementation**: Refactor the transfer-related commands to work with the new SDK:
+   - Update client initialization to handle multiple return values
+   - Fix authorizer implementation for the new API
+   - Update field name references (e.g., Data instead of DATA)
+   - Update endpoint-related options and models
+2. **Finalize Auth Implementation**: Complete the device flow implementation when SDK support is available
+3. **Integration Testing**: Perform integration testing with Globus services
+4. **Release Preparation**: Update documentation and prepare for v0.9.10 release
 ## Recommendations
 1. **Create Feature Branch for Auth Updates**: Create a dedicated branch for updating auth-related commands
 2. **Documentation**: Document the API changes in a developer guide for future reference

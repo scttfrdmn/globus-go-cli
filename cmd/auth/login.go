@@ -87,12 +87,14 @@ func login(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create auth client directly
+	// Create auth client directly - SDK v0.9.10 compatibility
 	authOptions := []auth.ClientOption{
 		auth.WithClientID(clientCfg.ClientID),
 		auth.WithClientSecret(clientCfg.ClientSecret),
 	}
 	
+	// In v0.9.10, NewClient may return multiple values
+	// For now we're only capturing the client and error
 	authClient, err := auth.NewClient(authOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create auth client: %w", err)
@@ -178,11 +180,10 @@ func loginWithLocalServer(authClient *auth.Client, profile string, scopes []stri
 	// Generate a random state parameter
 	state := fmt.Sprintf("globus-cli-%d", time.Now().Unix())
 
-	// Get the authorization URL
-	authURL, err := authClient.GetAuthorizationURL(context.Background(), state, scopes)
-	if err != nil {
-		return fmt.Errorf("failed to get authorization URL: %w", err)
-	}
+	// Get the authorization URL - SDK v0.9.10 compatibility
+	// In v0.9.10, GetAuthorizationURL has a different signature
+	// We need to adapt to the new method
+	authURL := authClient.GetAuthorizationURL(state, scopes...)
 
 	// Print the URL for the user to open
 	fmt.Println("Please open the following URL in your browser:")

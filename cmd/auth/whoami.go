@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 )
@@ -76,19 +75,17 @@ func whoami(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to get user identity: %w", err)
 	}
 
-	// Print user information
+	// Print user information - SDK v0.9.10 compatibility
 	fmt.Println("\nCurrent User:")
 	fmt.Printf("  Username: %s\n", introspection.Username)
-	fmt.Printf("  Identity ID: %s\n", introspection.Sub)
+	fmt.Printf("  Identity ID: %s\n", introspection.Subject)
 	fmt.Printf("  Email: %s\n", introspection.Email)
 	fmt.Printf("  Name: %s\n", introspection.Name)
 	
-	if len(introspection.IdentitiesSets) > 0 && len(introspection.IdentitiesSets[0]) > 0 {
+	if len(introspection.IdentitySet) > 0 {
 		fmt.Println("  Linked Identities:")
-		for _, idSet := range introspection.IdentitiesSets {
-			for _, id := range idSet {
-				fmt.Printf("    - %s\n", id)
-			}
+		for _, id := range introspection.IdentitySet {
+			fmt.Printf("    - %s\n", id)
 		}
 	}
 	
