@@ -93,6 +93,9 @@ This indicates a circular dependency in the SDK that affects all versions.
 - SDK v0.9.12 released: May 8, 2025
 - SDK v0.9.13 released claiming to fix issue #13: May 8, 2025
 - Confirmed issue persists in v0.9.13: May 8, 2025
+- SDK v0.9.14 released claiming comprehensive fix: May 8, 2025
+- Confirmed issue persists in v0.9.14, tag points to v0.9.11 commit: May 8, 2025
+- Escalated issue with additional details to upstream project: May 8, 2025
 
 ## References
 - GitHub Issue #8: Import cycle issues

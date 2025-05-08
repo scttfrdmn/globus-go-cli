@@ -15,9 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created bug report for the SDK (Issue #13)
 
 ### Known Issues
-- Unable to update to SDK v0.9.11-v0.9.13 due to persistent compilation errors
+- Unable to update to SDK v0.9.11-v0.9.14 due to persistent compilation errors
 - Remaining on v0.9.10 until upstream SDK issues are properly resolved
-- Despite v0.9.13 claiming to fix the issue, the problem persists
+- Despite v0.9.13 and v0.9.14 claiming to fix the issue, the problem persists
+- Verified that v0.9.14 tag improperly points to the same commit as v0.9.11
+- Reported detailed findings to upstream project for resolution
 
 ## [0.9.10] - 2025-05-07
 
