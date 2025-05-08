@@ -48,7 +48,7 @@ Output Formats:
 
 For more information and examples, visit: 
 https://github.com/scttfrdmn/globus-go-cli`,
-	Version: "0.9.10",
+	Version: "0.9.10+1",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

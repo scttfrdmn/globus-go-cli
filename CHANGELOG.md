@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.10+1] - 2025-05-08
+
+### Changed
+- Maintained compatibility with Globus Go SDK v0.9.10
+- Investigated SDK v0.9.11 compatibility issues
+- Created bug report for SDK v0.9.11 (Issue #13)
+
+### Known Issues
+- Unable to update to SDK v0.9.11 due to compilation errors
+- Remaining on v0.9.10 until SDK issues are resolved
+
 ## [0.9.10] - 2025-05-07
 
 ### Changed

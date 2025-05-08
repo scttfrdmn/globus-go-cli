@@ -4,9 +4,15 @@
 This document summarizes the current status of our attempt to update the Globus Go CLI to use the latest Globus Go SDK versions.
 
 ## Current Status
-- **Branch**: feature/sdk-0.9.10-update
+- **Branch**: feature/sdk-0.9.10-compatibility
 - **SDK Version**: v0.9.10
 - **Status**: Success - All tests pass and CLI is functional with SDK v0.9.10
+
+### SDK v0.9.11 Issues
+Attempted to update to SDK v0.9.11 but discovered breaking changes:
+- Missing functions in the SDK's core package that are still referenced internally
+- Created GitHub issue #13 (https://github.com/scttfrdmn/globus-go-sdk/issues/13) to report the problem
+- Maintaining v0.9.10 compatibility until the SDK bug is fixed
 
 ## Issues Identified
 
@@ -81,6 +87,8 @@ This indicates a circular dependency in the SDK that affects all versions.
 - Issues with v0.9.9 reported: May 7, 2025 (after v0.9.9 release)
 - SDK v0.9.10 released with fixes: May 7, 2025
 - Full integration of v0.9.10: May 7, 2025
+- SDK v0.9.11 released: May 8, 2025
+- Issues with v0.9.11 reported: May 8, 2025 (GitHub issue #13)
 
 ## References
 - GitHub Issue #8: Import cycle issues
