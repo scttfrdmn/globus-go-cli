@@ -14,7 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
@@ -135,26 +136,35 @@ func listEndpoints(cmd *cobra.Command) error {
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration
-	clientCfg, err := config.LoadClientConfig()
+	// Load client configuration - not used with direct client initialization in v0.9.10
+	// We still load it for future use cases
+	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create SDK config
-	sdkConfig := pkg.NewConfig().
-		WithClientID(clientCfg.ClientID).
-		WithClientSecret(clientCfg.ClientSecret)
+	// Create a simple static token authorizer for v0.9.10
+	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
+	
+	// Create a core authorizer adapter for v0.9.10 compatibility
+	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client
-	transferClient := sdkConfig.NewTransferClient(tokenInfo.AccessToken)
+	// Create transfer client with v0.9.10 compatible options
+	transferOptions := []transfer.Option{
+		transfer.WithAuthorizer(coreAuthorizer),
+	}
+	
+	transferClient, err := transfer.NewClient(transferOptions...)
+	if err != nil {
+		return fmt.Errorf("failed to create transfer client: %w", err)
+	}
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// Prepare options for listing endpoints
-	options := &pkg.EndpointListOptions{
+	options := &transfer.ListEndpointsOptions{
 		Limit: limit,
 	}
 
@@ -257,19 +267,28 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration
-	clientCfg, err := config.LoadClientConfig()
+	// Load client configuration - not used with direct client initialization in v0.9.10
+	// We still load it for future use cases
+	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create SDK config
-	sdkConfig := pkg.NewConfig().
-		WithClientID(clientCfg.ClientID).
-		WithClientSecret(clientCfg.ClientSecret)
+	// Create a simple static token authorizer for v0.9.10
+	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
+	
+	// Create a core authorizer adapter for v0.9.10 compatibility
+	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client
-	transferClient := sdkConfig.NewTransferClient(tokenInfo.AccessToken)
+	// Create transfer client with v0.9.10 compatible options
+	transferOptions := []transfer.Option{
+		transfer.WithAuthorizer(coreAuthorizer),
+	}
+	
+	transferClient, err := transfer.NewClient(transferOptions...)
+	if err != nil {
+		return fmt.Errorf("failed to create transfer client: %w", err)
+	}
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -312,9 +331,9 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 		}
 		
 		// Show server information if available
-		if len(endpoint.DATA) > 0 {
+		if len(endpoint.Data) > 0 {
 			fmt.Println("\nServer Configuration:")
-			for i, server := range endpoint.DATA {
+			for i, server := range endpoint.Data {
 				fmt.Printf("  Server #%d:\n", i+1)
 				fmt.Printf("    Hostname:       %s\n", server.Hostname)
 				fmt.Printf("    Scheme:         %s\n", server.Scheme)

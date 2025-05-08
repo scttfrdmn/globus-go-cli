@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
@@ -87,18 +86,22 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration
-	clientCfg, err := config.LoadClientConfig()
+	// Load client configuration - not used with direct client initialization in v0.9.10
+	// We still load it for future use cases
+	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer
+	// Create a simple static token authorizer for v0.9.10
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
+	
+	// Create a core authorizer adapter for v0.9.10 compatibility
+	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client
+	// Create transfer client with v0.9.10 compatible options
 	transferOptions := []transfer.Option{
-		transfer.WithAuthorizer(tokenAuthorizer),
+		transfer.WithAuthorizer(coreAuthorizer),
 	}
 	
 	transferClient, err := transfer.NewClient(transferOptions...)
@@ -148,9 +151,10 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 		Name        string
 	}
 	
-	entries := make([]fileEntry, 0, len(listing.DATA))
+	// In SDK v0.9.10, the field is named Data instead of DATA
+	entries := make([]fileEntry, 0, len(listing.Data))
 	
-	for _, item := range listing.DATA {
+	for _, item := range listing.Data {
 		entry := fileEntry{
 			Type:        getFileType(item.Type),
 			Name:        item.Name,
@@ -181,7 +185,7 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 	
 	// Output the directory path
 	fmt.Printf("\nDirectory: %s:%s\n", endpointID, path)
-	fmt.Printf("Total: %d items\n", len(listing.DATA))
+	fmt.Printf("Total: %d items\n", len(listing.Data))
 	
 	return nil
 }
