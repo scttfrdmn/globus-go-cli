@@ -12,7 +12,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 )
@@ -72,19 +73,28 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration
-	clientCfg, err := config.LoadClientConfig()
+	// Load client configuration - not used with direct client initialization in v0.9.10
+	// We still load it for future use cases
+	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create SDK config
-	sdkConfig := pkg.NewConfig().
-		WithClientID(clientCfg.ClientID).
-		WithClientSecret(clientCfg.ClientSecret)
+	// Create a simple static token authorizer for v0.9.10
+	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
+	
+	// Create a core authorizer adapter for v0.9.10 compatibility
+	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client
-	transferClient := sdkConfig.NewTransferClient(tokenInfo.AccessToken)
+	// Create transfer client with v0.9.10 compatible options
+	transferOptions := []transfer.Option{
+		transfer.WithAuthorizer(coreAuthorizer),
+	}
+	
+	transferClient, err := transfer.NewClient(transferOptions...)
+	if err != nil {
+		return fmt.Errorf("failed to create transfer client: %w", err)
+	}
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -93,11 +103,12 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 	// Check if we need to prompt for confirmation
 	if !rmForce {
 		// Get file/directory info
-		options := &pkg.ListOptions{
-			Path: path,
+		options := &transfer.ListDirectoryOptions{
+			EndpointID: endpointID,
+			Path:       path,
 		}
 		
-		listing, err := transferClient.ListDirectory(ctx, endpointID, options)
+		listing, err := transferClient.ListDirectory(ctx, options)
 		if err != nil {
 			// If we can't get info, still prompt
 			prompt := fmt.Sprintf("Are you sure you want to delete %s:%s?", endpointID, path)
@@ -108,7 +119,7 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 		} else {
 			// Check if it's a directory
 			isDir := false
-			for _, item := range listing.DATA {
+			for _, item := range listing.Data {
 				if item.Type == "dir" && item.Name == "." {
 					isDir = true
 					break
@@ -121,7 +132,7 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 				}
 				
 				// Count items in the directory
-				count := len(listing.DATA)
+				count := len(listing.Data)
 				if count > 2 { // Accounting for "." and ".."
 					prompt := fmt.Sprintf("Are you sure you want to delete directory %s:%s and all its contents (%d items)?", 
 						endpointID, path, count-2)
@@ -142,7 +153,13 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 	}
 
 	// Delete the item
-	err = transferClient.Delete(ctx, endpointID, path, rmRecursive)
+	deleteOptions := &transfer.DeleteOptions{
+		EndpointID: endpointID,
+		Path:       path,
+		Recursive:  rmRecursive,
+	}
+	
+	err = transferClient.Delete(ctx, deleteOptions)
 	if err != nil {
 		return fmt.Errorf("failed to delete item: %w", err)
 	}

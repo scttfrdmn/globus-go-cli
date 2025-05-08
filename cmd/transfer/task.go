@@ -16,7 +16,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
@@ -151,12 +150,15 @@ func listTasks(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer
+	// Create a simple static token authorizer for v0.9.10
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
+	
+	// Create a core authorizer adapter for v0.9.10 compatibility
+	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client
+	// Create transfer client with v0.9.10 compatible options
 	transferOptions := []transfer.Option{
-		transfer.WithAuthorizer(tokenAuthorizer),
+		transfer.WithAuthorizer(coreAuthorizer),
 	}
 	
 	transferClient, err := transfer.NewClient(transferOptions...)
@@ -203,9 +205,9 @@ func listTasks(cmd *cobra.Command) error {
 		Label       string
 	}
 	
-	entries := make([]taskEntry, 0, len(tasks.DATA))
+	entries := make([]taskEntry, 0, len(tasks.Data))
 	
-	for _, task := range tasks.DATA {
+	for _, task := range tasks.Data {
 		source := "N/A"
 		if task.SourceEndpointID != "" {
 			source = fmt.Sprintf("%s:%s", task.SourceEndpointID, task.SourceEndpointDisplayName)
@@ -263,12 +265,15 @@ func showTask(cmd *cobra.Command, taskID string) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer
+	// Create a simple static token authorizer for v0.9.10
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
+	
+	// Create a core authorizer adapter for v0.9.10 compatibility
+	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client
+	// Create transfer client with v0.9.10 compatible options
 	transferOptions := []transfer.Option{
-		transfer.WithAuthorizer(tokenAuthorizer),
+		transfer.WithAuthorizer(coreAuthorizer),
 	}
 	
 	transferClient, err := transfer.NewClient(transferOptions...)
@@ -377,12 +382,15 @@ func cancelTask(cmd *cobra.Command, taskID string) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer
+	// Create a simple static token authorizer for v0.9.10
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
+	
+	// Create a core authorizer adapter for v0.9.10 compatibility
+	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client
+	// Create transfer client with v0.9.10 compatible options
 	transferOptions := []transfer.Option{
-		transfer.WithAuthorizer(tokenAuthorizer),
+		transfer.WithAuthorizer(coreAuthorizer),
 	}
 	
 	transferClient, err := transfer.NewClient(transferOptions...)
@@ -437,12 +445,15 @@ func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer
+	// Create a simple static token authorizer for v0.9.10
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
+	
+	// Create a core authorizer adapter for v0.9.10 compatibility
+	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client
+	// Create transfer client with v0.9.10 compatible options
 	transferOptions := []transfer.Option{
-		transfer.WithAuthorizer(tokenAuthorizer),
+		transfer.WithAuthorizer(coreAuthorizer),
 	}
 	
 	transferClient, err := transfer.NewClient(transferOptions...)
