@@ -8,11 +8,12 @@ This document summarizes the current status of our attempt to update the Globus 
 - **SDK Version**: v0.9.10
 - **Status**: Success - All tests pass and CLI is functional with SDK v0.9.10
 
-### SDK v0.9.11 Issues
-Attempted to update to SDK v0.9.11 but discovered breaking changes:
+### SDK v0.9.11-v0.9.13 Issues
+Attempted to update to SDK v0.9.11, v0.9.12, and v0.9.13 but discovered persistent breaking changes:
 - Missing functions in the SDK's core package that are still referenced internally
 - Created GitHub issue #13 (https://github.com/scttfrdmn/globus-go-sdk/issues/13) to report the problem
-- Maintaining v0.9.10 compatibility until the SDK bug is fixed
+- Despite v0.9.13 claiming to fix the issue, the problem persists
+- Maintaining v0.9.10 compatibility until the SDK bug is properly fixed
 
 ## Issues Identified
 
@@ -89,6 +90,9 @@ This indicates a circular dependency in the SDK that affects all versions.
 - Full integration of v0.9.10: May 7, 2025
 - SDK v0.9.11 released: May 8, 2025
 - Issues with v0.9.11 reported: May 8, 2025 (GitHub issue #13)
+- SDK v0.9.12 released: May 8, 2025
+- SDK v0.9.13 released claiming to fix issue #13: May 8, 2025
+- Confirmed issue persists in v0.9.13: May 8, 2025
 
 ## References
 - GitHub Issue #8: Import cycle issues

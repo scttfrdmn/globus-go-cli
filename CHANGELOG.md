@@ -11,12 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Maintained compatibility with Globus Go SDK v0.9.10
-- Investigated SDK v0.9.11 compatibility issues
-- Created bug report for SDK v0.9.11 (Issue #13)
+- Investigated compatibility issues with SDK v0.9.11, v0.9.12, and v0.9.13
+- Created bug report for the SDK (Issue #13)
 
 ### Known Issues
-- Unable to update to SDK v0.9.11 due to compilation errors
-- Remaining on v0.9.10 until SDK issues are resolved
+- Unable to update to SDK v0.9.11-v0.9.13 due to persistent compilation errors
+- Remaining on v0.9.10 until upstream SDK issues are properly resolved
+- Despite v0.9.13 claiming to fix the issue, the problem persists
 
 ## [0.9.10] - 2025-05-07
 
