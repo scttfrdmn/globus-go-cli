@@ -52,16 +52,11 @@ func TestRootCommand(t *testing.T) {
 
 // getRootCommandForTesting creates a new instance of the root command for testing
 func getRootCommandForTesting() *cobra.Command {
-	// Create a new instance to avoid side effects
-	cmd := &cobra.Command{
-		Use:   "globus",
-		Short: "Globus CLI - Command line interface for Globus services",
-		Long: `Globus CLI - A command line interface for interacting with Globus services.
-		
-	This CLI provides access to Globus services including Auth, Transfer, Search,
-	Groups, Flows, Compute, and Timers.`,
-		Version: "0.1.0-test",
-	}
+	// Use the actual root command to ensure subcommands are included
+	cmd := Execute()
+	
+	// Override version for testing
+	cmd.Version = "0.1.0-test"
 	
 	return cmd
 }

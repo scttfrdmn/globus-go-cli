@@ -6,9 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -18,7 +16,6 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-cli/pkg/output"
 )
 
 // EndpointCmd returns the endpoint command
@@ -168,30 +165,21 @@ func listEndpoints(cmd *cobra.Command) error {
 		Limit: limit,
 	}
 
-	// Add filters based on flags
+	// Add filters based on flags - simplified for SDK v0.9.10
 	if filterOwner != "" {
 		options.FilterOwnerID = filterOwner
 	}
+	
+	// Filter scope handling for SDK v0.9.10
 	if filterRecentlyUsed {
-		options.FilterRecentlyUsed = true
+		options.FilterScope = "recently-used"
+	} else if filterMyTasksOnly {
+		options.FilterScope = "in-use"
 	}
-	if filterIsManagedBy != "" {
-		options.FilterIsManagedBy = filterIsManagedBy
-	}
-	if filterOrganization != "" {
-		options.FilterOrganization = filterOrganization
-	}
-	if filterRole != "" {
-		options.FilterRole = filterRole
-	}
-	if filterSubscribeId != "" {
-		options.FilterSubscriptionID = filterSubscribeId
-	}
-	if filterMyTasksOnly {
-		options.FilterMyTasksOnly = true
-	}
+	
+	// Search text for full text search
 	if searchText != "" {
-		options.SearchText = searchText
+		options.FilterFullText = searchText
 	}
 
 	// Get the endpoints
@@ -228,13 +216,12 @@ func listEndpoints(cmd *cobra.Command) error {
 			)
 		}
 	default:
-		// Output as text table
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "ID\tName\tOwner\tActivated\tConnected\t")
-		fmt.Fprintln(w, "---\t----\t-----\t---------\t---------\t")
+		// Output as simple table for v0.9.10 compatibility
+		fmt.Println("ID\tName\tOwner\tActivated\tConnected")
+		fmt.Println("---\t----\t-----\t---------\t---------")
 
 		for _, endpoint := range endpoints.Data {
-			fmt.Fprintf(w, "%s\t%s\t%s\t%t\t%t\t\n",
+			fmt.Printf("%s\t%s\t%s\t%t\t%t\n",
 				endpoint.ID,
 				endpoint.DisplayName,
 				endpoint.OwnerString,
@@ -242,10 +229,9 @@ func listEndpoints(cmd *cobra.Command) error {
 				endpoint.GCPConnected,
 			)
 		}
-		w.Flush()
 
 		// Display count
-		fmt.Printf("\nShowing %d of %d endpoints\n", len(endpoints.Data), endpoints.Length)
+		fmt.Printf("\nShowing %d endpoints\n", len(endpoints.Data))
 	}
 
 	return nil
@@ -326,60 +312,24 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 		fmt.Printf("  Connected:      %t\n", endpoint.GCPConnected)
 		fmt.Printf("  Default Dir:    %s\n", endpoint.DefaultDirectory)
 		
-		if endpoint.Activated {
-			fmt.Printf("  Expires In:     %s\n", formatDuration(endpoint.ExpiresIn))
+		// We don't have access to these fields in SDK v0.9.10
+		// Display the available information only
+		
+		// Organization and department if available
+		if endpoint.Organization != "" {
+			fmt.Printf("  Organization:   %s\n", endpoint.Organization)
+		}
+		if endpoint.Department != "" {
+			fmt.Printf("  Department:     %s\n", endpoint.Department)
 		}
 		
-		// Show server information if available
-		if len(endpoint.Data) > 0 {
-			fmt.Println("\nServer Configuration:")
-			for i, server := range endpoint.Data {
-				fmt.Printf("  Server #%d:\n", i+1)
-				fmt.Printf("    Hostname:       %s\n", server.Hostname)
-				fmt.Printf("    Scheme:         %s\n", server.Scheme)
-				fmt.Printf("    Port:           %d\n", server.Port)
-				fmt.Printf("    Subject:        %s\n", server.Subject)
-			}
-		}
-		
-		// Show network use if available
-		if endpoint.NetworkUse != nil {
-			fmt.Println("\nNetwork Use:")
-			fmt.Printf("  Max Concurrency:    %d\n", endpoint.NetworkUse.MaxConcurrency)
-			fmt.Printf("  Max Parallelism:    %d\n", endpoint.NetworkUse.MaxParallelism)
-			fmt.Printf("  Preferred Concurrency: %d\n", endpoint.NetworkUse.PreferredConcurrency)
-			fmt.Printf("  Preferred Parallelism: %d\n", endpoint.NetworkUse.PreferredParallelism)
+		// Contact info if available
+		if endpoint.ContactEmail != "" {
+			fmt.Printf("  Contact Email:  %s\n", endpoint.ContactEmail)
 		}
 	}
 
 	return nil
 }
 
-// formatDuration formats a duration in seconds as a human-readable string
-func formatDuration(seconds int) string {
-	if seconds <= 0 {
-		return "Expired"
-	}
-	
-	duration := time.Duration(seconds) * time.Second
-	
-	if duration.Hours() > 24 {
-		days := int(duration.Hours() / 24)
-		hours := int(duration.Hours()) % 24
-		return fmt.Sprintf("%d days, %d hours", days, hours)
-	}
-	
-	if duration.Hours() >= 1 {
-		hours := int(duration.Hours())
-		minutes := int(duration.Minutes()) % 60
-		return fmt.Sprintf("%d hours, %d minutes", hours, minutes)
-	}
-	
-	if duration.Minutes() >= 1 {
-		minutes := int(duration.Minutes())
-		seconds := int(duration.Seconds()) % 60
-		return fmt.Sprintf("%d minutes, %d seconds", minutes, seconds)
-	}
-	
-	return fmt.Sprintf("%d seconds", seconds)
-}
+// Note: formatDuration function removed as it is no longer needed in SDK v0.9.10

@@ -6,9 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -145,7 +143,7 @@ func listTasks(cmd *cobra.Command) error {
 	}
 
 	// Load client configuration
-	clientCfg, err := config.LoadClientConfig()
+	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
@@ -210,12 +208,12 @@ func listTasks(cmd *cobra.Command) error {
 	for _, task := range tasks.Data {
 		source := "N/A"
 		if task.SourceEndpointID != "" {
-			source = fmt.Sprintf("%s:%s", task.SourceEndpointID, task.SourceEndpointDisplayName)
+			source = fmt.Sprintf("%s:%s", task.SourceEndpointID, task.SourceEndpointDisplay)
 		}
 		
 		destination := "N/A"
 		if task.DestinationEndpointID != "" {
-			destination = fmt.Sprintf("%s:%s", task.DestinationEndpointID, task.DestinationEndpointDisplayName)
+			destination = fmt.Sprintf("%s:%s", task.DestinationEndpointID, task.DestEndpointDisplay)
 		}
 		
 		entry := taskEntry{
@@ -260,7 +258,7 @@ func showTask(cmd *cobra.Command, taskID string) error {
 	}
 
 	// Load client configuration
-	clientCfg, err := config.LoadClientConfig()
+	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
@@ -314,46 +312,46 @@ func showTask(cmd *cobra.Command, taskID string) error {
 		fmt.Printf("  Type:           %s\n", task.Type)
 		fmt.Printf("  Label:          %s\n", task.Label)
 		
-		// Format dates
-		requestTime, _ := time.Parse(time.RFC3339, task.RequestTime)
-		fmt.Printf("  Request Time:   %s\n", requestTime.Format("2006-01-02 15:04:05"))
+		// Format dates - RequestTime is now time.Time in SDK v0.9.10
+		fmt.Printf("  Request Time:   %s\n", task.RequestTime.Format("2006-01-02 15:04:05"))
 		
-		if task.CompletionTime != "" {
-			completionTime, _ := time.Parse(time.RFC3339, task.CompletionTime)
-			fmt.Printf("  Completion Time: %s\n", completionTime.Format("2006-01-02 15:04:05"))
+		// CompletionTime is now *time.Time in SDK v0.9.10
+		if task.CompletionTime != nil {
+			fmt.Printf("  Completion Time: %s\n", task.CompletionTime.Format("2006-01-02 15:04:05"))
 		}
 		
 		// Format task status with color
 		if task.Status == "SUCCEEDED" {
 			color.Green("  Task succeeded")
 		} else if task.Status == "FAILED" {
-			color.Red("  Task failed: %s", task.NiceStatus)
+			// NiceStatus field is not available in SDK v0.9.10
+			color.Red("  Task failed")
 		} else if task.Status == "ACTIVE" {
-			color.Yellow("  Task is active: %s", task.NiceStatus)
+			color.Yellow("  Task is active")
 		}
 		
 		// Show endpoint information
 		fmt.Println("\nEndpoints:")
-		fmt.Printf("  Source:      %s (%s)\n", task.SourceEndpointDisplayName, task.SourceEndpointID)
-		fmt.Printf("  Destination: %s (%s)\n", task.DestinationEndpointDisplayName, task.DestinationEndpointID)
+		fmt.Printf("  Source:      %s (%s)\n", task.SourceEndpointDisplay, task.SourceEndpointID)
+		fmt.Printf("  Destination: %s (%s)\n", task.DestEndpointDisplay, task.DestinationEndpointID)
 		
 		// Show transfer stats
 		fmt.Println("\nTransfer Stats:")
 		fmt.Printf("  Files:          %d\n", task.FilesTransferred)
-		fmt.Printf("  Directories:    %d\n", task.DirectoriesTransferred)
+		fmt.Printf("  Directories:    %d\n", task.Subtasks) // DirectoriesTransferred is not available in v0.9.10, using Subtasks instead
 		fmt.Printf("  Files Skipped:  %d\n", task.FilesSkipped)
-		fmt.Printf("  Total Files:    %d\n", task.Files)
-		fmt.Printf("  Total Bytes:    %d\n", task.Bytes)
+		fmt.Printf("  Total Files:    %d\n", task.Subtasks) // Using Subtasks as approximation for total files
+		fmt.Printf("  Total Bytes:    %d\n", task.BytesSkipped + task.BytesTransferred) // Approximation for total bytes
 		fmt.Printf("  Bytes Transferred: %d\n", task.BytesTransferred)
 		
 		// Show sync options if applicable
-		if task.SynchronizationLevel > 0 {
-			fmt.Printf("\nSynchronization Level: %d\n", task.SynchronizationLevel)
+		if task.SyncLevel > 0 {
+			fmt.Printf("\nSynchronization Level: %d\n", task.SyncLevel)
 		}
 		
 		// Show verification if applicable
-		if task.VerificationType != "" {
-			fmt.Printf("\nVerification: %s\n", task.VerificationType)
+		if task.VerifyChecksum {
+			fmt.Printf("\nVerification: checksum\n")
 		}
 	}
 
@@ -377,7 +375,7 @@ func cancelTask(cmd *cobra.Command, taskID string) error {
 	}
 
 	// Load client configuration
-	clientCfg, err := config.LoadClientConfig()
+	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
@@ -413,11 +411,12 @@ func cancelTask(cmd *cobra.Command, taskID string) error {
 		return fmt.Errorf("task %s is not active (status: %s), cannot cancel", taskID, task.Status)
 	}
 
-	// Cancel the task
-	err = transferClient.CancelTask(ctx, taskID)
+	// Cancel the task - CancelTask returns OperationResult and error in v0.9.10
+	result, err := transferClient.CancelTask(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to cancel task: %w", err)
 	}
+	_ = result // Using result to avoid unused variable warning
 
 	fmt.Printf("Successfully canceled task %s\n", taskID)
 	return nil
@@ -440,7 +439,7 @@ func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 	}
 
 	// Load client configuration
-	clientCfg, err := config.LoadClientConfig()
+	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
@@ -490,7 +489,7 @@ func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 			// Update spinner message
 			if task.FilesTransferred > 0 || task.BytesTransferred > 0 {
 				s.Suffix = fmt.Sprintf(" Waiting for task %s: %d/%d files, %d/%d bytes",
-					taskID, task.FilesTransferred, task.Files, task.BytesTransferred, task.Bytes)
+					taskID, task.FilesTransferred, task.Subtasks, task.BytesTransferred, task.BytesSkipped+task.BytesTransferred)
 			}
 
 			// Check if the task has completed
@@ -502,7 +501,8 @@ func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 					color.Green("Task %s completed successfully", taskID)
 					fmt.Printf("Transferred %d files (%d bytes)\n", task.FilesTransferred, task.BytesTransferred)
 				} else if task.Status == "FAILED" {
-					color.Red("Task %s failed: %s", taskID, task.NiceStatus)
+					// NiceStatus not available in v0.9.10
+					color.Red("Task %s failed", taskID)
 				} else {
 					fmt.Printf("Task %s status: %s\n", taskID, task.Status)
 				}

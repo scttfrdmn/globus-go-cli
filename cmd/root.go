@@ -52,7 +52,12 @@ https://github.com/scttfrdmn/globus-go-cli`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-func Execute() error {
+func Execute() *cobra.Command {
+	return rootCmd
+}
+
+// ExecuteCmd executes the root command.
+func ExecuteCmd() error {
 	return rootCmd.Execute()
 }
 

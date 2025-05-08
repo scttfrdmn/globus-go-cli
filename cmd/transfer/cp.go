@@ -5,7 +5,6 @@ package transfer
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 

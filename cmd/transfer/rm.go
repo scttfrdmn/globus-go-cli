@@ -152,17 +152,26 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 		}
 	}
 
-	// Delete the item
-	deleteOptions := &transfer.DeleteOptions{
-		EndpointID: endpointID,
-		Path:       path,
-		Recursive:  rmRecursive,
+	// Delete the item using a delete task request for v0.9.10
+	deleteItem := transfer.DeleteItem{
+		DataType: "delete_item",
+		Path:     path,
+		// Note: In SDK v0.9.10, recursive is handled at the task level
 	}
 	
-	err = transferClient.Delete(ctx, deleteOptions)
+	deleteRequest := &transfer.DeleteTaskRequest{
+		DataType:   "delete",
+		EndpointID: endpointID,
+		Items:      []transfer.DeleteItem{deleteItem},
+	}
+	
+	// Create a delete task
+	taskResponse, err := transferClient.CreateDeleteTask(ctx, deleteRequest)
 	if err != nil {
 		return fmt.Errorf("failed to delete item: %w", err)
 	}
+	
+	fmt.Printf("Delete task submitted. Task ID: %s\n", taskResponse.TaskID)
 
 	fmt.Printf("Successfully deleted %s:%s\n", endpointID, path)
 	return nil

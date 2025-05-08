@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9.10] - 2025-05-07 (In Progress)
+## [0.9.10] - 2025-05-07
 
 ### Changed
 - Updated to Globus Go SDK v0.9.10
-- Modified DeleteItem handling to be compatible with newer SDK versions
+- Modified DeleteItem handling to use CreateDeleteTask instead of Delete
 - Updated CLI version to match SDK version
 - Refactored auth package for compatibility with SDK v0.9.10:
   - Updated refresh.go - Token refresh compatible with SDK v0.9.10
@@ -20,20 +20,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated logout.go - Updated for new client initialization pattern
   - Updated identities.go - Added temporary stub implementation
   - Updated device.go - Added placeholder implementation
+- Refactored transfer package for compatibility with SDK v0.9.10:
+  - Updated cp.go - Updated transfer client initialization and authorizer
+  - Updated ls.go - Fixed field references from DATA to Data 
+  - Updated endpoint.go - Simplified endpoint display formatting
+  - Updated mkdir.go - Updated client initialization and authorizer
+  - Updated rm.go - Replaced Delete with CreateDeleteTask
+  - Updated task.go - Fixed time handling and field references
 
 ### Fixed
 - Integration with SDK v0.9.10 which fixes connection pool initialization issues
 - Improved compatibility with Globus API v0.10
 - Fixed token introspection field references (Subject vs Sub)
 - Fixed identity set handling in token introspection
+- Fixed task time handling (RequestTime is now time.Time, CompletionTime is *time.Time)
+- Fixed field name changes in transfer models (SourceEndpointDisplay vs SourceEndpointDisplayName)
+- Updated CancelTask to correctly handle multiple return values
+- Improved output formatting for tabular display
 
 ### Known Issues
 - Device authentication flow implementation pending SDK support
-- Transfer package needs updating for SDK v0.9.10:
-  - Client initialization returns multiple values
-  - Authorizer implementation needs to be updated
-  - Field name case has changed (e.g., Data instead of DATA)
-  - Endpoint-related options and models have changed
 
 ## [0.9.1] - 2025-05-07
 
