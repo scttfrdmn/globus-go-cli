@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 )
 
 // DeviceCmd returns the device command

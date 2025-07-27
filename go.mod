@@ -1,17 +1,18 @@
 module github.com/scttfrdmn/globus-go-cli
 
-go 1.21
+go 1.22
 
-toolchain go1.24.2
+toolchain go1.24.5
 
 require (
 	github.com/briandowns/spinner v1.23.0
 	github.com/fatih/color v1.15.0
 	github.com/joho/godotenv v1.5.1
 	github.com/manifoldco/promptui v0.9.0
-	github.com/scttfrdmn/globus-go-sdk v0.9.17
+	github.com/scttfrdmn/globus-go-sdk/v3 v3.60.0-1
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -33,5 +34,4 @@ require (
 	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/testhelpers"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
 func TestTransferIntegration(t *testing.T) {

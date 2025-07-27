@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.60.0-1] - 2025-07-27
+
+### Changed
+- Updated to Globus Go SDK v3.60.0-1 with major version bump
+- Migrated to v3 module path: github.com/scttfrdmn/globus-go-sdk/v3
+- Aligned with Python SDK v3.60.0 versioning using hybrid format
+- All SDK packages now marked as STABLE API
+
+### Added
+- Support for Globus Auth Requirements Error (GARE) for dependent consent handling
+- Enhanced error handling matching Python SDK behavior
+- Comprehensive stability indicators across all components
+- Full Python SDK v3.x compatibility patterns
+
+### Fixed
+- Zero breaking changes - seamless migration from v0.9.17
+- Maintained all existing CLI functionality and test coverage
+- Preserved backward compatibility with all commands and options
+
 ## [0.9.17] - 2025-05-10
 
 ### Changed
