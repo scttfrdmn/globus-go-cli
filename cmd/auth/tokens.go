@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
 // TokensCmd returns the tokens command
@@ -91,12 +91,12 @@ invalidating them with Globus Auth.`,
 				return fmt.Errorf("failed to load client configuration: %w", err)
 			}
 
-			// Create auth client - SDK v0.9.10 compatibility
+			// Create auth client - SDK v0.9.17 compatibility
 			authOptions := []auth.ClientOption{
 				auth.WithClientID(clientCfg.ClientID),
 				auth.WithClientSecret(clientCfg.ClientSecret),
 			}
-			
+
 			authClient, err := auth.NewClient(authOptions...)
 			if err != nil {
 				return fmt.Errorf("failed to create auth client: %w", err)
@@ -170,12 +170,12 @@ by introspecting it with Globus Auth.`,
 				return fmt.Errorf("failed to load client configuration: %w", err)
 			}
 
-			// Create auth client - SDK v0.9.10 compatibility
+			// Create auth client - SDK v0.9.17 compatibility
 			authOptions := []auth.ClientOption{
 				auth.WithClientID(clientCfg.ClientID),
 				auth.WithClientSecret(clientCfg.ClientSecret),
 			}
-			
+
 			authClient, err := auth.NewClient(authOptions...)
 			if err != nil {
 				return fmt.Errorf("failed to create auth client: %w", err)
@@ -184,13 +184,13 @@ by introspecting it with Globus Auth.`,
 			// Introspect the token
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
-			
+
 			introspection, err := authClient.IntrospectToken(ctx, tokenInfo.AccessToken)
 			if err != nil {
 				return fmt.Errorf("failed to introspect token: %w", err)
 			}
 
-			// Print token introspection - SDK v0.9.10 compatibility
+			// Print token introspection - SDK v0.9.17 compatibility
 			// Field names may have changed in the TokenInfo struct
 			fmt.Println("\nToken Introspection:")
 			fmt.Printf("  Active: %t\n", introspection.Active)
@@ -198,19 +198,19 @@ by introspecting it with Globus Auth.`,
 			fmt.Printf("  Client ID: %s\n", introspection.ClientID)
 			fmt.Printf("  Username: %s\n", introspection.Username)
 			fmt.Printf("  Email: %s\n", introspection.Email)
-			
-			// Updated field names for Subject in v0.9.10
+
+			// Updated field names for Subject in v0.9.17
 			fmt.Printf("  Subject: %s\n", introspection.Subject)
 			fmt.Printf("  Expires At: %d\n", introspection.Exp)
-			
-			// IdentitySet field in v0.9.10 replaces Audiences
+
+			// IdentitySet field in v0.9.17 replaces Audiences
 			if len(introspection.IdentitySet) > 0 {
 				fmt.Println("  Identity Set:")
 				for _, identity := range introspection.IdentitySet {
 					fmt.Printf("    - %s\n", identity)
 				}
 			}
-			
+
 			return nil
 		},
 	}

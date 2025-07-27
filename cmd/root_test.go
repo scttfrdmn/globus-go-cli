@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 	"testing"
-	
-	"github.com/spf13/cobra"
+
 	"github.com/scttfrdmn/globus-go-cli/pkg/testhelpers"
+	"github.com/spf13/cobra"
 )
 
 func TestRootCommand(t *testing.T) {
@@ -18,7 +18,7 @@ func TestRootCommand(t *testing.T) {
 		oldArgs := os.Args
 		defer func() { os.Args = oldArgs }()
 		os.Args = []string{"globus"}
-		
+
 		// Execute with a new rootCmd instance for testing
 		cmd := getRootCommandForTesting()
 		cmd.SetArgs([]string{"--help"})
@@ -29,15 +29,15 @@ func TestRootCommand(t *testing.T) {
 	if stdout == "" {
 		t.Error("Expected help output, but stdout was empty")
 	}
-	
+
 	// Check for expected content in the help output
 	expectedPhrases := []string{
-		"Globus CLI", 
+		"Globus CLI",
 		"Available Commands",
 		"help",
 		"Flags:",
 	}
-	
+
 	for _, phrase := range expectedPhrases {
 		if !strings.Contains(stdout, phrase) {
 			t.Errorf("Expected help output to contain '%s', but it didn't", phrase)
@@ -54,9 +54,9 @@ func TestRootCommand(t *testing.T) {
 func getRootCommandForTesting() *cobra.Command {
 	// Use the actual root command to ensure subcommands are included
 	cmd := Execute()
-	
+
 	// Override version for testing
 	cmd.Version = "0.1.0-test"
-	
+
 	return cmd
 }

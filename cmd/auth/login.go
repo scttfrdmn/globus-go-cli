@@ -17,9 +17,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 )
 
 // TokenInfo holds the token data
@@ -31,11 +31,11 @@ type TokenInfo struct {
 }
 
 var (
-	loginScopes  []string
+	loginScopes   []string
 	noLocalServer bool
-	noSaveTokens bool
+	noSaveTokens  bool
 	noOpenBrowser bool
-	forceLogin bool
+	forceLogin    bool
 )
 
 // LoginCmd returns the login command
@@ -87,19 +87,19 @@ func login(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create auth client directly - SDK v0.9.10 compatibility
+	// Create auth client directly - SDK v0.9.17 compatibility
 	authOptions := []auth.ClientOption{
 		auth.WithClientID(clientCfg.ClientID),
 		auth.WithClientSecret(clientCfg.ClientSecret),
 	}
-	
-	// In v0.9.10, NewClient may return multiple values
+
+	// In v0.9.17, NewClient may return multiple values
 	// For now we're only capturing the client and error
 	authClient, err := auth.NewClient(authOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create auth client: %w", err)
 	}
-	
+
 	// Determine which scopes to request
 	var scopes []string
 	if len(loginScopes) > 0 {
@@ -180,8 +180,8 @@ func loginWithLocalServer(authClient *auth.Client, profile string, scopes []stri
 	// Generate a random state parameter
 	state := fmt.Sprintf("globus-cli-%d", time.Now().Unix())
 
-	// Get the authorization URL - SDK v0.9.10 compatibility
-	// In v0.9.10, GetAuthorizationURL has a different signature
+	// Get the authorization URL - SDK v0.9.17 compatibility
+	// In v0.9.17, GetAuthorizationURL has a different signature
 	// We need to adapt to the new method
 	authURL := authClient.GetAuthorizationURL(state, scopes...)
 
@@ -325,21 +325,21 @@ func isTokenValid(token *TokenInfo) bool {
 // printTokenInfo prints information about a token
 func printTokenInfo(token *TokenInfo) {
 	expiresIn := time.Until(token.ExpiresAt).Round(time.Second)
-	
+
 	fmt.Println("\nToken Information:")
-	fmt.Printf("  Access Token: %s...%s\n", 
-		token.AccessToken[:10], 
+	fmt.Printf("  Access Token: %s...%s\n",
+		token.AccessToken[:10],
 		token.AccessToken[len(token.AccessToken)-10:])
-	
+
 	if token.RefreshToken != "" {
-		fmt.Printf("  Refresh Token: %s...%s\n", 
-			token.RefreshToken[:10], 
+		fmt.Printf("  Refresh Token: %s...%s\n",
+			token.RefreshToken[:10],
 			token.RefreshToken[len(token.RefreshToken)-10:])
 	}
-	
+
 	fmt.Printf("  Expires At: %s\n", token.ExpiresAt.Format(time.RFC3339))
 	fmt.Printf("  Expires In: %s\n", expiresIn)
-	
+
 	if len(token.Scopes) > 0 {
 		fmt.Println("  Scopes:")
 		for _, scope := range token.Scopes {

@@ -14,11 +14,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 var (
@@ -130,7 +130,7 @@ showing progress information while waiting.`,
 func listTasks(cmd *cobra.Command) error {
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -148,17 +148,17 @@ func listTasks(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)
@@ -186,13 +186,13 @@ func listTasks(cmd *cobra.Command) error {
 
 	// Get output format
 	format := viper.GetString("format")
-	
+
 	// Format and display the results
 	formatter := output.NewFormatter(format, cmd.OutOrStdout())
-	
+
 	// Define the headers
 	headers := []string{"TaskID", "Status", "Type", "Source", "Destination", "Label"}
-	
+
 	// Create a slice of task entries for formatting
 	type taskEntry struct {
 		TaskID      string
@@ -202,20 +202,20 @@ func listTasks(cmd *cobra.Command) error {
 		Destination string
 		Label       string
 	}
-	
+
 	entries := make([]taskEntry, 0, len(tasks.Data))
-	
+
 	for _, task := range tasks.Data {
 		source := "N/A"
 		if task.SourceEndpointID != "" {
 			source = fmt.Sprintf("%s:%s", task.SourceEndpointID, task.SourceEndpointDisplay)
 		}
-		
+
 		destination := "N/A"
 		if task.DestinationEndpointID != "" {
 			destination = fmt.Sprintf("%s:%s", task.DestinationEndpointID, task.DestEndpointDisplay)
 		}
-		
+
 		entry := taskEntry{
 			TaskID:      task.TaskID,
 			Status:      task.Status,
@@ -224,15 +224,15 @@ func listTasks(cmd *cobra.Command) error {
 			Destination: destination,
 			Label:       task.Label,
 		}
-		
+
 		entries = append(entries, entry)
 	}
-	
+
 	// Display the results using the formatter
 	if err := formatter.FormatOutput(entries, headers); err != nil {
 		return fmt.Errorf("error formatting output: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -242,10 +242,10 @@ func showTask(cmd *cobra.Command, taskID string) error {
 	if taskWait {
 		return waitForTask(cmd, taskID, taskWaitTime)
 	}
-	
+
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -263,17 +263,17 @@ func showTask(cmd *cobra.Command, taskID string) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)
@@ -311,44 +311,44 @@ func showTask(cmd *cobra.Command, taskID string) error {
 		fmt.Printf("  Status:         %s\n", task.Status)
 		fmt.Printf("  Type:           %s\n", task.Type)
 		fmt.Printf("  Label:          %s\n", task.Label)
-		
-		// Format dates - RequestTime is now time.Time in SDK v0.9.10
+
+		// Format dates - RequestTime is now time.Time in SDK v0.9.17
 		fmt.Printf("  Request Time:   %s\n", task.RequestTime.Format("2006-01-02 15:04:05"))
-		
-		// CompletionTime is now *time.Time in SDK v0.9.10
+
+		// CompletionTime is now *time.Time in SDK v0.9.17
 		if task.CompletionTime != nil {
 			fmt.Printf("  Completion Time: %s\n", task.CompletionTime.Format("2006-01-02 15:04:05"))
 		}
-		
+
 		// Format task status with color
 		if task.Status == "SUCCEEDED" {
 			color.Green("  Task succeeded")
 		} else if task.Status == "FAILED" {
-			// NiceStatus field is not available in SDK v0.9.10
+			// NiceStatus field is not available in SDK v0.9.17
 			color.Red("  Task failed")
 		} else if task.Status == "ACTIVE" {
 			color.Yellow("  Task is active")
 		}
-		
+
 		// Show endpoint information
 		fmt.Println("\nEndpoints:")
 		fmt.Printf("  Source:      %s (%s)\n", task.SourceEndpointDisplay, task.SourceEndpointID)
 		fmt.Printf("  Destination: %s (%s)\n", task.DestEndpointDisplay, task.DestinationEndpointID)
-		
+
 		// Show transfer stats
 		fmt.Println("\nTransfer Stats:")
 		fmt.Printf("  Files:          %d\n", task.FilesTransferred)
-		fmt.Printf("  Directories:    %d\n", task.Subtasks) // DirectoriesTransferred is not available in v0.9.10, using Subtasks instead
+		fmt.Printf("  Directories:    %d\n", task.Subtasks) // DirectoriesTransferred is not available in v0.9.17, using Subtasks instead
 		fmt.Printf("  Files Skipped:  %d\n", task.FilesSkipped)
-		fmt.Printf("  Total Files:    %d\n", task.Subtasks) // Using Subtasks as approximation for total files
-		fmt.Printf("  Total Bytes:    %d\n", task.BytesSkipped + task.BytesTransferred) // Approximation for total bytes
+		fmt.Printf("  Total Files:    %d\n", task.Subtasks)                           // Using Subtasks as approximation for total files
+		fmt.Printf("  Total Bytes:    %d\n", task.BytesSkipped+task.BytesTransferred) // Approximation for total bytes
 		fmt.Printf("  Bytes Transferred: %d\n", task.BytesTransferred)
-		
+
 		// Show sync options if applicable
 		if task.SyncLevel > 0 {
 			fmt.Printf("\nSynchronization Level: %d\n", task.SyncLevel)
 		}
-		
+
 		// Show verification if applicable
 		if task.VerifyChecksum {
 			fmt.Printf("\nVerification: checksum\n")
@@ -362,7 +362,7 @@ func showTask(cmd *cobra.Command, taskID string) error {
 func cancelTask(cmd *cobra.Command, taskID string) error {
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -380,17 +380,17 @@ func cancelTask(cmd *cobra.Command, taskID string) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)
@@ -405,13 +405,13 @@ func cancelTask(cmd *cobra.Command, taskID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get task status: %w", err)
 	}
-	
+
 	// Check if the task can be canceled
 	if task.Status != "ACTIVE" {
 		return fmt.Errorf("task %s is not active (status: %s), cannot cancel", taskID, task.Status)
 	}
 
-	// Cancel the task - CancelTask returns OperationResult and error in v0.9.10
+	// Cancel the task - CancelTask returns OperationResult and error in v0.9.17
 	result, err := transferClient.CancelTask(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to cancel task: %w", err)
@@ -426,7 +426,7 @@ func cancelTask(cmd *cobra.Command, taskID string) error {
 func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -444,17 +444,17 @@ func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)
@@ -495,18 +495,18 @@ func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 			// Check if the task has completed
 			if task.Status != "ACTIVE" {
 				s.Stop()
-				
+
 				// Display final status
 				if task.Status == "SUCCEEDED" {
 					color.Green("Task %s completed successfully", taskID)
 					fmt.Printf("Transferred %d files (%d bytes)\n", task.FilesTransferred, task.BytesTransferred)
 				} else if task.Status == "FAILED" {
-					// NiceStatus not available in v0.9.10
+					// NiceStatus not available in v0.9.17
 					color.Red("Task %s failed", taskID)
 				} else {
 					fmt.Printf("Task %s status: %s\n", taskID, task.Status)
 				}
-				
+
 				return nil
 			}
 		}

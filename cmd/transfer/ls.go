@@ -11,15 +11,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 var (
-	lsRecursive bool
+	lsRecursive  bool
 	lsLongFormat bool
 	lsShowHidden bool
 )
@@ -41,7 +41,7 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Parse endpoint ID and path
 			endpointID, path := parseEndpointAndPath(args[0])
-			
+
 			return listDirectory(cmd, endpointID, path)
 		},
 	}
@@ -58,13 +58,13 @@ Examples:
 func parseEndpointAndPath(s string) (endpointID, path string) {
 	parts := strings.SplitN(s, ":", 2)
 	endpointID = parts[0]
-	
+
 	if len(parts) > 1 {
 		path = parts[1]
 	} else {
 		path = "/"
 	}
-	
+
 	return endpointID, path
 }
 
@@ -72,7 +72,7 @@ func parseEndpointAndPath(s string) (endpointID, path string) {
 func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -84,24 +84,24 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration - not used with direct client initialization in v0.9.10
+	// Load client configuration - not used with direct client initialization in v0.9.17
 	// We still load it for future use cases
 	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)
@@ -126,10 +126,10 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 
 	// Get output format
 	format := viper.GetString("format")
-	
+
 	// Format and display the results
 	formatter := output.NewFormatter(format, cmd.OutOrStdout())
-	
+
 	// Define the headers based on format
 	var headers []string
 	if lsLongFormat {
@@ -137,33 +137,33 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 	} else {
 		headers = []string{"Type", "Name"}
 	}
-	
+
 	// Create a slice of file entries for formatting
 	type fileEntry struct {
-		Type        string
-		Permissions string
-		User        string
-		Group       string
-		Size        int64
+		Type         string
+		Permissions  string
+		User         string
+		Group        string
+		Size         int64
 		LastModified string
-		Name        string
+		Name         string
 	}
-	
-	// In SDK v0.9.10, the field is named Data instead of DATA
+
+	// In SDK v0.9.17, the field is named Data instead of DATA
 	entries := make([]fileEntry, 0, len(listing.Data))
-	
+
 	for _, item := range listing.Data {
 		entry := fileEntry{
-			Type:        getFileType(item.Type),
-			Name:        item.Name,
+			Type: getFileType(item.Type),
+			Name: item.Name,
 		}
-		
+
 		if lsLongFormat {
 			entry.Permissions = item.Permissions
 			entry.User = item.User
 			entry.Group = item.Group
 			entry.Size = item.Size
-			
+
 			// Format last modified time
 			t, err := time.Parse(time.RFC3339, item.LastModified)
 			if err == nil {
@@ -172,19 +172,19 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 				entry.LastModified = item.LastModified
 			}
 		}
-		
+
 		entries = append(entries, entry)
 	}
-	
+
 	// Display the results using the formatter
 	if err := formatter.FormatOutput(entries, headers); err != nil {
 		return fmt.Errorf("error formatting output: %w", err)
 	}
-	
+
 	// Output the directory path
 	fmt.Printf("\nDirectory: %s:%s\n", endpointID, path)
 	fmt.Printf("Total: %d items\n", len(listing.Data))
-	
+
 	return nil
 }
 

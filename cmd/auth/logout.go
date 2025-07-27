@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
 // LogoutCmd returns the logout command
@@ -56,7 +56,7 @@ func logout(cmd *cobra.Command) error {
 		auth.WithClientID(clientCfg.ClientID),
 		auth.WithClientSecret(clientCfg.ClientSecret),
 	}
-	
+
 	authClient, err := auth.NewClient(authOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create auth client: %w", err)
@@ -66,7 +66,7 @@ func logout(cmd *cobra.Command) error {
 	fmt.Println("Revoking access token...")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	
+
 	if err := authClient.RevokeToken(ctx, tokenInfo.AccessToken); err != nil {
 		fmt.Printf("Warning: Failed to revoke access token: %v\n", err)
 	}

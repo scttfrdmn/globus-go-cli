@@ -18,6 +18,9 @@ var (
 	outputFormat string
 )
 
+// Version is set during the build process
+var Version = "0.9.17"
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "globus",
@@ -39,16 +42,16 @@ Basic Usage:
 Configuration:
   The CLI stores its configuration in ~/.globus-cli/ directory.
   You can use multiple profiles with the --profile flag.
-  
+
 Output Formats:
   Most commands support different output formats using the --format flag:
   --format=text                      Human-readable text (default)
   --format=json                      JSON format for programmatic use
   --format=csv                       CSV format for importing into spreadsheets
 
-For more information and examples, visit: 
+For more information and examples, visit:
 https://github.com/scttfrdmn/globus-go-cli`,
-	Version: "0.9.10+1",
+	Version: Version,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

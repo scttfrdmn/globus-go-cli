@@ -13,10 +13,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 var (
@@ -48,10 +48,10 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Parse source endpoint and path
 			sourceEndpointID, sourcePath := parseEndpointAndPath(args[0])
-			
+
 			// Parse destination endpoint and path
 			destEndpointID, destPath := parseEndpointAndPath(args[1])
-			
+
 			return transferFiles(cmd, sourceEndpointID, sourcePath, destEndpointID, destPath)
 		},
 	}
@@ -73,7 +73,7 @@ Examples:
 func transferFiles(cmd *cobra.Command, sourceEndpointID, sourcePath, destEndpointID, destPath string) error {
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -85,24 +85,24 @@ func transferFiles(cmd *cobra.Command, sourceEndpointID, sourcePath, destEndpoin
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration - not used with direct client initialization in v0.9.10
+	// Load client configuration - not used with direct client initialization in v0.9.17
 	// We still load it for future use cases
 	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)
@@ -124,12 +124,12 @@ func transferFiles(cmd *cobra.Command, sourceEndpointID, sourcePath, destEndpoin
 
 	// Create transfer options map
 	optionsMap := map[string]interface{}{
-		"recursive":      transferRecursive,
-		"sync_level":     transferSync,
-		"preserve_mtime": transferPreserveTime,
+		"recursive":       transferRecursive,
+		"sync_level":      transferSync,
+		"preserve_mtime":  transferPreserveTime,
 		"verify_checksum": transferVerify,
 	}
-	
+
 	if deadline != nil {
 		optionsMap["deadline"] = deadline
 	}
@@ -141,7 +141,7 @@ func transferFiles(cmd *cobra.Command, sourceEndpointID, sourcePath, destEndpoin
 		fmt.Printf("  Destination: %s:%s\n", destEndpointID, destPath)
 		fmt.Printf("  Recursive:   %t\n", transferRecursive)
 		fmt.Printf("  Sync Level:  %d\n", transferSync)
-		
+
 		confirm := promptui.Prompt{
 			Label:     "Proceed with transfer",
 			IsConfirm: true,
@@ -168,7 +168,7 @@ func transferFiles(cmd *cobra.Command, sourceEndpointID, sourcePath, destEndpoin
 		optionsMap,
 	)
 	s.Stop()
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to submit transfer: %w", err)
 	}

@@ -12,9 +12,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 )
 
 // DeviceCmd returns the device command
@@ -77,12 +77,12 @@ func deviceLogin(cmd *cobra.Command) error {
 
 	// Start device code flow
 	fmt.Println("Starting device code flow...")
-	
+
 	// Request device code
-	// Implementation for SDK v0.9.10
+	// Implementation for SDK v0.9.17
 	// TODO: Update this when SDK device flow implementation is found
 	// For now, we'll implement a temporary solution using the auth API directly
-	
+
 	// OAuth 2.0 Device Code flow standard endpoint
 	// We'll make the API call directly when we implement this
 	// For now, this is just a placeholder implementation
@@ -99,11 +99,11 @@ func deviceLogin(cmd *cobra.Command) error {
 
 	// Poll for token exchange - temporary stub implementation
 	// TODO: Implement proper device code flow when SDK implementation is available
-	
+
 	// This is a placeholder implementation
 	// We'll simulate waiting for user authentication
 	time.Sleep(2 * time.Second) // Simulate a short delay
-	
+
 	// Temporary stub to simulate token response while we wait for SDK implementation
 	tokenResp := &auth.TokenResponse{
 		AccessToken:  "TEMPORARY_ACCESS_TOKEN",
@@ -112,10 +112,10 @@ func deviceLogin(cmd *cobra.Command) error {
 		Scope:        strings.Join(scopes, " "),
 		ExpiryTime:   time.Now().Add(1 * time.Hour),
 	}
-	
+
 	// Stop spinner
 	s.Stop()
-	
+
 	if err != nil {
 		return fmt.Errorf("error polling for tokens: %w", err)
 	}

@@ -12,8 +12,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
 // RefreshCmd returns the refresh command
@@ -57,12 +57,12 @@ func refreshToken(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create auth client - SDK v0.9.10 compatibility
+	// Create auth client - SDK v0.9.17 compatibility
 	authOptions := []auth.ClientOption{
 		auth.WithClientID(clientCfg.ClientID),
 		auth.WithClientSecret(clientCfg.ClientSecret),
 	}
-	
+
 	authClient, err := auth.NewClient(authOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create auth client: %w", err)

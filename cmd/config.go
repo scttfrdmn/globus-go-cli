@@ -41,7 +41,7 @@ This command displays the current configuration settings for the CLI.`,
 			fmt.Println("Current Configuration:")
 			fmt.Printf("  Profile: %s\n", viper.GetString("profile"))
 			fmt.Printf("  Config File: %s\n", viper.ConfigFileUsed())
-			
+
 			// Print all configuration values
 			allSettings := viper.AllSettings()
 			for key, value := range allSettings {
@@ -56,7 +56,7 @@ This command displays the current configuration settings for the CLI.`,
 					}
 					continue
 				}
-				
+
 				fmt.Printf("  %s: %v\n", key, value)
 			}
 		},
@@ -66,7 +66,7 @@ This command displays the current configuration settings for the CLI.`,
 // configInitCmd returns the config init command
 func configInitCmd() *cobra.Command {
 	var clientID, clientSecret string
-	
+
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize configuration",
@@ -82,12 +82,12 @@ the necessary directories and files.`,
 			if clientSecret != "" {
 				viper.Set("client.secret", clientSecret)
 			}
-			
+
 			// Set default values if not already set
 			if viper.GetString("client.id") == "" {
 				viper.Set("client.id", "e6c75d97-532a-4c88-b031-f5a3014430e3")
 			}
-			
+
 			// Write the configuration to a file
 			configFile := viper.ConfigFileUsed()
 			if configFile == "" {
@@ -96,30 +96,30 @@ the necessary directories and files.`,
 				if err != nil {
 					return fmt.Errorf("failed to get home directory: %w", err)
 				}
-				
+
 				// Create the config directory
 				configDir := fmt.Sprintf("%s/.globus-cli", homeDir)
 				if err := os.MkdirAll(configDir, 0700); err != nil {
 					return fmt.Errorf("failed to create config directory: %w", err)
 				}
-				
+
 				// Set the config file path
 				configFile = fmt.Sprintf("%s/config.yaml", configDir)
 			}
-			
+
 			// Write the config file
 			if err := viper.WriteConfigAs(configFile); err != nil {
 				return fmt.Errorf("failed to write config file: %w", err)
 			}
-			
+
 			fmt.Printf("Configuration initialized at %s\n", configFile)
 			return nil
 		},
 	}
-	
+
 	// Add flags
 	cmd.Flags().StringVar(&clientID, "client-id", "", "Client ID for Globus Auth")
 	cmd.Flags().StringVar(&clientSecret, "client-secret", "", "Client Secret for Globus Auth")
-	
+
 	return cmd
 }

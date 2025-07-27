@@ -76,7 +76,7 @@ provided criteria.`,
 
 			// Get the current profile
 			profile := viper.GetString("profile")
-			
+
 			// Load the token
 			tokenInfo, err := loadToken(profile)
 			if err != nil {
@@ -94,15 +94,15 @@ provided criteria.`,
 				return fmt.Errorf("failed to load client configuration: %w", err)
 			}
 
-			// Create auth client - SDK v0.9.10 compatibility
+			// Create auth client - SDK v0.9.17 compatibility
 			// This is a stub implementation for now
 			// Mark as used to avoid warnings
 			_ = clientCfg
-				
-			// TODO: Update identity lookup implementation for v0.9.10
+
+			// TODO: Update identity lookup implementation for v0.9.17
 			// For now, returning a stub response for compatibility
 			var identities []Identity
-			
+
 			// Add a sample identity for testing
 			identities = append(identities, Identity{
 				ID:         "urn:globus:auth:identity:12345",
@@ -122,7 +122,7 @@ provided criteria.`,
 			// Format and display the results
 			format := viper.GetString("format")
 			formatter := output.NewFormatter(format, cmd.OutOrStdout())
-			
+
 			headers := []string{"ID", "Username", "Name", "Email", "Status", "IDProvider"}
 			if err := formatter.FormatOutput(identities, headers); err != nil {
 				return fmt.Errorf("error formatting output: %w", err)

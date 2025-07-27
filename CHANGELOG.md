@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.17] - 2025-05-10
+
+### Changed
+- Updated to Globus Go SDK v0.9.17
+- Successfully preserved compatibility with API stability changes
+- Updated CLI version to match SDK version
+- Significantly improved test coverage across all packages
+- Enhanced cross-platform compatibility with explicit handling for Windows, macOS, and Linux
+
+### Added
+- Support for SDK stability indicators with clear component compatibility
+- Improved error handling based on SDK v0.9.17 enhancements
+- Comprehensive integration testing with real Globus credentials
+- Proper mock implementations for all service clients
+- Cross-platform test workflows in GitHub Actions
+- Detailed documentation for integration testing setup
+- Cross-platform compatibility guide for developers
+
+### Fixed
+- Maintained backwards compatibility with all SDK v0.9.15 functionality
+- Fixed file path handling for cross-platform compatibility
+- Improved test helpers for better test isolation
+- Updated linting configuration to use staticcheck
+
+## [0.9.15] - 2025-05-09
+
+### Changed
+- Updated to Globus Go SDK v0.9.15
+- Successfully resolved SDK compatibility issues reported in GitHub issue #13
+- Updated CLI version to match SDK version
+
+### Fixed
+- Fixed connection pool initialization issues with EnableDefaultConnectionPool function
+- Maintained compatibility with all API changes from v0.9.10 to v0.9.15
+- Ensured all tests pass with the updated SDK
+
 ## [0.9.10+1] - 2025-05-08
 
 ### Changed

@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 // EndpointCmd returns the endpoint command
@@ -121,7 +121,7 @@ returning matches based on the provided search text.`,
 func listEndpoints(cmd *cobra.Command) error {
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -133,24 +133,24 @@ func listEndpoints(cmd *cobra.Command) error {
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration - not used with direct client initialization in v0.9.10
+	// Load client configuration - not used with direct client initialization in v0.9.17
 	// We still load it for future use cases
 	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)
@@ -165,18 +165,18 @@ func listEndpoints(cmd *cobra.Command) error {
 		Limit: limit,
 	}
 
-	// Add filters based on flags - simplified for SDK v0.9.10
+	// Add filters based on flags - simplified for SDK v0.9.17
 	if filterOwner != "" {
 		options.FilterOwnerID = filterOwner
 	}
-	
-	// Filter scope handling for SDK v0.9.10
+
+	// Filter scope handling for SDK v0.9.17
 	if filterRecentlyUsed {
 		options.FilterScope = "recently-used"
 	} else if filterMyTasksOnly {
 		options.FilterScope = "in-use"
 	}
-	
+
 	// Search text for full text search
 	if searchText != "" {
 		options.FilterFullText = searchText
@@ -216,7 +216,7 @@ func listEndpoints(cmd *cobra.Command) error {
 			)
 		}
 	default:
-		// Output as simple table for v0.9.10 compatibility
+		// Output as simple table for v0.9.17 compatibility
 		fmt.Println("ID\tName\tOwner\tActivated\tConnected")
 		fmt.Println("---\t----\t-----\t---------\t---------")
 
@@ -241,7 +241,7 @@ func listEndpoints(cmd *cobra.Command) error {
 func showEndpoint(cmd *cobra.Command, endpointID string) error {
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -253,24 +253,24 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration - not used with direct client initialization in v0.9.10
+	// Load client configuration - not used with direct client initialization in v0.9.17
 	// We still load it for future use cases
 	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)
@@ -311,10 +311,10 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 		fmt.Printf("  Activated:      %t\n", endpoint.Activated)
 		fmt.Printf("  Connected:      %t\n", endpoint.GCPConnected)
 		fmt.Printf("  Default Dir:    %s\n", endpoint.DefaultDirectory)
-		
-		// We don't have access to these fields in SDK v0.9.10
+
+		// We don't have access to these fields in SDK v0.9.17
 		// Display the available information only
-		
+
 		// Organization and department if available
 		if endpoint.Organization != "" {
 			fmt.Printf("  Organization:   %s\n", endpoint.Organization)
@@ -322,7 +322,7 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 		if endpoint.Department != "" {
 			fmt.Printf("  Department:     %s\n", endpoint.Department)
 		}
-		
+
 		// Contact info if available
 		if endpoint.ContactEmail != "" {
 			fmt.Printf("  Contact Email:  %s\n", endpoint.ContactEmail)
@@ -332,4 +332,4 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 	return nil
 }
 
-// Note: formatDuration function removed as it is no longer needed in SDK v0.9.10
+// Note: formatDuration function removed as it is no longer needed in SDK v0.9.17

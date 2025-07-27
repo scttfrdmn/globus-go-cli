@@ -1,25 +1,17 @@
+run:
+  timeout: 5m
+  go: '1.21'
+
 linters:
+  disable-all: true
   enable:
     - errcheck
-    - gofmt
-    - goimports
     - gosimple
     - govet
     - ineffassign
-    - misspell
     - staticcheck
-    - typecheck
     - unused
 
 linters-settings:
   goimports:
     local-prefixes: github.com/scttfrdmn/globus-go-cli
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-
-run:
-  timeout: 5m

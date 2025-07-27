@@ -6,13 +6,42 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 )
 
+// FutureTime is a helper for tests creating tokens that shouldn't be expired
+var FutureTime = time.Now().Add(24 * time.Hour)
+
+// LoadTokenFunc is a var that allows tests to replace the LoadToken implementation
+var LoadTokenFunc = func(profile string) (*TokenInfo, error) {
+	return loadTokenImpl(profile)
+}
+
+// GetTokenFilePathFunc is a var that allows tests to replace the getTokenFilePath implementation
+var GetTokenFilePathFunc = func(profile string) (string, error) {
+	// Get the home directory
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("error getting home directory: %w", err)
+	}
+
+	// Create the token file path
+	tokensDir := filepath.Join(homeDir, ".globus-cli", "tokens")
+	tokenFile := filepath.Join(tokensDir, profile+".json")
+
+	return tokenFile, nil
+}
+
 // LoadToken loads a token from disk (exported for use in other packages)
 func LoadToken(profile string) (*TokenInfo, error) {
+	return LoadTokenFunc(profile)
+}
+
+// loadTokenImpl is the actual implementation of LoadToken
+func loadTokenImpl(profile string) (*TokenInfo, error) {
 	// Get the token file path
-	tokenFile, err := getTokenFilePath(profile)
+	tokenFile, err := GetTokenFilePathFunc(profile)
 	if err != nil {
 		return nil, err
 	}

@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 var (
@@ -40,12 +40,12 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Parse endpoint ID and path
 			endpointID, path := parseEndpointAndPath(args[0])
-			
+
 			// Check that path is specified
 			if path == "/" {
 				return fmt.Errorf("path must be specified for rm command")
 			}
-			
+
 			return removeItem(cmd, endpointID, path)
 		},
 	}
@@ -61,7 +61,7 @@ Examples:
 func removeItem(cmd *cobra.Command, endpointID, path string) error {
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -73,24 +73,24 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration - not used with direct client initialization in v0.9.10
+	// Load client configuration - not used with direct client initialization in v0.9.17
 	// We still load it for future use cases
 	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)
@@ -107,7 +107,7 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 			EndpointID: endpointID,
 			Path:       path,
 		}
-		
+
 		listing, err := transferClient.ListDirectory(ctx, options)
 		if err != nil {
 			// If we can't get info, still prompt
@@ -125,16 +125,16 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 					break
 				}
 			}
-			
+
 			if isDir {
 				if !rmRecursive {
 					return fmt.Errorf("%s is a directory. Use --recursive to remove directories", path)
 				}
-				
+
 				// Count items in the directory
 				count := len(listing.Data)
 				if count > 2 { // Accounting for "." and ".."
-					prompt := fmt.Sprintf("Are you sure you want to delete directory %s:%s and all its contents (%d items)?", 
+					prompt := fmt.Sprintf("Are you sure you want to delete directory %s:%s and all its contents (%d items)?",
 						endpointID, path, count-2)
 					if !confirmAction(prompt) {
 						fmt.Println("Operation canceled.")
@@ -152,25 +152,25 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 		}
 	}
 
-	// Delete the item using a delete task request for v0.9.10
+	// Delete the item using a delete task request for v0.9.17
 	deleteItem := transfer.DeleteItem{
 		DataType: "delete_item",
 		Path:     path,
-		// Note: In SDK v0.9.10, recursive is handled at the task level
+		// Note: In SDK v0.9.17, recursive is handled at the task level
 	}
-	
+
 	deleteRequest := &transfer.DeleteTaskRequest{
 		DataType:   "delete",
 		EndpointID: endpointID,
 		Items:      []transfer.DeleteItem{deleteItem},
 	}
-	
+
 	// Create a delete task
 	taskResponse, err := transferClient.CreateDeleteTask(ctx, deleteRequest)
 	if err != nil {
 		return fmt.Errorf("failed to delete item: %w", err)
 	}
-	
+
 	fmt.Printf("Delete task submitted. Task ID: %s\n", taskResponse.TaskID)
 
 	fmt.Printf("Successfully deleted %s:%s\n", endpointID, path)

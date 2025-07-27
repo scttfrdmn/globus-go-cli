@@ -7,29 +7,115 @@
 package auth
 
 import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/testhelpers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
 func TestAuthIntegration(t *testing.T) {
 	// Load test credentials
-	creds := testhelpers.LoadTestCredentials(t)
+	creds := testhelpers.SkipIfNoCredentials(t)
 
-	// This test will be skipped if .env.test is not found or credentials aren't set
+	// Set up test config
+	homeDir, err := os.MkdirTemp("", "globus-cli-test-home-")
+	if err != nil {
+		t.Fatalf("Failed to create temp home directory: %v", err)
+	}
+	defer os.RemoveAll(homeDir)
+
+	// Set HOME environment variable to the test directory
+	origHome := os.Getenv("HOME")
+	os.Setenv("HOME", homeDir)
+	defer os.Setenv("HOME", origHome)
+
+	// Create test token directory
+	tokenDir := filepath.Join(homeDir, ".globus-cli", "tokens")
+	if err := os.MkdirAll(tokenDir, 0700); err != nil {
+		t.Fatalf("Failed to create token directory: %v", err)
+	}
+
 	t.Run("TestClientCredentialsFlow", func(t *testing.T) {
-		// Example test using client credentials from .env.test
-		// This is just a placeholder - replace with actual test logic
-		if creds.ClientID == "" || creds.ClientSecret == "" {
-			t.Skip("Client credentials not configured in .env.test")
+		// Create auth client with test credentials
+		authClient, err := auth.NewClient(
+			auth.WithClientCredentials(creds.ClientID, creds.ClientSecret),
+		)
+		if err != nil {
+			t.Fatalf("Failed to create auth client: %v", err)
 		}
 
 		// Test client credentials flow
-		// Actual implementation would use the SDK to test authentication
-		// ...
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 
-		// Verify the result
-		// ...
+		// Get a token using client credentials
+		tokenResp, err := authClient.GetClientCredentialsToken(ctx, []string{"openid", "email", "profile"})
+		if err != nil {
+			t.Fatalf("Failed to get client credentials token: %v", err)
+		}
+
+		// Verify we got a valid token
+		if tokenResp.AccessToken == "" {
+			t.Fatal("Empty access token received")
+		}
+		if tokenResp.ExpiresIn <= 0 {
+			t.Fatal("Invalid token expiration time")
+		}
+
+		// Introspect the token to verify it's valid
+		introResp, err := authClient.IntrospectToken(ctx, tokenResp.AccessToken)
+		if err != nil {
+			t.Fatalf("Failed to introspect token: %v", err)
+		}
+
+		if !introResp.Active {
+			t.Fatal("Token reported as inactive by introspection endpoint")
+		}
+
+		t.Logf("Successfully validated client credentials flow with token: %s...", tokenResp.AccessToken[:10])
+	})
+
+	t.Run("TestIdentityLookup", func(t *testing.T) {
+		// Skip if no identity is provided
+		if creds.TestIdentity == "" {
+			t.Skip("Test identity not configured in .env.test")
+		}
+
+		// Create auth client with test credentials
+		authClient, err := auth.NewClient(
+			auth.WithClientCredentials(creds.ClientID, creds.ClientSecret),
+		)
+		if err != nil {
+			t.Fatalf("Failed to create auth client: %v", err)
+		}
+
+		// Set up context
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Look up identity
+		identities, err := authClient.GetIdentities(ctx, creds.TestIdentity)
+		if err != nil {
+			t.Fatalf("Failed to get identity: %v", err)
+		}
+
+		// Check if we found any identities
+		if len(identities) == 0 {
+			t.Fatalf("No identities found for %s", creds.TestIdentity)
+		}
+
+		// Verify identity data
+		identity := identities[0]
+		if identity.Username == "" || identity.ID == "" {
+			t.Fatal("Invalid identity returned: missing username or ID")
+		}
+
+		t.Logf("Successfully looked up identity: %s (%s)", identity.Username, identity.ID)
 	})
 
 	t.Run("TestDeviceCodeFlow", func(t *testing.T) {
@@ -38,16 +124,17 @@ func TestAuthIntegration(t *testing.T) {
 			t.Skip("Skipping device code flow test in CI")
 		}
 
-		// Skip if no client credentials
-		if creds.ClientID == "" || creds.ClientSecret == "" {
-			t.Skip("Client credentials not configured in .env.test")
-		}
+		// Skip this test as it requires user interaction
+		t.Skip("Skipping device code flow test as it requires user interaction")
 
-		// Test device code flow
-		// Actual implementation would use the SDK to test device code flow
-		// ...
+		// NOTE: Real device code flow testing requires user interaction
+		// In a real scenario, this would:
+		// 1. Start the device code flow
+		// 2. Display the user code and verification URL
+		// 3. Wait for the user to authenticate
+		// 4. Verify the token received
 
-		// Verify the result
-		// ...
+		// For an actual automated integration test, this would need to be
+		// replaced with a pre-authorized flow or a non-interactive method
 	})
 }

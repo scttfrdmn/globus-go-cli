@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
 // WhoamiCmd returns the whoami command
@@ -60,7 +60,7 @@ func whoami(cmd *cobra.Command) error {
 		auth.WithClientID(clientCfg.ClientID),
 		auth.WithClientSecret(clientCfg.ClientSecret),
 	}
-	
+
 	authClient, err := auth.NewClient(authOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create auth client: %w", err)
@@ -69,30 +69,30 @@ func whoami(cmd *cobra.Command) error {
 	// Get the current user's identity
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	
+
 	introspection, err := authClient.IntrospectToken(ctx, tokenInfo.AccessToken)
 	if err != nil {
 		return fmt.Errorf("failed to get user identity: %w", err)
 	}
 
-	// Print user information - SDK v0.9.10 compatibility
+	// Print user information - SDK v0.9.17 compatibility
 	fmt.Println("\nCurrent User:")
 	fmt.Printf("  Username: %s\n", introspection.Username)
 	fmt.Printf("  Identity ID: %s\n", introspection.Subject)
 	fmt.Printf("  Email: %s\n", introspection.Email)
 	fmt.Printf("  Name: %s\n", introspection.Name)
-	
+
 	if len(introspection.IdentitySet) > 0 {
 		fmt.Println("  Linked Identities:")
 		for _, id := range introspection.IdentitySet {
 			fmt.Printf("    - %s\n", id)
 		}
 	}
-	
+
 	// Print token information
 	fmt.Println("\nToken Information:")
 	fmt.Printf("  Expires At: %s\n", tokenInfo.ExpiresAt.Format(time.RFC3339))
 	fmt.Printf("  Expires In: %s\n", time.Until(tokenInfo.ExpiresAt).Round(time.Second))
-	
+
 	return nil
 }

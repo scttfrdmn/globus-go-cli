@@ -10,10 +10,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 var (
@@ -37,12 +37,12 @@ Examples:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Parse endpoint ID and path
 			endpointID, path := parseEndpointAndPath(args[0])
-			
+
 			// Check that path is specified
 			if path == "/" {
 				return fmt.Errorf("path must be specified for mkdir command")
 			}
-			
+
 			return createDirectory(cmd, endpointID, path)
 		},
 	}
@@ -57,7 +57,7 @@ Examples:
 func createDirectory(cmd *cobra.Command, endpointID, path string) error {
 	// Get current profile
 	profile := viper.GetString("profile")
-	
+
 	// Load token
 	tokenInfo, err := authcmd.LoadToken(profile)
 	if err != nil {
@@ -69,24 +69,24 @@ func createDirectory(cmd *cobra.Command, endpointID, path string) error {
 		return fmt.Errorf("token is expired, please login again")
 	}
 
-	// Load client configuration - not used with direct client initialization in v0.9.10
+	// Load client configuration - not used with direct client initialization in v0.9.17
 	// We still load it for future use cases
 	_, err = config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create a simple static token authorizer for v0.9.10
+	// Create a simple static token authorizer for v0.9.17
 	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	
-	// Create a core authorizer adapter for v0.9.10 compatibility
+
+	// Create a core authorizer adapter for v0.9.17 compatibility
 	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
 
-	// Create transfer client with v0.9.10 compatible options
+	// Create transfer client with v0.9.17 compatible options
 	transferOptions := []transfer.Option{
 		transfer.WithAuthorizer(coreAuthorizer),
 	}
-	
+
 	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		return fmt.Errorf("failed to create transfer client: %w", err)

@@ -30,3 +30,4 @@ vendor/
 .env
 .env.test
 ~/.globus-cli/
+**/.claude/settings.local.json

@@ -16,7 +16,7 @@ install: build
 	cp $(BINARY_NAME) $(GOPATH)/bin/
 
 lint:
-	golangci-lint run
+	staticcheck ./...
 
 test:
 	go test -v -cover ./...

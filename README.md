@@ -3,7 +3,7 @@
 
 # Globus Go CLI
 
-A command-line interface for Globus services, built in Go using the [Globus Go SDK](https://github.com/scttfrdmn/globus-go-sdk) v0.9.1.
+A command-line interface for Globus services, built in Go using the [Globus Go SDK](https://github.com/scttfrdmn/globus-go-sdk) v0.9.17.
 
 ## Features
 
@@ -210,9 +210,24 @@ globus completion fish > ~/.config/fish/completions/globus.fish
 
 Contributions are welcome! Please feel free to submit a Pull Request. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
+## Development
+
+### Integration Testing
+
+For information about setting up integration testing with real Globus credentials, see [INTEGRATION_TESTING.md](INTEGRATION_TESTING.md).
+
+### Cross-Platform Compatibility
+
+For guidelines on ensuring cross-platform compatibility, see [CROSS_PLATFORM.md](CROSS_PLATFORM.md).
+
 ## Release Process
 
 For information about the release process, see [RELEASE_PROCESS.md](RELEASE_PROCESS.md).
+
+## Release Notes
+
+- [Release v0.9.17](RELEASE_NOTES_V0.9.17.md) - Latest release
+- [Changelog](CHANGELOG.md) - Full history of changes
 
 ## License
 
