@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.61.0-1] - 2025-08-09
+
+### Changed
+- Updated to Globus Go SDK v3.61.0-1 
+- Aligned with Python SDK v3.61.0 deprecation timeline
+- Maintained full backward compatibility with existing CLI functionality
+
+### Deprecated (SDK-level)
+- Globus Connect Server v4 support deprecated in SDK
+- ComputeClient alias deprecated in favor of compute.Client
+- Legacy GCS v4 server methods deprecated
+
+### Fixed
+- No code changes required - CLI does not use deprecated APIs
+- All tests pass with zero breaking changes
+- Seamless upgrade from v3.60.0-1
+
 ## [3.60.0-1] - 2025-07-27
 
 ### Changed
