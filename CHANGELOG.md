@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.62.0-1] - 2025-08-09
+
+### Changed
+- Updated to Globus Go SDK v3.62.0-1
+- Aligned with Python SDK v3.62.0 feature additions
+- Maintained full backward compatibility with existing CLI functionality
+
+### Added (SDK-level)
+- Groups service subscription_id support
+- SetSubscriptionAdminVerifiedID() method
+- GetGroupSubscription() method  
+- GroupSubscription type
+
+### Fixed
+- No code changes required - CLI benefits from enhanced Groups service features
+- All tests pass with zero breaking changes
+- Seamless upgrade from v3.61.0-1
+
 ## [3.61.0-1] - 2025-08-09
 
 ### Changed

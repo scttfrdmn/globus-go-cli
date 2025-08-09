@@ -4,18 +4,18 @@
 This document summarizes the current status of our attempt to update the Globus Go CLI to use the latest Globus Go SDK versions.
 
 ## Current Status
-- **Branch**: feature/sdk-v3.61.0-1-update
-- **SDK Version**: v3.61.0-1
-- **Status**: Success - All tests pass and CLI is functional with SDK v3.61.0-1
+- **Branch**: feature/sdk-v3.62.0-1-update
+- **SDK Version**: v3.62.0-1
+- **Status**: Success - All tests pass and CLI is functional with SDK v3.62.0-1
 
-### SDK v3.61.0-1 Update Success
-Successfully updated from SDK v3.60.0-1 to v3.61.0-1 with full compatibility:
-- Updated SDK dependency to track Python SDK v3.61.0
-- No deprecated APIs used in CLI codebase - zero code changes required
+### SDK v3.62.0-1 Update Success
+Successfully updated from SDK v3.61.0-1 to v3.62.0-1 with full compatibility:
+- Updated SDK dependency to track Python SDK v3.62.0
+- Added Groups service enhancements available for future CLI features
 - All packages remain marked as STABLE API stability
 - Maintained full backward compatibility with existing CLI functionality
 - All tests pass without modification
-- Seamless upgrade path with no breaking changes
+- CLI benefits from enhanced Groups service subscription support
 
 ## Issues Identified
 
