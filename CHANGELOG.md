@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.36.0-1] - 2025-09-01
+
+### Changed
+- Updated version alignment to match upstream Globus CLI v3.36.0
+- Changed version to v3.36.0-1 following established versioning pattern
+- Updated SDK to v3.62.0-3 with improved integration testing support
+
+### Fixed
+- Resolved Integration Test compilation errors for SDK v3.62.0-3
+- Fixed auth client initialization using separate WithClientID/WithClientSecret options
+- Updated GetClientCredentialsToken to use individual string parameters
+- Fixed transfer client initialization using proper authorizer pattern
+- Updated ListDirectory and SubmitTransfer method signatures for SDK v3.62.0-3
+
+### Technical Improvements
+- Applied comprehensive code formatting with go fmt
+- All unit tests pass with no regressions
+- All integration tests compile successfully
+- Enhanced GitHub Actions CI/CD pipeline compatibility
+
 ## [3.62.0-1] - 2025-08-09
 
 ### Changed
