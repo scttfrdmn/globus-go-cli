@@ -17,10 +17,10 @@ import (
 // mockTaskCommands creates a set of mock task commands for testing
 func mockTaskCommands(mockClient *mocks.MockTransferClient) *cobra.Command {
 	taskCmd := TaskCmd()
-	
+
 	// Get the subcommands
 	var listCmd, showCmd, cancelCmd, waitCmd *cobra.Command
-	
+
 	// Find the subcommands by name
 	for _, cmd := range taskCmd.Commands() {
 		switch cmd.Name() {
@@ -34,7 +34,7 @@ func mockTaskCommands(mockClient *mocks.MockTransferClient) *cobra.Command {
 			waitCmd = cmd
 		}
 	}
-	
+
 	// Override list command
 	if listCmd != nil {
 		listCmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -65,16 +65,16 @@ func mockTaskCommands(mockClient *mocks.MockTransferClient) *cobra.Command {
 			return nil
 		}
 	}
-	
+
 	// Override show command
 	if showCmd != nil {
 		showCmd.RunE = func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("requires exactly one argument")
 			}
-			
+
 			taskID := args[0]
-			
+
 			// Get the task
 			task, err := mockClient.GetTask(context.Background(), taskID)
 			if err != nil {
@@ -120,14 +120,14 @@ func mockTaskCommands(mockClient *mocks.MockTransferClient) *cobra.Command {
 			return nil
 		}
 	}
-	
+
 	// Override cancel command
 	if cancelCmd != nil {
 		cancelCmd.RunE = func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("requires exactly one argument")
 			}
-			
+
 			taskID := args[0]
 
 			// Get the current task status first
@@ -151,14 +151,14 @@ func mockTaskCommands(mockClient *mocks.MockTransferClient) *cobra.Command {
 			return nil
 		}
 	}
-	
+
 	// Override wait command
 	if waitCmd != nil {
 		waitCmd.RunE = func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return fmt.Errorf("requires exactly one argument")
 			}
-			
+
 			taskID := args[0]
 
 			// Create context
@@ -190,7 +190,7 @@ func mockTaskCommands(mockClient *mocks.MockTransferClient) *cobra.Command {
 			return nil
 		}
 	}
-	
+
 	return taskCmd
 }
 
@@ -238,15 +238,15 @@ func TestTaskListCommand(t *testing.T) {
 
 	// Create test command
 	taskCmd := mockTaskCommands(mockClient)
-	
+
 	// Save original values
 	origLimit := limit
-	
+
 	// Restore original values after test
 	defer func() {
 		limit = origLimit
 	}()
-	
+
 	// Set limit
 	limit = 25
 
@@ -304,15 +304,15 @@ func TestTaskListCommandWithFilter(t *testing.T) {
 
 	// Create test command
 	taskCmd := mockTaskCommands(mockClient)
-	
+
 	// Save original values
 	origFilter := taskFilter
-	
+
 	// Restore original values after test
 	defer func() {
 		taskFilter = origFilter
 	}()
-	
+
 	// Set filter
 	taskFilter = "ACTIVE"
 
@@ -352,12 +352,12 @@ func TestTaskListCommandApiError(t *testing.T) {
 
 	// Execute command
 	output, err := testhelpers.ExecuteCommand(t, taskCmd, "list")
-	
+
 	// Should return an error
 	if err == nil {
 		t.Error("Expected error but got none")
 	}
-	
+
 	// Check error message
 	if !strings.Contains(err.Error(), "failed to list tasks") {
 		t.Errorf("Expected error to contain 'failed to list tasks', got: %v", err)
@@ -463,12 +463,12 @@ func TestTaskShowCommandApiError(t *testing.T) {
 
 	// Execute command
 	output, err := testhelpers.ExecuteCommand(t, taskCmd, "show", "invalid-task")
-	
+
 	// Should return an error
 	if err == nil {
 		t.Error("Expected error but got none")
 	}
-	
+
 	// Check error message
 	if !strings.Contains(err.Error(), "failed to get task") {
 		t.Errorf("Expected error to contain 'failed to get task', got: %v", err)
@@ -543,12 +543,12 @@ func TestTaskCancelCommandNotActive(t *testing.T) {
 
 	// Execute command
 	output, err := testhelpers.ExecuteCommand(t, taskCmd, "cancel", "task-1")
-	
+
 	// Should return an error
 	if err == nil {
 		t.Error("Expected error but got none")
 	}
-	
+
 	// Check error message
 	if !strings.Contains(err.Error(), "is not active") {
 		t.Errorf("Expected error to contain 'is not active', got: %v", err)
@@ -589,12 +589,12 @@ func TestTaskCancelCommandApiError(t *testing.T) {
 
 	// Execute command
 	output, err := testhelpers.ExecuteCommand(t, taskCmd, "cancel", "task-1")
-	
+
 	// Should return an error
 	if err == nil {
 		t.Error("Expected error but got none")
 	}
-	
+
 	// Check error message
 	if !strings.Contains(err.Error(), "failed to cancel task") {
 		t.Errorf("Expected error to contain 'failed to cancel task', got: %v", err)
@@ -644,15 +644,15 @@ func TestTaskWaitCommand(t *testing.T) {
 
 	// Create test command
 	taskCmd := mockTaskCommands(mockClient)
-	
+
 	// Save original values
 	origWaitTime := taskWaitTime
-	
+
 	// Restore original values after test
 	defer func() {
 		taskWaitTime = origWaitTime
 	}()
-	
+
 	// Set wait time
 	taskWaitTime = 300
 
@@ -697,12 +697,12 @@ func TestTaskWaitCommandApiError(t *testing.T) {
 
 	// Execute command
 	output, err := testhelpers.ExecuteCommand(t, taskCmd, "wait", "invalid-task")
-	
+
 	// Should return an error
 	if err == nil {
 		t.Error("Expected error but got none")
 	}
-	
+
 	// Check error message
 	if !strings.Contains(err.Error(), "failed to get task status") {
 		t.Errorf("Expected error to contain 'failed to get task status', got: %v", err)

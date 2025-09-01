@@ -53,7 +53,7 @@ func TestAuthIntegration(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Get a token using client credentials  
+		// Get a token using client credentials
 		tokenResp, err := authClient.GetClientCredentialsToken(ctx, "openid", "email", "profile")
 		if err != nil {
 			t.Fatalf("Failed to get client credentials token: %v", err)
@@ -83,44 +83,44 @@ func TestAuthIntegration(t *testing.T) {
 	// TODO: Re-enable when SDK provides identity lookup functionality
 	// GetIdentities method is not available in current SDK v3.62.0-3
 	/*
-	t.Run("TestIdentityLookup", func(t *testing.T) {
-		// Skip if no identity is provided
-		if creds.TestIdentity == "" {
-			t.Skip("Test identity not configured in .env.test")
-		}
+		t.Run("TestIdentityLookup", func(t *testing.T) {
+			// Skip if no identity is provided
+			if creds.TestIdentity == "" {
+				t.Skip("Test identity not configured in .env.test")
+			}
 
-		// Create auth client with test credentials
-		authClient, err := auth.NewClient(
-			auth.WithClientID(creds.ClientID),
-			auth.WithClientSecret(creds.ClientSecret),
-		)
-		if err != nil {
-			t.Fatalf("Failed to create auth client: %v", err)
-		}
+			// Create auth client with test credentials
+			authClient, err := auth.NewClient(
+				auth.WithClientID(creds.ClientID),
+				auth.WithClientSecret(creds.ClientSecret),
+			)
+			if err != nil {
+				t.Fatalf("Failed to create auth client: %v", err)
+			}
 
-		// Set up context
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
+			// Set up context
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
-		// Look up identity
-		identities, err := authClient.GetIdentities(ctx, creds.TestIdentity)
-		if err != nil {
-			t.Fatalf("Failed to get identity: %v", err)
-		}
+			// Look up identity
+			identities, err := authClient.GetIdentities(ctx, creds.TestIdentity)
+			if err != nil {
+				t.Fatalf("Failed to get identity: %v", err)
+			}
 
-		// Check if we found any identities
-		if len(identities) == 0 {
-			t.Fatalf("No identities found for %s", creds.TestIdentity)
-		}
+			// Check if we found any identities
+			if len(identities) == 0 {
+				t.Fatalf("No identities found for %s", creds.TestIdentity)
+			}
 
-		// Verify identity data
-		identity := identities[0]
-		if identity.Username == "" || identity.ID == "" {
-			t.Fatal("Invalid identity returned: missing username or ID")
-		}
+			// Verify identity data
+			identity := identities[0]
+			if identity.Username == "" || identity.ID == "" {
+				t.Fatal("Invalid identity returned: missing username or ID")
+			}
 
-		t.Logf("Successfully looked up identity: %s (%s)", identity.Username, identity.ID)
-	})
+			t.Logf("Successfully looked up identity: %s (%s)", identity.Username, identity.ID)
+		})
 	*/
 
 	t.Run("TestDeviceCodeFlow", func(t *testing.T) {

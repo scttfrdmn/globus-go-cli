@@ -133,10 +133,10 @@ func TestCpCmd_Success(t *testing.T) {
 	transferDryRun = true
 
 	// Execute command
-	output, err := testhelpers.ExecuteCommand(t, cmd, 
+	output, err := testhelpers.ExecuteCommand(t, cmd,
 		sourceEndpointID+":"+sourcePath,
 		destEndpointID+":"+destPath)
-	
+
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -211,7 +211,7 @@ func TestCpCmd_WithRecursive(t *testing.T) {
 	output, err := testhelpers.ExecuteCommand(t, cmd,
 		sourceEndpointID+":"+sourcePath,
 		destEndpointID+":"+destPath)
-	
+
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -271,7 +271,7 @@ func TestCpCmd_WithSyncLevel(t *testing.T) {
 	output, err := testhelpers.ExecuteCommand(t, cmd,
 		sourceEndpointID+":"+sourcePath,
 		destEndpointID+":"+destPath)
-	
+
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -316,12 +316,12 @@ func TestCpCmd_InvalidArguments(t *testing.T) {
 
 	// Execute command
 	err := cmd.Execute()
-	
+
 	// Should return an error for insufficient arguments
 	if err == nil {
 		t.Error("Expected error for insufficient arguments, got none")
 	}
-	
+
 	if !strings.Contains(err.Error(), "accepts 2 arg(s)") {
 		t.Errorf("Expected error about requiring 2 arguments, got: %v", err)
 	}
@@ -345,7 +345,7 @@ func TestCpCmd_ApiError(t *testing.T) {
 	mockClient.SubmitTransferFunc = func(ctx context.Context,
 		srcEndpointID, srcPath, dstEndpointID, dstPath, label string,
 		options map[string]interface{}) (*mocks.TaskResponse, error) {
-		
+
 		return nil, &mocks.EndpointError{
 			Code:    "PermissionDenied",
 			Message: "You do not have permission to access this endpoint",
@@ -437,7 +437,7 @@ func TestCpCmd_WithPreserveTimestamp(t *testing.T) {
 	_, err := testhelpers.ExecuteCommand(t, cmd,
 		sourceEndpointID+":"+sourcePath,
 		destEndpointID+":"+destPath)
-	
+
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}

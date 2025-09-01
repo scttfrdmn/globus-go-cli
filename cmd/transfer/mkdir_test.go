@@ -249,7 +249,7 @@ func TestMkdirCmd_MultiplePaths(t *testing.T) {
 	// Set up test parameters
 	endpointID := "test-endpoint-id"
 	paths := []string{
-		"/path/one", 
+		"/path/one",
 		"/path/two",
 		"/path/three",
 	}

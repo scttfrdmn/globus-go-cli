@@ -225,20 +225,20 @@ func TestRmCmd_InvalidPath(t *testing.T) {
 		err = cmd.Execute()
 	})
 	output = stdout + stderr
-	
+
 	// Should return an error for missing path
 	if err == nil {
 		t.Error("Expected error for invalid path, got none")
 	}
-	
+
 	// Check error message
 	if !strings.Contains(err.Error(), "path must be specified") {
 		t.Errorf("Expected 'path must be specified' error, got: %v", err)
 	}
 
 	// Check that task ID and success message are not in output
-	if output != "" && (strings.Contains(output, "Task ID:") || 
-						 strings.Contains(output, "Delete task submitted successfully")) {
+	if output != "" && (strings.Contains(output, "Task ID:") ||
+		strings.Contains(output, "Delete task submitted successfully")) {
 		t.Errorf("Did not expect task success message in output, got: %s", output)
 	}
 }
@@ -324,10 +324,10 @@ func TestRmCmd_MultipleFiles(t *testing.T) {
 
 	// Create test commands for each file
 	cmd1 := mockRmCommand(mockClient)
-	cmd1.SetArgs([]string{endpointID+":"+path1})
+	cmd1.SetArgs([]string{endpointID + ":" + path1})
 
 	cmd2 := mockRmCommand(mockClient)
-	cmd2.SetArgs([]string{endpointID+":"+path2})
+	cmd2.SetArgs([]string{endpointID + ":" + path2})
 
 	// Save original values
 	origForce := rmForce

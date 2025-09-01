@@ -192,8 +192,8 @@ func TestTransferIntegration(t *testing.T) {
 
 		// Create transfer options
 		optionsMap := map[string]interface{}{
-			"sync_level":    0,
-			"verify_write":  true,
+			"sync_level":   0,
+			"verify_write": true,
 		}
 
 		// Submit the transfer

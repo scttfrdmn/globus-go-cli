@@ -22,42 +22,42 @@ func mockLsCommand(mockClient *mocks.MockTransferClient) *cobra.Command {
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// Create a temporary viper config for this test
 		viper.Set("format", "text")
-		
+
 		// Parse endpoint ID and path
 		endpointID, path := parseEndpointAndPath(args[0])
-		
+
 		// Parse options
 		options := &mocks.ListDirectoryOptions{
 			EndpointID: endpointID,
 			Path:       path,
 			ShowHidden: lsShowHidden,
 		}
-		
+
 		// Use our mock client directly
 		listing, err := mockClient.ListDirectory(context.Background(), options)
 		if err != nil {
 			return fmt.Errorf("failed to list directory: %w", err)
 		}
-		
+
 		// Just print the entries directly for testing
 		for _, item := range listing.Data {
 			if lsLongFormat {
-				cmd.Printf("%s %s %s %s %d %s %s\n", 
-					getFileType(item.Type), 
-					item.Permissions, 
-					item.User, 
-					item.Group, 
-					item.Size, 
-					item.LastModified, 
+				cmd.Printf("%s %s %s %s %d %s %s\n",
+					getFileType(item.Type),
+					item.Permissions,
+					item.User,
+					item.Group,
+					item.Size,
+					item.LastModified,
 					item.Name)
 			} else {
 				cmd.Printf("%s %s\n", getFileType(item.Type), item.Name)
 			}
 		}
-		
+
 		cmd.Printf("\nDirectory: %s:%s\n", endpointID, path)
 		cmd.Printf("Total: %d items\n", len(listing.Data))
-		
+
 		return nil
 	}
 

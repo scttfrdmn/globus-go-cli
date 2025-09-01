@@ -36,7 +36,7 @@ func TestDeviceCmd_WithNoSaveTokens(t *testing.T) {
 
 	// Initialize viper with a test config
 	viper.Set("profile", "test-profile")
-	
+
 	// Set flags
 	noSaveTokens = true
 	forceLogin = true
@@ -81,7 +81,7 @@ func TestDeviceCmd_WithScopes(t *testing.T) {
 
 	// Initialize viper with a test config
 	viper.Set("profile", "test-profile")
-	
+
 	// Set flags
 	forceLogin = true
 	loginScopes = []string{"openid", "profile", "email"}
@@ -126,10 +126,10 @@ func TestDeviceCmd_AlreadyLoggedIn(t *testing.T) {
 
 	// Initialize viper with a test config
 	viper.Set("profile", "test-profile")
-	
+
 	// Set flags
 	forceLogin = false
-	
+
 	// Set up a valid token file first by running a login once
 	forceLogin = true
 	cmd := DeviceCmd()
