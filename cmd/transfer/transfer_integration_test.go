@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/testhelpers"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
@@ -47,7 +48,8 @@ func TestTransferIntegration(t *testing.T) {
 
 	// Create auth client with test credentials
 	authClient, err := auth.NewClient(
-		auth.WithClientCredentials(creds.ClientID, creds.ClientSecret),
+		auth.WithClientID(creds.ClientID),
+		auth.WithClientSecret(creds.ClientSecret),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
@@ -56,21 +58,24 @@ func TestTransferIntegration(t *testing.T) {
 	// Get a token with transfer scope
 	tokenResp, err := authClient.GetClientCredentialsToken(
 		ctx,
-		[]string{
-			"urn:globus:auth:scope:transfer.api.globus.org:all",
-			"openid",
-			"email",
-			"profile",
-		},
+		"urn:globus:auth:scope:transfer.api.globus.org:all",
+		"openid",
+		"email",
+		"profile",
 	)
 	if err != nil {
 		t.Fatalf("Failed to get token for transfer operations: %v", err)
 	}
 
-	// Create transfer client using the token
-	transferClient, err := transfer.NewClient(
-		transfer.WithBearerToken(tokenResp.AccessToken),
-	)
+	// Create authorizer from token
+	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenResp.AccessToken)
+	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
+
+	// Create transfer client using the authorizer
+	transferOptions := []transfer.Option{
+		transfer.WithAuthorizer(coreAuthorizer),
+	}
+	transferClient, err := transfer.NewClient(transferOptions...)
 	if err != nil {
 		t.Fatalf("Failed to create transfer client: %v", err)
 	}
@@ -139,9 +144,10 @@ func TestTransferIntegration(t *testing.T) {
 
 		// List the source directory
 		listOptions := &transfer.ListDirectoryOptions{
-			Path: creds.SourcePath,
+			EndpointID: creds.SourceEndpoint,
+			Path:       creds.SourcePath,
 		}
-		listing, err := transferClient.ListDirectory(ctx, creds.SourceEndpoint, listOptions)
+		listing, err := transferClient.ListDirectory(ctx, listOptions)
 		if err != nil {
 			t.Fatalf("Failed to list directory %s on endpoint %s: %v",
 				creds.SourcePath, creds.SourceEndpoint, err)
@@ -173,32 +179,30 @@ func TestTransferIntegration(t *testing.T) {
 		// Create a test file to transfer
 		testDir, cleanup := testhelpers.CreateTemporaryTestFiles(t, 1)
 		defer cleanup()
-		testFile := filepath.Join(testDir, "test-file-0")
+		_ = filepath.Join(testDir, "test-file-0") // Test file created but not used in this integration test
 
 		// Test file transfer
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // Longer timeout for transfers
 		defer cancel()
 
 		// Submit a transfer task
-		options := transfer.SubmitTransferOptions{
-			Label:       "CLI Integration Test",
-			SyncLevel:   0,
-			VerifyWrite: true,
-		}
+		sourcePath := fmt.Sprintf("%s/test-transfer-file.txt", creds.SourcePath)
+		destPath := fmt.Sprintf("%s/test-transfer-file-%d.txt", creds.DestinationPath, time.Now().Unix())
+		label := "CLI Integration Test"
 
-		// Define a single transfer item
-		transferItem := transfer.TransferItem{
-			Source:      fmt.Sprintf("%s/test-transfer-file.txt", creds.SourcePath),
-			Destination: fmt.Sprintf("%s/test-transfer-file-%d.txt", creds.DestinationPath, time.Now().Unix()),
+		// Create transfer options
+		optionsMap := map[string]interface{}{
+			"sync_level":    0,
+			"verify_write":  true,
 		}
 
 		// Submit the transfer
 		task, err := transferClient.SubmitTransfer(
 			ctx,
-			creds.SourceEndpoint,
-			creds.DestinationEndpoint,
-			[]transfer.TransferItem{transferItem},
-			&options,
+			creds.SourceEndpoint, sourcePath,
+			creds.DestinationEndpoint, destPath,
+			label,
+			optionsMap,
 		)
 		if err != nil {
 			t.Fatalf("Failed to submit transfer task: %v", err)
@@ -210,8 +214,8 @@ func TestTransferIntegration(t *testing.T) {
 		}
 
 		t.Logf("Successfully submitted transfer task with ID: %s", task.TaskID)
-		t.Logf("  From: %s:%s", creds.SourceEndpoint, transferItem.Source)
-		t.Logf("  To:   %s:%s", creds.DestinationEndpoint, transferItem.Destination)
+		t.Logf("  From: %s:%s", creds.SourceEndpoint, sourcePath)
+		t.Logf("  To:   %s:%s", creds.DestinationEndpoint, destPath)
 
 		// Note: In a real test, we might want to poll for task completion,
 		// but that would make the test too long-running. Instead, we just
