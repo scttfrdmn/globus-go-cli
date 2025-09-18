@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.37.0-1] - 2025-09-18
+
+### Changed
+- Updated version alignment to match upstream Globus CLI v3.37.0
+- Updated to Globus Go SDK v3.63.0-1 with latest improvements
+- Maintained backward compatibility with existing functionality
+
+### Technical Improvements
+- All unit tests continue to pass with new SDK version
+- Integration tests compile successfully with SDK v3.63.0-1
+- Enhanced compatibility with upstream project versioning
+
 ## [3.36.0-1] - 2025-09-01
 
 ### Changed
