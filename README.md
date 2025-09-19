@@ -226,7 +226,7 @@ For information about the release process, see [RELEASE_PROCESS.md](RELEASE_PROC
 
 ## Release Notes
 
-- [Release v3.36.0-1](RELEASE_NOTES_V3.36.0-1.md) - Latest release (aligned with upstream CLI v3.36.0)
+- [Release v3.37.0-1](RELEASE_NOTES_V3.37.0-1.md) - Latest release (aligned with upstream CLI v3.37.0)
 - [Changelog](CHANGELOG.md) - Full history of changes
 
 ## License
