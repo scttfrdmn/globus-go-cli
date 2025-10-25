@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.39.0-1] - 2025-10-25
+
+### Changed
+- Updated version alignment to match upstream Globus CLI v3.39.0
+- Updated to Globus Go SDK v3.65.0-1 with latest improvements
+- Maintained backward compatibility with existing functionality
+
+### Added (SDK-level)
+- FlowTimer helper methods for simplified timer creation
+  - `CreateFlowTimerOnce()` for one-time flow executions
+  - `CreateFlowTimerRecurring()` for ISO 8601 interval-based scheduling
+  - `CreateFlowTimerCron()` for cron-based flow scheduling
+- Groups status filtering support in `ListGroups()` method
+- Enhanced SDK capabilities for future Groups and Timers command implementation
+
+### Technical Improvements
+- All unit tests continue to pass with new SDK version
+- Integration tests compile successfully with SDK v3.65.0-1
+- Enhanced compatibility with upstream project versioning
+- SDK update enables future implementation of Groups and Timers commands
+
+### Notes
+- This release tracks upstream CLI v3.39.0 for versioning alignment
+- Auth and Transfer commands remain fully implemented and tested
+- Groups and Timers commands remain in planned stage for future releases
+- SDK v3.65.0-1 provides all necessary capabilities for future service implementations
+
 ## [3.37.0-1] - 2025-09-18
 
 ### Changed

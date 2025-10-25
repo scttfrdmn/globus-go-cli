@@ -19,7 +19,7 @@ var (
 )
 
 // Version is set during the build process
-var Version = "3.37.0-1"
+var Version = "3.39.0-1"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
