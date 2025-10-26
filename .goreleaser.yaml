@@ -148,6 +148,18 @@ brews:
     install: |
       bin.install "globus"
 
+# Scoop bucket for Windows
+# Publishes manifest to scoop-bucket repository
+scoops:
+  - repository:
+      owner: scttfrdmn
+      name: scoop-bucket
+      token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
+    homepage: https://github.com/scttfrdmn/globus-go-cli
+    description: "Command-line interface for Globus services, built in Go"
+    license: Apache-2.0
+    skip_upload: auto
+
 # Docker images
 dockers:
   - image_templates:

@@ -31,6 +31,7 @@ Configure these secrets in your repository settings (Settings > Secrets and vari
 - `DOCKER_USERNAME` - Docker Hub username (optional, for Docker images)
 - `DOCKER_TOKEN` - Docker Hub access token (optional, for Docker images)
 - `HOMEBREW_TAP_GITHUB_TOKEN` - Personal access token for Homebrew tap updates (optional)
+- `SCOOP_BUCKET_GITHUB_TOKEN` - Personal access token for Scoop bucket updates (optional)
 
 ## Release Checklist
 
@@ -74,6 +75,7 @@ git push origin v3.39.0-3
 - [ ] Verify checksums
 - [ ] Check Docker images (if enabled)
 - [ ] Test Homebrew installation (if tap is configured)
+- [ ] Test Scoop installation on Windows (if bucket is configured)
 
 ## Release Artifacts
 
@@ -135,6 +137,12 @@ goreleaser release --clean
 1. Verify tap repository exists
 2. Check `HOMEBREW_TAP_GITHUB_TOKEN` has correct permissions
 3. Ensure tap repository has `Formula` directory
+
+### Scoop Bucket Update Fails
+
+1. Verify scoop-bucket repository exists
+2. Check `SCOOP_BUCKET_GITHUB_TOKEN` has correct permissions
+3. Ensure bucket repository structure is valid for Scoop
 
 ## Rolling Back a Release
 

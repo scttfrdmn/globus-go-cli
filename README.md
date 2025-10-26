@@ -34,6 +34,16 @@ brew tap scttfrdmn/tap
 brew install globus-go-cli
 ```
 
+### Using Scoop (Windows)
+
+```powershell
+# Add the scoop bucket
+scoop bucket add scttfrdmn https://github.com/scttfrdmn/scoop-bucket
+
+# Install globus-go-cli
+scoop install globus-go-cli
+```
+
 ### Using Docker
 
 ```bash
