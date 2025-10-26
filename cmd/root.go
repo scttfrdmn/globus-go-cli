@@ -140,7 +140,12 @@ func addServiceCommands() {
 	rootCmd.AddCommand(
 		getAuthCommand(),
 		getTransferCommand(),
-		// Other service commands will be added as they are implemented
+		getGroupCommand(),
+		getTimerCommand(),
+		getSearchCommand(),
+		getFlowsCommand(),
+		getComputeCommand(),
+		// All services now implemented!
 		getConfigCommand(),
 	)
 }
