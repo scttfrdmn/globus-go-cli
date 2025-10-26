@@ -24,6 +24,15 @@ A command-line interface for Globus services, built in Go using the [Globus Go S
 - Cross-platform support (Linux, macOS, Windows)
 - Shell completion for Bash, Zsh, Fish, and PowerShell
 
+## Documentation
+
+**📚 [Read the full documentation](https://scttfrdmn.github.io/globus-go-cli/)**
+
+- [Installation Guide](https://scttfrdmn.github.io/globus-go-cli/getting-started/installation/)
+- [Quick Start](https://scttfrdmn.github.io/globus-go-cli/getting-started/quickstart/)
+- [Command Reference](https://scttfrdmn.github.io/globus-go-cli/reference/)
+- [Common Tasks](https://scttfrdmn.github.io/globus-go-cli/guides/common-tasks/)
+
 ## Installation
 
 ### Using Homebrew (macOS and Linux)

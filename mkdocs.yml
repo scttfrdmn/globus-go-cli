@@ -1,0 +1,86 @@
+site_name: Globus Go CLI Documentation
+site_url: https://scttfrdmn.github.io/globus-go-cli
+site_author: Scott Friedman
+site_description: Command-line interface for Globus services, built in Go
+
+repo_name: scttfrdmn/globus-go-cli
+repo_url: https://github.com/scttfrdmn/globus-go-cli
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Authentication: getting-started/authentication.md
+      - Configuration: getting-started/configuration.md
+  - Command Reference:
+      - Overview: reference/index.md
+      - Auth Commands: reference/auth.md
+      - Transfer Commands: reference/transfer.md
+      - Search Commands: reference/search.md
+      - Groups Commands: reference/groups.md
+      - Flows Commands: reference/flows.md
+      - Timers Commands: reference/timers.md
+      - Compute Commands: reference/compute.md
+  - Guides:
+      - Common Tasks: guides/common-tasks.md
+      - Output Formats: guides/output-formats.md
+      - Environment Variables: guides/environment-variables.md
+      - Migration from Python CLI: guides/migration.md
+  - About:
+      - Changelog: changelog.md
+      - Contributing: contributing.md
+      - License: license.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/scttfrdmn/globus-go-cli
+  version:
+    provider: mike
