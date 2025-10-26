@@ -1,0 +1,163 @@
+name: Check Upstream Releases
+
+on:
+  schedule:
+    # Run every Monday at 9am UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      force_check:
+        description: 'Force check even if version unchanged'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Python Globus CLI releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          upstream_repo="globus/globus-cli"
+          repo_label="Python Globus CLI"
+
+          echo "Checking $repo_label ($upstream_repo)..."
+
+          # Get latest release from upstream
+          latest_release=$(gh release view --repo "$upstream_repo" --json tagName,name,body,url,publishedAt 2>/dev/null || echo "")
+
+          if [ -z "$latest_release" ]; then
+            echo "  ⚠️  Could not fetch release for $upstream_repo"
+            exit 0
+          fi
+
+          latest_tag=$(echo "$latest_release" | jq -r '.tagName')
+          release_name=$(echo "$latest_release" | jq -r '.name')
+          release_body=$(echo "$latest_release" | jq -r '.body')
+          release_url=$(echo "$latest_release" | jq -r '.url')
+          published_at=$(echo "$latest_release" | jq -r '.publishedAt')
+
+          # Get stored version
+          stored_version=$(jq -r --arg repo "$upstream_repo" '.[$repo]' .github/upstream-versions.json)
+
+          echo "  Current tracked: $stored_version"
+          echo "  Latest upstream: $latest_tag"
+
+          # Check if version changed or force check
+          if [ "$stored_version" = "$latest_tag" ] && [ "${{ github.event.inputs.force_check }}" != "true" ]; then
+            echo "  ✓ Already up to date"
+            exit 0
+          fi
+
+          # Check if issue already exists for this version
+          existing_issue=$(gh issue list --repo ${{ github.repository }} \
+            --search "\"New $repo_label release: $latest_tag\" in:title" \
+            --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -n "$existing_issue" ]; then
+            echo "  ℹ️  Issue already exists: #$existing_issue"
+            exit 0
+          fi
+
+          echo "  🆕 New release found: $latest_tag"
+
+          # Build comparison URL
+          comparison_url="https://github.com/$upstream_repo/compare/$stored_version...$latest_tag"
+
+          # Create issue body
+          issue_body="## New $repo_label Release Available
+
+**New Version:** \`$latest_tag\`
+**Previous Version:** \`$stored_version\`
+**Published:** $published_at
+
+### Links
+- 📦 [Release Page]($release_url)
+- 🔍 [Compare Changes]($comparison_url)
+- 📚 [Repository](https://github.com/$upstream_repo)
+
+### Release Notes
+
+$release_body
+
+---
+
+### Action Items
+- [ ] Review release notes and changes
+- [ ] Check for breaking changes or deprecations
+- [ ] Update dependencies if needed
+- [ ] Test compatibility with current codebase
+- [ ] Update documentation if needed
+- [ ] Update \`.github/upstream-versions.json\` after porting changes
+
+**Upstream Repository:** \`$upstream_repo\`
+"
+
+          # Create the issue
+          issue_number=$(gh issue create \
+            --title "New $repo_label release: $latest_tag" \
+            --body "$issue_body" \
+            --label "upstream-update,needs-review,dependencies" \
+            --json number --jq '.number')
+
+          echo "  ✓ Created issue #$issue_number"
+
+          # Update the version tracking file
+          jq --arg repo "$upstream_repo" --arg version "$latest_tag" \
+            '.[$repo] = $version' .github/upstream-versions.json > .github/upstream-versions.json.tmp
+          mv .github/upstream-versions.json.tmp .github/upstream-versions.json
+
+          # Mark for commit
+          echo "true" > /tmp/has_update
+          echo "$latest_tag" > /tmp/new_version
+
+      - name: Commit version updates
+        run: |
+          if [ -f /tmp/has_update ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            # Check if there are changes to commit
+            if git diff --quiet .github/upstream-versions.json; then
+              echo "No version updates to commit"
+              exit 0
+            fi
+
+            new_version=$(cat /tmp/new_version)
+            git add .github/upstream-versions.json
+            git commit -m "chore: update upstream version tracking to $new_version"
+            git push
+
+            echo "✓ Committed version update"
+          else
+            echo "No updates found"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Upstream Release Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tracking:** Python Globus CLI (globus/globus-cli)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f /tmp/has_update ]; then
+            new_version=$(cat /tmp/new_version)
+            echo "### 🆕 New Release Found" >> $GITHUB_STEP_SUMMARY
+            echo "- Updated to $new_version" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✓ Already up to date with upstream" >> $GITHUB_STEP_SUMMARY
+          fi
