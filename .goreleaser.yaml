@@ -130,13 +130,13 @@ release:
        shasum -a 256 -c checksums.txt
        ```
 
-# Homebrew tap (optional - create tap repo first)
-# Note: Requires homebrew-globus repository to exist
+# Homebrew tap
+# Publishes formula to homebrew-tap repository
 brews:
   - name: globus-go-cli
     repository:
       owner: scttfrdmn
-      name: homebrew-globus
+      name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Formula
     homepage: https://github.com/scttfrdmn/globus-go-cli

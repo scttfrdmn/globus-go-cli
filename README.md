@@ -30,7 +30,7 @@ A command-line interface for Globus services, built in Go using the [Globus Go S
 
 ```bash
 # Install from Homebrew
-brew tap scttfrdmn/globus
+brew tap scttfrdmn/tap
 brew install globus-go-cli
 ```
 
