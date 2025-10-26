@@ -1,0 +1,210 @@
+# GoReleaser configuration for Globus Go CLI
+# Documentation: https://goreleaser.com
+
+version: 2
+
+before:
+  hooks:
+    # Ensure dependencies are up to date
+    - go mod tidy
+    # Run tests before building
+    - go test ./...
+
+builds:
+  - id: globus
+    main: ./main.go
+    binary: globus
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    # Ignore certain OS/arch combinations
+    ignore:
+      - goos: windows
+        goarch: arm64
+    # Set build flags
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/scttfrdmn/globus-go-cli/cmd.Version={{.Version}}
+      - -X github.com/scttfrdmn/globus-go-cli/cmd.Commit={{.Commit}}
+      - -X github.com/scttfrdmn/globus-go-cli/cmd.Date={{.Date}}
+
+archives:
+  - id: globus-archive
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+      - RELEASE_NOTES.md
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: 'Bug Fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: 'Performance Improvements'
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: Others
+      order: 999
+
+release:
+  github:
+    owner: scttfrdmn
+    name: globus-go-cli
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## Globus Go CLI {{ .Tag }}
+
+    Welcome to this release of the Globus Go CLI!
+
+    ### Installation
+
+    #### Binary Releases
+    Download the appropriate binary for your platform below.
+
+    #### Using Homebrew (macOS and Linux)
+    ```bash
+    brew tap scttfrdmn/globus
+    brew install globus-go-cli
+    ```
+
+    #### Using Go Install
+    ```bash
+    go install github.com/scttfrdmn/globus-go-cli@{{ .Tag }}
+    ```
+
+  footer: |
+    ---
+
+    **Full Changelog**: https://github.com/scttfrdmn/globus-go-cli/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+    ### Verifying Downloads
+
+    All artifacts are checksummed and the checksum file is signed with cosign.
+
+    1. Download the files you want, and the `checksums.txt` file
+    2. Verify checksums:
+       ```bash
+       shasum -a 256 -c checksums.txt
+       ```
+
+# Homebrew tap (optional - create tap repo first)
+# Note: Requires homebrew-globus repository to exist
+brews:
+  - name: globus-go-cli
+    repository:
+      owner: scttfrdmn
+      name: homebrew-globus
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/scttfrdmn/globus-go-cli
+    description: "Command-line interface for Globus services, built in Go"
+    license: Apache-2.0
+    skip_upload: auto
+    test: |
+      system "#{bin}/globus --version"
+    install: |
+      bin.install "globus"
+
+# Docker images
+dockers:
+  - image_templates:
+      - "scttfrdmn/globus-go-cli:{{ .Version }}-amd64"
+      - "scttfrdmn/globus-go-cli:latest-amd64"
+    use: buildx
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    skip_push: auto
+
+  - image_templates:
+      - "scttfrdmn/globus-go-cli:{{ .Version }}-arm64"
+      - "scttfrdmn/globus-go-cli:latest-arm64"
+    use: buildx
+    goarch: arm64
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    skip_push: auto
+
+docker_manifests:
+  - name_template: "scttfrdmn/globus-go-cli:{{ .Version }}"
+    image_templates:
+      - "scttfrdmn/globus-go-cli:{{ .Version }}-amd64"
+      - "scttfrdmn/globus-go-cli:{{ .Version }}-arm64"
+    skip_push: auto
+
+  - name_template: "scttfrdmn/globus-go-cli:latest"
+    image_templates:
+      - "scttfrdmn/globus-go-cli:latest-amd64"
+      - "scttfrdmn/globus-go-cli:latest-arm64"
+    skip_push: auto
+
+# SBOMs (Software Bill of Materials)
+sboms:
+  - artifacts: archive
+
+# Signs the checksums file
+signs:
+  - cmd: cosign
+    env:
+      - COSIGN_EXPERIMENTAL=1
+    certificate: '${artifact}.pem'
+    args:
+      - sign-blob
+      - '--output-certificate=${certificate}'
+      - '--output-signature=${signature}'
+      - '${artifact}'
+      - "--yes"
+    artifacts: checksum
+    output: true

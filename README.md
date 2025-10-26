@@ -45,6 +45,11 @@ docker run --rm -it scttfrdmn/globus-go-cli:latest auth whoami
 
 Download the latest release for your platform from the [Releases page](https://github.com/scttfrdmn/globus-go-cli/releases).
 
+Binaries are provided for:
+- Linux (amd64, arm64)
+- macOS (amd64, arm64)
+- Windows (amd64)
+
 ### From Source
 
 ```bash

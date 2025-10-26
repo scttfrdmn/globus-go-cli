@@ -1,0 +1,37 @@
+# Git
+.git/
+.gitignore
+.github/
+
+# Build artifacts
+globus
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+*_test.go
+testdata/
+
+# Documentation
+*.md
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# CI/CD
+.goreleaser.yaml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Other
+tmp/
+vendor/
