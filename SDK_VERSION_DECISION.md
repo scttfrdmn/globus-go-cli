@@ -398,13 +398,20 @@ Vote **SDK v3** if you value:
 
 ## References
 
+- [SDK v4.2.0-1 Release Notes](https://github.com/scttfrdmn/globus-go-sdk/releases/tag/v4.2.0-1)
 - [SDK v4.1.0-2 Release Notes](https://github.com/scttfrdmn/globus-go-sdk/releases/tag/v4.1.0-2)
-- [SDK v4.1.0-1 Breaking Changes](https://github.com/scttfrdmn/globus-go-sdk/releases/tag/v4.1.0-1)
 - [SDK v3.65.0-1 Release Notes](https://github.com/scttfrdmn/globus-go-sdk/releases/tag/v3.65.0-1)
 - [Feature Parity Roadmap](FEATURE_PARITY_ROADMAP.md)
+- [CLI Dual-Version Strategy](CLI_DUAL_VERSION_STRATEGY.md) - **NEW: Future parallel v3/v4 approach**
 
 ---
 
-**Awaiting Decision:** Please review and decide whether to proceed with v3 or v4 approach.
+## Future Path: Dual-Version Support
 
-**Recommended:** SDK v4.1.0-2 migration followed by new service implementation
+When upstream Globus v4 becomes official, the CLI can adopt the same dual-version approach as the SDK:
+- Maintain both v3 and v4 implementations in parallel
+- Allow users to choose when to migrate
+- Low-risk gradual migration path
+- See [CLI_DUAL_VERSION_STRATEGY.md](CLI_DUAL_VERSION_STRATEGY.md) for complete plan
+
+**Decision Status:** v3-only for now, dual-version strategy documented for future when needed.
