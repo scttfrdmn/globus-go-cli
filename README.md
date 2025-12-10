@@ -3,7 +3,9 @@
 
 # Globus Go CLI
 
-A command-line interface for Globus services, built in Go using the [Globus Go SDK](https://github.com/scttfrdmn/globus-go-sdk) v3.65.0-1. Aligned with upstream Globus CLI v3.39.0.
+A command-line interface for Globus services, built in Go using the [Globus Go SDK](https://github.com/scttfrdmn/globus-go-sdk) v3.65.0-1 (production). Aligned with upstream Globus CLI v3.39.0.
+
+> **Note:** This CLI uses SDK v3 (production-ready). SDK v4 is available but provides minimal benefit for CLI use cases. See [SDK_VERSION_DECISION.md](SDK_VERSION_DECISION.md) for details.
 
 ## Features
 

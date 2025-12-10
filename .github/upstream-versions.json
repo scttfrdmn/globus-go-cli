@@ -1,3 +1,5 @@
 {
-  "globus/globus-cli": "v3.39.0"
+  "globus/globus-cli": "v3.39.0",
+  "scttfrdmn/globus-go-sdk:v3": "v3.65.0-1",
+  "scttfrdmn/globus-go-sdk:v4": "v4.2.0-1"
 }

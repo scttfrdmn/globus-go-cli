@@ -7,6 +7,11 @@
 **Status:** ✅ DECIDED - Proceed with SDK v3.65.0-1
 **Decision:** Option 2 - Implement services on v3, migrate to v4 later
 
+**Latest Update (2025-12-09):**
+- SDK v3.65.0-1 ✅ In use (production-ready)
+- SDK v4.2.0-1 📋 Available but not adopting (minimal CLI benefit)
+- Decision to stay on v3 remains valid - v4's benefits (context-first, Close() methods) provide minimal value for CLI use case vs migration cost
+
 ---
 
 ## Executive Summary
