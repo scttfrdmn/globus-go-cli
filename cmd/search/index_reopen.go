@@ -16,28 +16,24 @@ import (
 	"github.com/spf13/viper"
 )
 
-// SubjectDeleteCmd represents the search subject delete command
-var SubjectDeleteCmd = &cobra.Command{
-	Use:   "delete INDEX_ID SUBJECT",
-	Short: "Delete a subject from a Globus Search index",
-	Long: `Submit a delete task to remove a subject from a Search index.
+// IndexReopenCmd represents the search index reopen command.
+// Added in Python SDK v4.0.0.
+var IndexReopenCmd = &cobra.Command{
+	Use:   "reopen INDEX_ID",
+	Short: "Reopen a previously deleted Globus Search index",
+	Long: `Reopen a previously deleted Globus Search index.
 
-This requires writer or stronger privileges on the index. Deletions are
-queued as tasks and are not guaranteed to be immediate.
+A deleted index can be reopened to restore access to its documents.
+Added in Python SDK v4.0.0.
 
 Examples:
-  # Delete a subject
-  globus search subject delete INDEX_ID my-document-id
-
-  # The command returns a task ID for monitoring progress
-  globus search subject delete INDEX_ID doc123`,
-	Args: cobra.ExactArgs(2),
-	RunE: runSubjectDelete,
+  globus search index reopen INDEX_ID`,
+	Args: cobra.ExactArgs(1),
+	RunE: runIndexReopen,
 }
 
-func runSubjectDelete(cmd *cobra.Command, args []string) error {
+func runIndexReopen(cmd *cobra.Command, args []string) error {
 	indexID := args[0]
-	subject := args[1]
 
 	// Get current profile
 	profile := viper.GetString("profile")
@@ -75,27 +71,17 @@ func runSubjectDelete(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Build delete request
-	deleteRequest := &search.DeleteDocumentsRequest{
-		IndexID:  indexID,
-		Subjects: []string{subject},
-	}
-
-	// Execute delete
-	response, err := searchClient.DeleteDocuments(ctx, deleteRequest)
+	// Reopen the index
+	index, err := searchClient.ReopenIndex(ctx, indexID)
 	if err != nil {
-		return fmt.Errorf("error deleting subject: %w", err)
+		return fmt.Errorf("error reopening index: %w", err)
 	}
 
 	// Display success message
-	fmt.Fprintf(os.Stdout, "Subject deletion task submitted!\n\n")
-	fmt.Fprintf(os.Stdout, "Task ID:    %s\n", response.Task.TaskID)
-	fmt.Fprintf(os.Stdout, "Subject:    %s\n", subject)
-	fmt.Fprintf(os.Stdout, "Status:     %s\n", response.Task.ProcessingState)
-
-	if response.Task.TaskID != "" {
-		fmt.Fprintf(os.Stdout, "\nCheck task status with: globus search task show %s\n", response.Task.TaskID)
-	}
+	fmt.Fprintf(os.Stdout, "Index reopened successfully!\n\n")
+	fmt.Fprintf(os.Stdout, "Index ID:     %s\n", index.ID)
+	fmt.Fprintf(os.Stdout, "Display Name: %s\n", index.DisplayName)
+	fmt.Fprintf(os.Stdout, "Is Active:    %t\n", index.IsActive)
 
 	return nil
 }

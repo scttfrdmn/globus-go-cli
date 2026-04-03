@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 
 // NOTE: This command is a placeholder because the Go SDK v3.65.0-1 does not
 // yet support flow definition validation.

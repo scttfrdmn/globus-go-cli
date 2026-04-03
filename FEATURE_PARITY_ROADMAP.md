@@ -1,27 +1,25 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
+<!-- SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors -->
 
 # Feature Parity Roadmap
 
-This document outlines the implementation plan to achieve full feature parity with the upstream Globus CLI v3.39.0.
+This document tracks feature parity with the upstream Globus CLI and Python SDK.
 
-**Current Status:** Auth and Transfer services fully implemented (2/7 services complete)
-**Target:** Full parity with upstream CLI v3.39.0
+**Current Status:** All 7 services complete; CLI at v4.5.0-1 (Python SDK v4.5.0 parity)
+**Last Updated:** 2026-04-03
 
 ---
 
 ## Overview
 
 The globus-go-cli currently implements:
-- ✅ **Auth Service** - Complete implementation
-- ✅ **Transfer Service** - Complete implementation
-
-Remaining services to implement for full parity:
-- 📋 **Groups Service** - 0% complete
-- 📋 **Timers Service** - 0% complete
-- 📋 **Search Service** - 0% complete
-- 📋 **Flows Service** - 0% complete
-- 📋 **Compute Service** - 0% complete
+- ✅ **Auth Service** - Complete (9 commands)
+- ✅ **Transfer Service** - Complete (6 commands + Streams/Tunnels: tunnel create/list/show/update/delete/events, stream-access-point show)
+- ✅ **Groups Service** - Complete (12 commands)
+- ✅ **Timers Service** - Complete (8 commands)
+- ✅ **Search Service** - Complete (19 commands, including `index reopen`)
+- ✅ **Flows Service** - Complete (15 commands, including authentication policy flags)
+- ✅ **Compute Service** - Complete (14 commands) — exclusive to Go CLI, not in Python CLI
 
 ---
 
@@ -505,13 +503,13 @@ Update this section as services are implemented:
 
 | Service | Status | Start Date | Completion Date | Notes |
 |---------|--------|------------|-----------------|-------|
-| Auth | ✅ Complete | - | 2025-09-18 | Fully implemented |
-| Transfer | ✅ Complete | - | 2025-09-18 | Fully implemented |
-| Groups | 📋 Planned | TBD | TBD | SDK v3.65.0-1 ready |
-| Timers | 📋 Planned | TBD | TBD | SDK v3.65.0-1 ready |
-| Search | 📋 Planned | TBD | TBD | SDK v3.65.0-1 ready |
-| Flows | 📋 Planned | TBD | TBD | SDK v3.65.0-1 ready |
-| Compute | 📋 Planned | TBD | TBD | SDK v3.65.0-1 ready |
+| Auth | ✅ Complete | - | 2025-09-18 | 9 commands |
+| Transfer | ✅ Complete | - | 2026-04-03 | + Streams/Tunnels (Python SDK v4.3.0/v4.4.0) |
+| Groups | ✅ Complete | - | 2025-10-25 | 12 commands |
+| Timers | ✅ Complete | - | 2025-10-25 | 8 commands |
+| Search | ✅ Complete | - | 2026-04-03 | 19 commands (+index reopen, Python SDK v4.0.0) |
+| Flows | ✅ Complete | - | 2026-04-03 | 15 commands (+auth policy, Python SDK v4.1.0) |
+| Compute | ✅ Complete | - | 2025-10-25 | 14 commands (Go CLI exclusive) |
 
 ---
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 package search
 
 import (
@@ -37,6 +37,7 @@ Examples:
 	indexCmd.AddCommand(IndexShowCmd)
 	indexCmd.AddCommand(IndexUpdateCmd)
 	indexCmd.AddCommand(IndexDeleteCmd)
+	indexCmd.AddCommand(IndexReopenCmd)
 	indexCmd.AddCommand(GetIndexRoleCmd())
 
 	return indexCmd

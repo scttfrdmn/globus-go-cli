@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 package flows
 
 import (
@@ -18,12 +18,17 @@ import (
 )
 
 var (
-	createTitle         string
-	createDescription   string
+	createTitle          string
+	createDescription    string
 	createDefinitionFile string
-	createSchemaFile    string
-	createKeywords      []string
-	createPublic        bool
+	createSchemaFile     string
+	createKeywords       []string
+	createPublic         bool
+
+	// Authentication policy flags (Python SDK v4.1.0)
+	createHighAssurance   bool
+	createRequiredMFA     bool
+	createSessionPolicies []string
 )
 
 // CreateCmd represents the flows create command
@@ -60,6 +65,11 @@ func init() {
 	CreateCmd.Flags().StringVar(&createSchemaFile, "schema-file", "", "Path to input schema JSON file")
 	CreateCmd.Flags().StringSliceVar(&createKeywords, "keywords", []string{}, "Comma-separated keywords")
 	CreateCmd.Flags().BoolVar(&createPublic, "public", false, "Make flow publicly visible")
+
+	// Authentication policy flags (Python SDK v4.1.0)
+	CreateCmd.Flags().BoolVar(&createHighAssurance, "high-assurance", false, "Require high-assurance authentication for flow runs")
+	CreateCmd.Flags().BoolVar(&createRequiredMFA, "required-mfa", false, "Require multi-factor authentication for flow runs")
+	CreateCmd.Flags().StringSliceVar(&createSessionPolicies, "session-policies", []string{}, "Named authentication session policies required for flow runs")
 
 	CreateCmd.MarkFlagRequired("title")
 	CreateCmd.MarkFlagRequired("definition-file")
@@ -134,6 +144,21 @@ func runFlowsCreate(cmd *cobra.Command, args []string) error {
 		InputSchema: inputSchema,
 		Keywords:    createKeywords,
 		Public:      createPublic,
+	}
+
+	// Apply authentication policy if any policy flag was set
+	if createHighAssurance || createRequiredMFA || len(createSessionPolicies) > 0 {
+		policy := &flows.FlowAuthenticationPolicy{}
+		if createHighAssurance {
+			policy.HighAssurance = &createHighAssurance
+		}
+		if createRequiredMFA {
+			policy.RequiredMFA = &createRequiredMFA
+		}
+		if len(createSessionPolicies) > 0 {
+			policy.SessionPolicies = createSessionPolicies
+		}
+		request.AuthenticationPolicy = policy
 	}
 
 	// Create flow

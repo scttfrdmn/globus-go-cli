@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 package cmd
 
 import (
@@ -19,7 +19,7 @@ var (
 )
 
 // Version is set during the build process
-var Version = "3.39.0-1"
+var Version = "4.5.0-1"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

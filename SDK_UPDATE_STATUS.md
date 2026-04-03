@@ -1,12 +1,26 @@
 # SDK Update Status Report
 
 ## Overview
-This document summarizes the current status of our attempt to update the Globus Go CLI to use the latest Globus Go SDK versions.
+This document summarizes the current status of the Globus Go CLI SDK dependency.
 
-## Current Status
-- **Branch**: feature/sdk-v3.62.0-1-update
-- **SDK Version**: v3.62.0-1
-- **Status**: Success - All tests pass and CLI is functional with SDK v3.62.0-1
+## Current Status (2026-04-03)
+- **SDK Module**: `github.com/scttfrdmn/globus-go-sdk/v3`
+- **SDK Version**: Local workspace at Python SDK v4.5.0 parity (go.work)
+- **Last Released Tag**: `v3.65.0-1` (go.mod); local SDK used via go.work for new APIs
+- **CLI Version**: `4.5.0-1`
+- **Status**: All tests pass; all new SDK APIs since v3.65.0-1 implemented in CLI
+
+### SDK Delta Since v3.65.0-1 (All Implemented)
+
+| SDK Equivalent | Feature | CLI Command |
+|---|---|---|
+| Python SDK v4.0.0 | `search.ReopenIndex` | `globus search index reopen` |
+| Python SDK v4.0.1 | Transfer `SetSubscriptionAdminVerified` fix | Bug fix (no new command) |
+| Python SDK v4.1.0 | `flows.FlowAuthenticationPolicy` | `--high-assurance`, `--required-mfa`, `--session-policies` on `flows create/update` |
+| Python SDK v4.2.0 | `timers.FlowUserScope`, client `Close()` | Internal SDK utility |
+| Python SDK v4.3.0 | Transfer Streams/Tunnels API | `globus transfer tunnel *` + `stream-access-point show` |
+| Python SDK v4.4.0 | `GetTunnelEvents` | `globus transfer tunnel events` |
+| Python SDK v4.4.0 | Groups `SetSubscriptionAdminVerified` fix | Bug fix (no new command) |
 
 ### SDK v3.62.0-1 Update Success
 Successfully updated from SDK v3.61.0-1 to v3.62.0-1 with full compatibility:

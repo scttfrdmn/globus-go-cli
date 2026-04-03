@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 package cmd
 
 import (
@@ -22,8 +22,10 @@ Available Commands:
   ls          List directory contents on an endpoint
   mkdir       Create a directory on an endpoint
   rm          Remove files and directories from an endpoint
-  cp          Transfer files between endpoints
-  task        Manage transfer tasks
+  cp                  Transfer files between endpoints
+  task                Manage transfer tasks
+  tunnel              Manage Globus Streams tunnels
+  stream-access-point Manage Globus Streams access points
 
 Examples:
   globus transfer endpoint list               List your endpoints
@@ -42,6 +44,8 @@ Examples:
 		transfer.CpCmd(),
 		transfer.RmCmd(),
 		transfer.TaskCmd(),
+		transfer.TunnelCmd(),
+		transfer.StreamAccessPointCmd(),
 	)
 
 	return transferCmd

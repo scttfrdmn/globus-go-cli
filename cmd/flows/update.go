@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 package flows
 
 import (
@@ -18,12 +18,17 @@ import (
 )
 
 var (
-	updateTitle         string
-	updateDescription   string
+	updateTitle          string
+	updateDescription    string
 	updateDefinitionFile string
-	updateSchemaFile    string
-	updateKeywords      []string
-	updatePublic        *bool
+	updateSchemaFile     string
+	updateKeywords       []string
+	updatePublic         *bool
+
+	// Authentication policy flags (Python SDK v4.1.0)
+	updateHighAssurance   bool
+	updateRequiredMFA     bool
+	updateSessionPolicies []string
 )
 
 // UpdateCmd represents the flows update command
@@ -65,6 +70,11 @@ func init() {
 	var publicFlag bool
 	UpdateCmd.Flags().BoolVar(&publicFlag, "public", false, "Make flow publicly visible")
 	updatePublic = &publicFlag
+
+	// Authentication policy flags (Python SDK v4.1.0)
+	UpdateCmd.Flags().BoolVar(&updateHighAssurance, "high-assurance", false, "Require high-assurance authentication for flow runs")
+	UpdateCmd.Flags().BoolVar(&updateRequiredMFA, "required-mfa", false, "Require multi-factor authentication for flow runs")
+	UpdateCmd.Flags().StringSliceVar(&updateSessionPolicies, "session-policies", []string{}, "Named authentication session policies required for flow runs")
 }
 
 func runFlowsUpdate(cmd *cobra.Command, args []string) error {
@@ -113,6 +123,21 @@ func runFlowsUpdate(cmd *cobra.Command, args []string) error {
 
 	if cmd.Flags().Changed("public") {
 		request.Public = updatePublic
+	}
+
+	// Apply authentication policy if any policy flag was changed
+	if cmd.Flags().Changed("high-assurance") || cmd.Flags().Changed("required-mfa") || cmd.Flags().Changed("session-policies") {
+		policy := &flows.FlowAuthenticationPolicy{}
+		if cmd.Flags().Changed("high-assurance") {
+			policy.HighAssurance = &updateHighAssurance
+		}
+		if cmd.Flags().Changed("required-mfa") {
+			policy.RequiredMFA = &updateRequiredMFA
+		}
+		if cmd.Flags().Changed("session-policies") {
+			policy.SessionPolicies = updateSessionPolicies
+		}
+		request.AuthenticationPolicy = policy
 	}
 
 	// Get current profile

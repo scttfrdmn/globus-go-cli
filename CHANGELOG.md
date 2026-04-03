@@ -7,7 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added - Major Feature Release 🎉
+## [4.5.0-1] - 2026-04-03
+
+### Added
+- **Transfer: Globus Streams Tunnels** (`globus transfer tunnel`) — new subcommand group tracking Python SDK v4.3.0/v4.4.0:
+  - `tunnel create` — create a new streaming tunnel (`--name`, `--source-endpoint`, `--source-path`, `--expires-in`)
+  - `tunnel list` — list tunnels owned by the current user
+  - `tunnel show TUNNEL_ID` — show tunnel details
+  - `tunnel update TUNNEL_ID` — update tunnel display name
+  - `tunnel delete TUNNEL_ID` — permanently delete a tunnel
+  - `tunnel events TUNNEL_ID` — list events for a tunnel (Python SDK v4.4.0)
+- **Transfer: Globus Streams Access Points** (`globus transfer stream-access-point`) — new subcommand group:
+  - `stream-access-point show ACCESS_POINT_ID` — show stream access point details and URL
+- **Search: Index Reopen** (`globus search index reopen INDEX_ID`) — reopen a previously deleted index (Python SDK v4.0.0)
+- **Flows: Authentication Policy** — `globus flows create` and `globus flows update` now accept:
+  - `--high-assurance` — require high-assurance authentication for flow runs
+  - `--required-mfa` — require multi-factor authentication for flow runs
+  - `--session-policies` — specify named session policies (Python SDK v4.1.0)
+
+### Changed
+- CLI version bumped to `4.5.0-1`, aligned with Go SDK tracking of Python SDK v4.5.0
+- Copyright year updated to 2025-2026 across all source files
+- `go.work` updated to reference local SDK for workspace-mode development
+
+### Technical
+- SDK dependency: `github.com/scttfrdmn/globus-go-sdk/v3` — local workspace at Python SDK v4.5.0 parity
+- New files: `cmd/transfer/tunnel.go`, `cmd/transfer/stream_access_point.go`, `cmd/search/index_reopen.go`
+
+## [3.39.0-1] - 2025-10-25
+
+### Added - Major Feature Release
 - **Complete Groups Service** (12 commands, 80% coverage)
   - Group management: create, list, show, update, delete
   - Membership management: add/remove members, list members

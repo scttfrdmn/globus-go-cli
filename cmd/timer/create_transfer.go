@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 
 // NOTE: This implementation uses direct HTTP calls to the Globus Timers v2 API
 // because the Go SDK v3.65.0-1 does not yet support transfer timers.
