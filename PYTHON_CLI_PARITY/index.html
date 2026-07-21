@@ -12,31 +12,27 @@
         <meta name="author" content="Scott Friedman">
       
       
-        <link rel="canonical" href="https://scttfrdmn.github.io/globus-go-cli/reference/groups/">
+        <link rel="canonical" href="https://scttfrdmn.github.io/globus-go-cli/PYTHON_CLI_PARITY/">
       
       
-        <link rel="prev" href="../search/">
-      
-      
-        <link rel="next" href="../flows/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
-        <title>Groups Commands - Globus Go CLI Documentation</title>
+        <title>PYTHON CLI PARITY - Globus Go CLI Documentation</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -55,7 +51,7 @@
       
     
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#groups-commands" class="md-skip">
+        <a href="#parity-with-the-upstream-python-globus-cli" class="md-skip">
           Skip to content
         </a>
       
@@ -98,7 +94,7 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Globus Go CLI Documentation" class="md-header__button md-logo" aria-label="Globus Go CLI Documentation" data-md-component="logo">
+    <a href=".." title="Globus Go CLI Documentation" class="md-header__button md-logo" aria-label="Globus Go CLI Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -118,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Groups Commands
+              PYTHON CLI PARITY
             
           </span>
         </div>
@@ -231,7 +227,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href=".." class="md-tabs__link">
         
   
   
@@ -252,7 +248,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../getting-started/installation/" class="md-tabs__link">
+        <a href="../getting-started/installation/" class="md-tabs__link">
           
   
   
@@ -268,13 +264,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../reference/" class="md-tabs__link">
           
   
   
@@ -294,7 +288,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../guides/common-tasks/" class="md-tabs__link">
+        <a href="../guides/common-tasks/" class="md-tabs__link">
           
   
   
@@ -314,7 +308,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../changelog/" class="md-tabs__link">
+        <a href="../changelog/" class="md-tabs__link">
           
   
   
@@ -348,7 +342,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Globus Go CLI Documentation" class="md-nav__button md-logo" aria-label="Globus Go CLI Documentation" data-md-component="logo">
+    <a href=".." title="Globus Go CLI Documentation" class="md-nav__button md-logo" aria-label="Globus Go CLI Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -378,7 +372,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -457,7 +451,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/installation/" class="md-nav__link">
+      <a href="../getting-started/installation/" class="md-nav__link">
         
   
   
@@ -485,7 +479,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/quickstart/" class="md-nav__link">
+      <a href="../getting-started/quickstart/" class="md-nav__link">
         
   
   
@@ -513,7 +507,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/authentication/" class="md-nav__link">
+      <a href="../getting-started/authentication/" class="md-nav__link">
         
   
   
@@ -541,7 +535,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting-started/configuration/" class="md-nav__link">
+      <a href="../getting-started/configuration/" class="md-nav__link">
         
   
   
@@ -573,31 +567,26 @@
       
   
   
-    
   
   
-  
     
     
     
     
-      
-        
-        
       
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
             
   
   
@@ -615,7 +604,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -633,7 +622,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../reference/" class="md-nav__link">
         
   
   
@@ -661,7 +650,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../auth/" class="md-nav__link">
+      <a href="../reference/auth/" class="md-nav__link">
         
   
   
@@ -689,7 +678,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../transfer/" class="md-nav__link">
+      <a href="../reference/transfer/" class="md-nav__link">
         
   
   
@@ -717,7 +706,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../search/" class="md-nav__link">
+      <a href="../reference/search/" class="md-nav__link">
         
   
   
@@ -742,37 +731,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Groups Commands
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../reference/groups/" class="md-nav__link">
         
   
   
@@ -788,70 +750,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#globus-groups-list" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        globus groups list
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#globus-groups-show" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        globus groups show
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#globus-groups-member-add" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        globus groups member add
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See Also
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -864,7 +762,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../flows/" class="md-nav__link">
+      <a href="../reference/flows/" class="md-nav__link">
         
   
   
@@ -892,7 +790,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../timers/" class="md-nav__link">
+      <a href="../reference/timers/" class="md-nav__link">
         
   
   
@@ -920,7 +818,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../compute/" class="md-nav__link">
+      <a href="../reference/compute/" class="md-nav__link">
         
   
   
@@ -1007,7 +905,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/common-tasks/" class="md-nav__link">
+      <a href="../guides/common-tasks/" class="md-nav__link">
         
   
   
@@ -1035,7 +933,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/output-formats/" class="md-nav__link">
+      <a href="../guides/output-formats/" class="md-nav__link">
         
   
   
@@ -1063,7 +961,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/environment-variables/" class="md-nav__link">
+      <a href="../guides/environment-variables/" class="md-nav__link">
         
   
   
@@ -1091,7 +989,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/migration/" class="md-nav__link">
+      <a href="../guides/migration/" class="md-nav__link">
         
   
   
@@ -1178,7 +1076,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../changelog/" class="md-nav__link">
+      <a href="../changelog/" class="md-nav__link">
         
   
   
@@ -1206,7 +1104,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../contributing/" class="md-nav__link">
+      <a href="../contributing/" class="md-nav__link">
         
   
   
@@ -1234,7 +1132,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../license/" class="md-nav__link">
+      <a href="../license/" class="md-nav__link">
         
   
   
@@ -1289,10 +1187,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#globus-groups-list" class="md-nav__link">
+  <a href="#coverage-by-area" class="md-nav__link">
     <span class="md-ellipsis">
       
-        globus groups list
+        Coverage by area
       
     </span>
   </a>
@@ -1300,10 +1198,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#globus-groups-show" class="md-nav__link">
+  <a href="#gap-classification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        globus groups show
+        Gap classification
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Gap classification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-cli-gaps-the-go-sdk-already-supports-exposing-them-is-cli-only-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. CLI gaps the Go SDK already supports (exposing them is CLI-only work)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-gaps-with-no-v3-sdk-support-need-sdk-work-first-or-are-out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        B. Gaps with no v3 SDK support (need SDK work first, or are out of scope)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compute-is-a-go-only-extension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compute is a Go-only extension
       
     </span>
   </a>
@@ -1311,21 +1248,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#globus-groups-member-add" class="md-nav__link">
+  <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
       
-        globus groups member add
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#see-also" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        See Also
+        Summary
       
     </span>
   </a>
@@ -1352,24 +1278,192 @@
   
 
 
-<h1 id="groups-commands">Groups Commands<a class="headerlink" href="#groups-commands" title="Permanent link">&para;</a></h1>
-<p>Commands for group membership and policy management.</p>
-<h2 id="globus-groups-list">globus groups list<a class="headerlink" href="#globus-groups-list" title="Permanent link">&para;</a></h2>
-<p>List groups you have access to.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>globus<span class="w"> </span>groups<span class="w"> </span>list
-</code></pre></div>
-<h2 id="globus-groups-show">globus groups show<a class="headerlink" href="#globus-groups-show" title="Permanent link">&para;</a></h2>
-<p>Show details for a specific group.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>globus<span class="w"> </span>groups<span class="w"> </span>show<span class="w"> </span>GROUP_ID
-</code></pre></div>
-<h2 id="globus-groups-member-add">globus groups member add<a class="headerlink" href="#globus-groups-member-add" title="Permanent link">&para;</a></h2>
-<p>Add a member to a group.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>globus<span class="w"> </span>groups<span class="w"> </span>member<span class="w"> </span>add<span class="w"> </span>GROUP_ID<span class="w"> </span>USER_ID<span class="w"> </span><span class="o">[</span>flags<span class="o">]</span>
-</code></pre></div>
-<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors -->
+
+<h1 id="parity-with-the-upstream-python-globus-cli">Parity with the upstream Python Globus CLI<a class="headerlink" href="#parity-with-the-upstream-python-globus-cli" title="Permanent link">&para;</a></h1>
+<p>This tracks the Go CLI's command coverage against the reference
+<a href="https://github.com/globus/globus-cli">Globus CLI (Python)</a>. It is a
+functional comparison, not a 1:1 command-path map — the two CLIs organize
+commands differently (the Go CLI nests task/endpoint commands under each
+service; the Python CLI is flatter, e.g. top-level <code>task</code>, <code>bookmark</code>,
+<code>collection</code>, <code>endpoint</code>).</p>
 <ul>
-<li><a href="../">Command Reference</a></li>
+<li><strong>Python globus-cli compared:</strong> 3.42.0 (latest at time of writing), 164 commands.</li>
+<li><strong>Go CLI:</strong> ~112 command paths across auth, transfer, search, groups, flows,
+  compute, timer, config.</li>
 </ul>
+<p>Note the version numbers are independent: the Go CLI tracks the Globus <strong>SDK</strong>
+(Python globus-sdk 3.65.0), while the Python <strong>CLI</strong> versions separately (3.42.0).</p>
+<h2 id="coverage-by-area">Coverage by area<a class="headerlink" href="#coverage-by-area" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Python CLI</th>
+<th>Go CLI</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Login / logout / whoami</td>
+<td>✅</td>
+<td>✅ (<code>auth login/logout/whoami</code>)</td>
+<td>Covered</td>
+</tr>
+<tr>
+<td>Identity lookup</td>
+<td><code>get-identities</code></td>
+<td>✅ (<code>auth identities lookup</code>)</td>
+<td>Covered</td>
+</tr>
+<tr>
+<td>Transfer submit / ls / mkdir / rename / rm / stat</td>
+<td>✅</td>
+<td>Partial — <code>cp</code>, <code>ls</code>, <code>mkdir</code>, <code>rm</code>; <strong>no <code>rename</code>, no <code>stat</code></strong></td>
+<td>Gap: rename, stat</td>
+</tr>
+<tr>
+<td>Tasks (show/list/cancel/wait/event-list/pause-info/update)</td>
+<td>✅ (8)</td>
+<td>Partial — show/list/cancel/wait; <strong>no event-list, pause-info, update, generate-submission-id</strong></td>
+<td>Gap</td>
+</tr>
+<tr>
+<td>Endpoint search / show / update / delete</td>
+<td>✅</td>
+<td>Partial — search/show/list; <strong>no update/delete</strong></td>
+<td>Gap</td>
+</tr>
+<tr>
+<td>Endpoint roles</td>
+<td>✅ (create/delete/list/show)</td>
+<td>❌ none</td>
+<td>Gap</td>
+</tr>
+<tr>
+<td>Endpoint permissions (ACLs)</td>
+<td>✅ (5)</td>
+<td>❌ none</td>
+<td>Gap</td>
+</tr>
+<tr>
+<td>Bookmarks</td>
+<td>✅ (5)</td>
+<td>❌ none</td>
+<td>Gap</td>
+</tr>
+<tr>
+<td>Collections / GCS management</td>
+<td>✅ (<code>collection</code>, <code>gcs</code>, 32 cmds)</td>
+<td>❌ none</td>
+<td>Gap (no SDK support)</td>
+</tr>
+<tr>
+<td>GCP (Connect Personal)</td>
+<td>✅ (6)</td>
+<td>❌ none</td>
+<td>Gap (no SDK support)</td>
+</tr>
+<tr>
+<td>Streams / tunnels</td>
+<td>✅ (8)</td>
+<td>Stubs (report "unavailable")</td>
+<td>Gap (not in v3 SDK)</td>
+</tr>
+<tr>
+<td>Search (index/query/ingest/task/role/subject)</td>
+<td>✅ (14)</td>
+<td>✅ comparable</td>
+<td>Covered</td>
+</tr>
+<tr>
+<td>Groups (member/role/policy/invite/join/leave)</td>
+<td>✅ (19)</td>
+<td>Partial — create/delete/list/show/update, member add/invite/list/remove, join/leave; <strong>no group role commands</strong></td>
+<td>Mostly covered</td>
+</tr>
+<tr>
+<td>Flows (create/run/list/show/update/validate/logs)</td>
+<td>✅ (17)</td>
+<td>✅ comparable</td>
+<td>Covered</td>
+</tr>
+<tr>
+<td>Timers</td>
+<td>✅ (7)</td>
+<td>✅ (create/list/show/pause/resume/delete)</td>
+<td>Covered</td>
+</tr>
+<tr>
+<td><code>api</code> raw passthrough</td>
+<td>✅ (7 services)</td>
+<td>❌ none</td>
+<td>Gap</td>
+</tr>
+<tr>
+<td><code>session</code> (consent/show/update)</td>
+<td>✅ (3)</td>
+<td>❌ none</td>
+<td>Gap</td>
+</tr>
+<tr>
+<td>Compute</td>
+<td>❌ (not in Python CLI)</td>
+<td>✅ (endpoint/function/task)</td>
+<td>Go-only extension</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gap-classification">Gap classification<a class="headerlink" href="#gap-classification" title="Permanent link">&para;</a></h2>
+<p>Two kinds of gap, important to distinguish:</p>
+<h3 id="a-cli-gaps-the-go-sdk-already-supports-exposing-them-is-cli-only-work">A. CLI gaps the Go SDK already supports (exposing them is CLI-only work)<a class="headerlink" href="#a-cli-gaps-the-go-sdk-already-supports-exposing-them-is-cli-only-work" title="Permanent link">&para;</a></h3>
+<p>The v3 SDK parity audit added the wire methods for most of these; the CLI simply
+hasn't wired up commands yet:</p>
+<ul>
+<li><strong>Bookmarks</strong> — SDK: <code>BookmarkList</code>/<code>CreateBookmark</code>/<code>GetBookmark</code>/
+  <code>UpdateBookmark</code>/<code>DeleteBookmark</code>.</li>
+<li><strong>Endpoint roles</strong> — SDK: <code>EndpointRoleList</code>/<code>AddEndpointRole</code>/
+  <code>GetEndpointRole</code>/<code>DeleteEndpointRole</code>.</li>
+<li><strong>Endpoint ACLs / permissions</strong> — SDK: <code>EndpointACLList</code>/<code>GetEndpointACLRule</code>/
+  <code>AddEndpointACLRule</code>/<code>UpdateEndpointACLRule</code>/<code>DeleteEndpointACLRule</code>.</li>
+<li><strong>Endpoint update/delete, set-subscription-id, shared-endpoint list</strong> — SDK:
+  <code>UpdateEndpoint</code>/<code>DeleteEndpoint</code>/<code>SetSubscriptionID</code>/<code>MySharedEndpointList</code>/
+  <code>GetSharedEndpointList</code>.</li>
+<li><strong>Transfer <code>stat</code></strong> — SDK: <code>OperationStat</code>. <strong><code>rename</code></strong> — SDK: <code>Rename</code>.</li>
+<li><strong>Task <code>event-list</code>/<code>pause-info</code>/<code>update</code></strong> — SDK: <code>TaskEventList</code>/
+  <code>TaskPauseInfo</code>/<code>UpdateTask</code> (+ <code>TaskSuccessfulTransfers</code>/<code>TaskSkippedErrors</code>).</li>
+<li><strong>Endpoint-manager admin surface</strong> — SDK: full <code>EndpointManager*</code> family.</li>
+<li><strong>Group roles</strong>, <strong>session/consents</strong> — SDK: groups membership actions and
+  auth <code>GetConsents</code>/<code>GetIdentities</code> exist.</li>
+</ul>
+<h3 id="b-gaps-with-no-v3-sdk-support-need-sdk-work-first-or-are-out-of-scope">B. Gaps with no v3 SDK support (need SDK work first, or are out of scope)<a class="headerlink" href="#b-gaps-with-no-v3-sdk-support-need-sdk-work-first-or-are-out-of-scope" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>GCS / collections management</strong> (<code>collection</code>, <code>gcs</code>, ~32 commands) — there is
+  <strong>no v3 <code>gcs</code> service</strong> in the Go SDK. The v4 SDK module has a <code>gcs</code> service;
+  full support would require either a v4-based CLI or a v3 gcs port.</li>
+<li><strong>GCP (Globus Connect Personal)</strong> — local-agent management; not an SDK API.</li>
+<li><strong>Streams / tunnels</strong> — a Python globus-sdk v4.3.0+ feature, absent from the
+  frozen v3 SDK. Present as "unavailable" stubs.</li>
+<li><strong><code>api</code> raw passthrough</strong> — convenience for arbitrary API calls; no SDK method,
+  would be a thin HTTP wrapper.</li>
+</ul>
+<h2 id="compute-is-a-go-only-extension">Compute is a Go-only extension<a class="headerlink" href="#compute-is-a-go-only-extension" title="Permanent link">&para;</a></h2>
+<p>The Go CLI exposes a <code>compute</code> command tree; the Python CLI has <strong>no</strong> compute
+commands (Globus Compute has its own separate <code>globus-compute</code> CLI). The Go
+compute commands are limited by the Compute web API (no list/cancel/run of tasks
+or functions server-side — those require the Globus Compute serialization SDK).</p>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>The Go CLI covers the <strong>core data-management workflows</strong> (transfer, search,
+groups, flows, timers, auth) at rough parity with the Python CLI's most-used
+commands, plus a compute extension. The material gaps are:</p>
+<ol>
+<li><strong>Endpoint administration</strong> (roles, ACLs/permissions, update/delete) and
+   <strong>bookmarks</strong> — all SDK-supported; CLI wiring is the remaining work.</li>
+<li><strong>GCS/collections and GCP</strong> — larger, need a v4-gcs path or are out of scope.</li>
+<li><strong><code>api</code> passthrough</strong> and <strong><code>session</code></strong> — convenience features.</li>
+</ol>
 
 
 
@@ -1392,7 +1486,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 26, 2025 18:03:25 UTC">October 26, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 02:50:55 UTC">July 21, 2026</span>
   </span>
 
     
@@ -1402,7 +1496,7 @@
     <span class="md-icon" title="Created">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 26, 2025 18:03:25 UTC">October 26, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 02:50:55 UTC">July 21, 2026</span>
   </span>
 
     
@@ -1473,10 +1567,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
