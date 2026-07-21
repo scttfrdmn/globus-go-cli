@@ -106,10 +106,10 @@ func init() {
 	CreateTransferCmd.Flags().StringArrayVar(&createTransferInclude, "include", []string{}, "Include patterns")
 	CreateTransferCmd.Flags().StringArrayVar(&createTransferExclude, "exclude", []string{}, "Exclude patterns")
 
-	CreateTransferCmd.MarkFlagRequired("name")
-	CreateTransferCmd.MarkFlagRequired("source")
-	CreateTransferCmd.MarkFlagRequired("dest")
-	CreateTransferCmd.MarkFlagRequired("interval")
+	_ = CreateTransferCmd.MarkFlagRequired("name")
+	_ = CreateTransferCmd.MarkFlagRequired("source")
+	_ = CreateTransferCmd.MarkFlagRequired("dest")
+	_ = CreateTransferCmd.MarkFlagRequired("interval")
 }
 
 func runCreateTransferTimer(cmd *cobra.Command, args []string) error {

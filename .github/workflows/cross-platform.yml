@@ -14,16 +14,17 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go-version: ['1.20', '1.21']
+        go-version: ['1.22', '1.23']
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+          cache: true
 
       - name: Get dependencies
         run: go mod download
@@ -36,14 +37,14 @@ jobs:
 
       - name: Upload binary (Unix)
         if: matrix.os != 'windows-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: globus-${{ matrix.os }}-go${{ matrix.go-version }}
           path: globus
 
       - name: Upload binary (Windows)
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: globus-${{ matrix.os }}-go${{ matrix.go-version }}
           path: globus.exe

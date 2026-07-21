@@ -4,6 +4,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -105,9 +106,11 @@ func TestGetConfigFilePath(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	// Verify the path ends with .globus-cli/config.yaml
-	if !strings.HasSuffix(configPath, ".globus-cli/config.yaml") {
-		t.Errorf("Expected path to end with .globus-cli/config.yaml, got %s", configPath)
+	// Verify the path ends with .globus-cli/config.yaml (use the OS-native
+	// separator so this passes on Windows too).
+	wantSuffix := filepath.Join(".globus-cli", "config.yaml")
+	if !strings.HasSuffix(configPath, wantSuffix) {
+		t.Errorf("Expected path to end with %s, got %s", wantSuffix, configPath)
 	}
 
 	// Verify the path is based on user home directory

@@ -57,7 +57,7 @@ func init() {
 	QueryCmd.Flags().IntVar(&queryOffset, "offset", 0, "Offset for pagination")
 	QueryCmd.Flags().BoolVar(&queryAdvanced, "advanced", false, "Use advanced query syntax")
 
-	QueryCmd.MarkFlagRequired("query")
+	_ = QueryCmd.MarkFlagRequired("query")
 }
 
 func runSearchQuery(cmd *cobra.Command, args []string) error {

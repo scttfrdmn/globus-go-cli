@@ -27,12 +27,20 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
 
-      - name: Run tests
+      # -race requires a C toolchain (CGO); Windows runners lack one by default,
+      # so run the race detector + coverage on Linux/macOS and a plain test on
+      # Windows.
+      - name: Run tests (race + coverage)
+        if: matrix.os != 'windows-latest'
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Run tests (Windows)
+        if: matrix.os == 'windows-latest'
+        run: go test -v ./...
 
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.22'
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./coverage.txt
           flags: unittests
@@ -72,7 +80,10 @@ jobs:
           cache: true
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v4
+        # v7+ of the action is required to run golangci-lint v2, which our
+        # .golangci.yml (version: "2") targets. v6 installs the v1.x line and
+        # rejects the v2 config.
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: latest
+          version: v2.12.2
           args: --timeout=5m

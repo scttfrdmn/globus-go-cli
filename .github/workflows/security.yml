@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025-2026 Scott Friedman and Project Contributors
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0' # weekly
+
+jobs:
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Run gosec
+        # Pin gosec to a version compatible with the Go toolchain; advisory only.
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.22.0 || true
+          "$(go env GOPATH)/bin/gosec" ./... || echo "gosec found issues (advisory)"
+        continue-on-error: true
+
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: '1.22'
+          go-package: ./...
+        continue-on-error: true

@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [1.21.x, 1.22.x]
+        go-version: [1.23.x, 1.22.x]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Go
       uses: actions/setup-go@v3
@@ -23,14 +23,13 @@ jobs:
         go-version: ${{ matrix.go-version }}
     
     - name: Install dependencies
-      run: |
-        go mod download
-        go install golang.org/x/lint/golint@latest
-    
+      run: go mod download
+
     - name: Run linters
-      run: |
-        go vet ./...
-        golint -set_exit_status ./...
+      # golint is deprecated/archived and flags every SPDX-headed file for a
+      # missing "Package X ..." doc comment; go vet is the gating check here and
+      # golangci-lint runs in the Build workflow.
+      run: go vet ./...
     
     - name: Run unit tests with coverage
       run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
@@ -48,12 +47,12 @@ jobs:
     needs: test
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.21.x
+        go-version: 1.23.x
     
     - name: Install dependencies
       run: go mod download

@@ -11,7 +11,6 @@ import (
 var (
 	updateName        string
 	updateDescription string
-	updatePublic      *bool
 )
 
 // FunctionUpdateCmd represents the compute function update command
@@ -31,10 +30,8 @@ func init() {
 	FunctionUpdateCmd.Flags().StringVar(&updateName, "name", "", "New function name")
 	FunctionUpdateCmd.Flags().StringVar(&updateDescription, "description", "", "New function description")
 
-	// Use a pointer so we can detect if flag was set
 	var publicFlag bool
 	FunctionUpdateCmd.Flags().BoolVar(&publicFlag, "public", false, "Make function publicly visible")
-	updatePublic = &publicFlag
 }
 
 func runFunctionUpdate(cmd *cobra.Command, args []string) error {

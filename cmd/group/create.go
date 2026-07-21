@@ -47,7 +47,7 @@ func init() {
 	CreateCmd.Flags().StringVar(&createName, "name", "", "Name for the new group (required)")
 	CreateCmd.Flags().StringVar(&createDescription, "description", "", "Description of the group")
 	CreateCmd.Flags().BoolVar(&createPublic, "public", false, "Make the group publicly visible")
-	CreateCmd.MarkFlagRequired("name")
+	_ = CreateCmd.MarkFlagRequired("name")
 }
 
 func runCreateGroup(cmd *cobra.Command, args []string) error {

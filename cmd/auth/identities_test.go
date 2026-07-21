@@ -128,7 +128,7 @@ func TestIdentitiesLookupCmd_Username(t *testing.T) {
 	lookupCmd := setupLookupTest(t)
 
 	// Set the flags
-	lookupCmd.Flags().Set("username", "testuser")
+	_ = lookupCmd.Flags().Set("username", "testuser")
 
 	// Execute the command and capture output
 	stdout, _ := testhelpers.CaptureOutput(func() {
@@ -158,7 +158,7 @@ func TestIdentitiesLookupCmd_Email(t *testing.T) {
 	lookupCmd := setupLookupTest(t)
 
 	// Set the flags
-	lookupCmd.Flags().Set("email", "test@example.com")
+	_ = lookupCmd.Flags().Set("email", "test@example.com")
 
 	// Execute the command and capture output
 	stdout, _ := testhelpers.CaptureOutput(func() {
@@ -187,7 +187,7 @@ func TestIdentitiesLookupCmd_ID(t *testing.T) {
 	lookupCmd := setupLookupTest(t)
 
 	// Set the flags
-	lookupCmd.Flags().Set("id", "urn:globus:auth:identity:54321")
+	_ = lookupCmd.Flags().Set("id", "urn:globus:auth:identity:54321")
 
 	// Execute the command and capture output
 	stdout, _ := testhelpers.CaptureOutput(func() {

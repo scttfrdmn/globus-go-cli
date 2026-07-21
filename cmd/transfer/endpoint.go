@@ -44,7 +44,7 @@ var (
 	filterIsManagedBy  string
 	filterOrganization string
 	filterRole         string
-	filterSubscribeId  string
+	filterSubscribeID  string
 	filterMyTasksOnly  bool
 	searchText         string
 	limit              int
@@ -70,7 +70,7 @@ with filtering options to narrow down the results.`,
 	cmd.Flags().StringVar(&filterIsManagedBy, "managed-by", "", "Filter by managing entity")
 	cmd.Flags().StringVar(&filterOrganization, "organization", "", "Filter by organization")
 	cmd.Flags().StringVar(&filterRole, "role", "", "Filter by role (manager, administrator, etc.)")
-	cmd.Flags().StringVar(&filterSubscribeId, "subscription", "", "Filter by subscription ID")
+	cmd.Flags().StringVar(&filterSubscribeID, "subscription", "", "Filter by subscription ID")
 	cmd.Flags().BoolVar(&filterMyTasksOnly, "my-tasks", false, "Show only endpoints with my tasks")
 	cmd.Flags().StringVar(&searchText, "search", "", "Search text to filter endpoints")
 	cmd.Flags().IntVar(&limit, "limit", 25, "Maximum number of endpoints to return")

@@ -1,17 +1,46 @@
+version: "2"
 run:
-  timeout: 5m
-  go: '1.21'
-
+  go: "1.22"
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
     - unused
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/scttfrdmn/globus-go-cli
+  settings:
+    staticcheck:
+      # Keep correctness checks; drop the stylistic quickfix (QF*) rules and the
+      # error-string-formatting nits (ST1005) that add churn without catching bugs.
+      checks:
+        - all
+        - -QF1003
+        - -QF1012
+        - -ST1005
+    govet:
+      # reflect.Ptr is a valid alias; the "inline" suggestion is stylistic.
+      disable:
+        - inline
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/scttfrdmn/globus-go-cli
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

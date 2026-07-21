@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -160,6 +159,11 @@ func saveToken(profile string, token *TokenInfo) error {
 		return fmt.Errorf("error marshaling token: %w", err)
 	}
 
+	// Ensure the tokens directory exists.
+	if err := os.MkdirAll(filepath.Dir(tokenFile), 0700); err != nil {
+		return fmt.Errorf("error creating tokens directory: %w", err)
+	}
+
 	// Write the token to the file
 	if err := os.WriteFile(tokenFile, data, 0600); err != nil {
 		return fmt.Errorf("error writing token file: %w", err)
@@ -244,22 +248,3 @@ func printTokenInfo(token *TokenInfo) {
 	}
 }
 
-// openBrowser tries to open the default browser with the given URL
-func openBrowser(url string) {
-	var err error
-
-	switch os.Getenv("GOOS") {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-
-	if err != nil {
-		fmt.Printf("Failed to open browser: %v\n", err)
-	}
-}

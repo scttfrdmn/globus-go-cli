@@ -53,7 +53,7 @@ func runDeleteGroup(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stdout, "Are you sure you want to delete this group? (yes/no): ")
 
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 
 		if response != "yes" && response != "y" {
 			fmt.Fprintf(os.Stdout, "Deletion cancelled.\n")
