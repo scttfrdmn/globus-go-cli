@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	listLimit  int
-	listOffset int
-	listFilter string
+	listLimit   int
+	listOffset  int
+	listFilter  string
 	listOrderBy string
 )
 
@@ -49,8 +49,12 @@ Examples:
 }
 
 func init() {
-	ListCmd.Flags().IntVar(&listLimit, "limit", 25, "Maximum number of flows to return")
-	ListCmd.Flags().IntVar(&listOffset, "offset", 0, "Offset for pagination")
+	// list_flows is marker-paginated; limit/offset are not accepted (kept as
+	// deprecated no-ops for compatibility).
+	ListCmd.Flags().IntVar(&listLimit, "limit", 0, "Deprecated: list_flows is marker-paginated")
+	ListCmd.Flags().IntVar(&listOffset, "offset", 0, "Deprecated: list_flows is marker-paginated")
+	_ = ListCmd.Flags().MarkDeprecated("limit", "list_flows is marker-paginated")
+	_ = ListCmd.Flags().MarkDeprecated("offset", "list_flows is marker-paginated")
 	ListCmd.Flags().StringVar(&listFilter, "filter", "", "Filter flows by text")
 	ListCmd.Flags().StringVar(&listOrderBy, "orderby", "created_at", "Order results by field (created_at, updated_at, title)")
 }
@@ -92,10 +96,9 @@ func runFlowsList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Build list options
+	// Build list options. list_flows is marker-paginated and rejects
+	// limit/offset (HTTP 422), so only filter/orderby are sent.
 	options := &flows.ListFlowsOptions{
-		Limit:   listLimit,
-		Offset:  listOffset,
 		OrderBy: listOrderBy,
 	}
 	if listFilter != "" {
