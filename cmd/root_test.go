@@ -78,8 +78,9 @@ func TestFlatCommandStructure(t *testing.T) {
 	wantTopLevel := []string{
 		"login", "logout", "whoami", "get-identities", "device", "refresh", "tokens",
 		"ls", "mkdir", "rm", "rename", "stat", "delete", "transfer", "task", "endpoint",
-		"bookmark", "tunnel", "stream-access-point",
+		"bookmark", "tunnel", "stream-access-point", "endpoint-manager",
 		"group", "search", "flows", "timer", "compute", "api", "config",
+		"list-commands", "version",
 	}
 	for _, name := range wantTopLevel {
 		if !have[name] {

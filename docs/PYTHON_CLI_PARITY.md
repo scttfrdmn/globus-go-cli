@@ -69,7 +69,14 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 | Timers | ✅ (7) | ✅ (create/list/show/pause/resume/delete) | Covered |
 | `api` raw passthrough | ✅ (7 services) | ✅ (`api auth/transfer/groups/search/flows/timer/compute`) | Covered (Phase 5) |
 | `session` (consent/show/update) | ✅ (3) | ❌ none | Gap — needs reauth/session-boundary support not in the v4 SDK (only `GetConsents`) |
+| Endpoint-manager (admin) | ✅ | ✅ (`endpoint-manager` — monitored-endpoints, task-list/show/cancel/pause/resume, pause-rule, ...) | Covered (Phase 6) |
+| Endpoint set-subscription-id / my-shared-endpoint-list | ✅ | ✅ | Covered (Phase 6) |
+| `list-commands` / `version` | ✅ | ✅ | Covered (Phase 6) |
 | Compute | ❌ (not in Python CLI) | ✅ (endpoint/function/task) | Go-only extension |
+
+**JSON output shape (Phase 6):** list commands emit the enveloped service
+document under `-F json` (`{"DATA_TYPE": ..., "DATA": [...]}`), matching the
+Python CLI, rather than a bare array. (Groups list is a bare array in both CLIs.)
 
 ## Gap classification
 

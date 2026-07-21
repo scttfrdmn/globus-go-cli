@@ -158,6 +158,12 @@ func listTasks(cmd *cobra.Command) error {
 	// Format and display the results
 	formatter := output.NewFormatter(format, cmd.OutOrStdout())
 
+	// For JSON, emit the enveloped service document ({"DATA_TYPE","DATA":[...]}),
+	// matching the Python CLI's JSON output shape.
+	if formatter.Format == output.FormatJSON {
+		return formatter.FormatOutput(tasks, nil)
+	}
+
 	// Define the headers
 	headers := []string{"TaskID", "Status", "Type", "Source", "Destination", "Label"}
 

@@ -154,7 +154,9 @@ func listBookmarks(cmd *cobra.Command) error {
 	formatter := output.NewFormatter(format, cmd.OutOrStdout())
 
 	if formatter.Format == output.FormatJSON {
-		return formatter.FormatOutput(resp.Bookmarks, nil)
+		// Emit the enveloped {"DATA":[...]} shape, matching the Python CLI. (The
+		// SDK's BookmarkList type has no DATA json tag, so wrap explicitly.)
+		return formatter.FormatOutput(map[string]interface{}{"DATA": resp.Bookmarks}, nil)
 	}
 
 	type bookmarkRow struct {

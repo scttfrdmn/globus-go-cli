@@ -99,7 +99,8 @@ func streamAccessPointListCmd() *cobra.Command {
 
 			formatter := output.NewFormatter(viper.GetString("format"), cmd.OutOrStdout())
 			if formatter.Format == output.FormatJSON {
-				return formatter.FormatOutput(resp.Data, nil)
+				// Emit the enveloped service document ({"DATA_TYPE","DATA":[...]}).
+				return formatter.FormatOutput(resp, nil)
 			}
 
 			type sapRow struct {
