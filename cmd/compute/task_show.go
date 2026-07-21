@@ -76,8 +76,8 @@ func runTaskShow(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Get task status
-	taskStatus, err := computeClient.GetTaskStatus(ctx, taskID)
+	// Get task status (GET /v2/tasks/{id}); the response is an open-ended document.
+	taskStatus, err := computeClient.GetTask(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("error getting task status: %w", err)
 	}
@@ -90,28 +90,28 @@ func runTaskShow(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Task Details\n")
 		fmt.Printf("============\n\n")
 
-		fmt.Printf("Task ID:       %s\n", taskStatus.TaskID)
-		fmt.Printf("Status:        %s\n", taskStatus.Status)
-
-		if !taskStatus.CompletedAt.IsZero() {
-			fmt.Printf("Completed:     %s\n", taskStatus.CompletedAt.Format(time.RFC3339))
+		id := mapStr(taskStatus, "task_id")
+		if id == "" {
+			id = taskID
 		}
+		fmt.Printf("Task ID:       %s\n", id)
+		fmt.Printf("Status:        %s\n", mapStr(taskStatus, "status"))
 
 		// Display result if available
-		if taskStatus.Result != nil {
+		if result, ok := taskStatus["result"]; ok && result != nil {
 			fmt.Printf("\nResult:\n")
-			resultJSON, _ := json.MarshalIndent(taskStatus.Result, "  ", "  ")
+			resultJSON, _ := json.MarshalIndent(result, "  ", "  ")
 			fmt.Printf("%s\n", string(resultJSON))
 		}
 
 		// Display exception if task failed
-		if taskStatus.Exception != "" {
-			fmt.Printf("\nException:\n%s\n", taskStatus.Exception)
+		if ex := mapStr(taskStatus, "exception"); ex != "" {
+			fmt.Printf("\nException:\n%s\n", ex)
 		}
 	} else {
-		// JSON or CSV output
+		// JSON or CSV output — emit the raw passthrough document.
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"TaskID", "Status", "CompletedAt"}
+		headers := []string{"task_id", "status", "completion_t"}
 		if err := formatter.FormatOutput(taskStatus, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}

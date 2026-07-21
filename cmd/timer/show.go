@@ -93,11 +93,8 @@ func runShowTimer(cmd *cobra.Command, args []string) error {
 		// Text output - human readable
 		fmt.Printf("Timer Information\n")
 		fmt.Printf("=================\n\n")
-		fmt.Printf("Timer ID:    %s\n", timer.ID)
+		fmt.Printf("Timer ID:    %s\n", timer.JobID)
 		fmt.Printf("Name:        %s\n", timer.Name)
-		if timer.Callback != nil {
-			fmt.Printf("Type:        %s\n", timer.Callback.Type)
-		}
 		fmt.Printf("Status:      %s\n", timer.Status)
 
 		fmt.Printf("\nSchedule\n")
@@ -106,38 +103,35 @@ func runShowTimer(cmd *cobra.Command, args []string) error {
 			if timer.Schedule.Type != "" {
 				fmt.Printf("Schedule Type: %s\n", timer.Schedule.Type)
 			}
-			if timer.Schedule.Interval != nil {
-				fmt.Printf("Interval:      %s\n", *timer.Schedule.Interval)
+			if timer.Schedule.Datetime != "" {
+				fmt.Printf("Run At:        %s\n", timer.Schedule.Datetime)
 			}
-			if timer.Schedule.CronExpression != nil {
-				fmt.Printf("Cron:          %s\n", *timer.Schedule.CronExpression)
+			if timer.Schedule.IntervalSeconds > 0 {
+				fmt.Printf("Interval:      %ds\n", timer.Schedule.IntervalSeconds)
 			}
-			if timer.Schedule.Timezone != nil {
-				fmt.Printf("Timezone:      %s\n", *timer.Schedule.Timezone)
+			if timer.Schedule.Start != "" {
+				fmt.Printf("Start Time:    %s\n", timer.Schedule.Start)
 			}
-			if timer.Schedule.StartTime != nil {
-				fmt.Printf("Start Time:    %s\n", timer.Schedule.StartTime.Format(time.RFC3339))
-			}
-			if timer.Schedule.EndTime != nil {
-				fmt.Printf("End Time:      %s\n", timer.Schedule.EndTime.Format(time.RFC3339))
+			if timer.Schedule.End != nil && timer.Schedule.End.Datetime != "" {
+				fmt.Printf("End Time:      %s\n", timer.Schedule.End.Datetime)
 			}
 		}
 
 		fmt.Printf("\nTimestamps\n")
 		fmt.Printf("----------\n")
-		fmt.Printf("Created:       %s\n", timer.CreateTime.Format(time.RFC3339))
-		fmt.Printf("Last Update:   %s\n", timer.LastUpdate.Format(time.RFC3339))
-		if timer.LastRun != nil {
-			fmt.Printf("Last Run:      %s\n", timer.LastRun.Format(time.RFC3339))
-			fmt.Printf("Last Run Status: %s\n", timer.LastRunStatus)
+		if !timer.Created.IsZero() {
+			fmt.Printf("Created:       %s\n", timer.Created.Format(time.RFC3339))
 		}
-		if timer.NextDue != nil {
-			fmt.Printf("Next Run:      %s\n", timer.NextDue.Format(time.RFC3339))
+		if !timer.LastRun.IsZero() {
+			fmt.Printf("Last Run:      %s\n", timer.LastRun.Format(time.RFC3339))
+		}
+		if !timer.NextRun.IsZero() {
+			fmt.Printf("Next Run:      %s\n", timer.NextRun.Format(time.RFC3339))
 		}
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"ID", "Name", "CallbackType", "Status", "LastRunStatus"}
+		headers := []string{"JobID", "Name", "Status", "Schedule"}
 		if err := formatter.FormatOutput(timer, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}

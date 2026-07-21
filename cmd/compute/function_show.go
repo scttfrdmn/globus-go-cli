@@ -84,56 +84,38 @@ func runFunctionShow(cmd *cobra.Command, args []string) error {
 	format := viper.GetString("format")
 
 	if format == "text" {
-		// Text output - human readable
+		// Text output - human readable. The function is an open-ended document.
 		fmt.Printf("Function Details\n")
 		fmt.Printf("================\n\n")
 
-		fmt.Printf("Function ID:   %s\n", function.ID)
-		if function.Name != "" {
-			fmt.Printf("Name:          %s\n", function.Name)
+		id := mapStr(function, "function_uuid")
+		if id == "" {
+			id = mapStr(function, "function_id")
 		}
-		if function.Description != "" {
-			fmt.Printf("Description:   %s\n", function.Description)
+		fmt.Printf("Function ID:   %s\n", id)
+		if n := mapStr(function, "function_name"); n != "" {
+			fmt.Printf("Name:          %s\n", n)
 		}
-		fmt.Printf("Status:        %s\n", function.Status)
-		fmt.Printf("Public:        %t\n", function.Public)
-		fmt.Printf("Owner:         %s\n", function.Owner)
-		if !function.CreatedAt.IsZero() {
-			fmt.Printf("Created:       %s\n", function.CreatedAt.Format(time.RFC3339))
+		if d := mapStr(function, "description"); d != "" {
+			fmt.Printf("Description:   %s\n", d)
 		}
-		if !function.ModifiedAt.IsZero() {
-			fmt.Printf("Modified:      %s\n", function.ModifiedAt.Format(time.RFC3339))
+		if b, ok := function["public"].(bool); ok {
+			fmt.Printf("Public:        %t\n", b)
 		}
 
-		// Display function code (truncated if very long)
-		if function.Function != "" {
+		// Display function code (truncated if very long) if present.
+		if code := mapStr(function, "function_code"); code != "" {
 			fmt.Printf("\nFunction Code:\n")
-			code := function.Function
 			if len(code) > 500 {
 				fmt.Printf("%s\n... (truncated, %d total characters)\n", code[:500], len(code))
 			} else {
 				fmt.Printf("%s\n", code)
 			}
 		}
-
-		// Display environment variables
-		if len(function.Environment) > 0 {
-			fmt.Printf("\nEnvironment Variables:\n")
-			for key, value := range function.Environment {
-				fmt.Printf("  %s: %s\n", key, value)
-			}
-		}
-
-		// Display container info
-		if function.Container != nil {
-			fmt.Printf("\nContainer:\n")
-			fmt.Printf("  Image:  %s\n", function.Container.Image)
-			fmt.Printf("  Type:   %s\n", function.Container.Type)
-		}
 	} else {
-		// JSON or CSV output
+		// JSON or CSV output — emit the raw passthrough document.
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"ID", "Name", "Description", "Status", "Public", "Owner", "CreatedAt", "ModifiedAt"}
+		headers := []string{"function_uuid", "function_name", "description", "public"}
 		if err := formatter.FormatOutput(function, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}

@@ -79,20 +79,16 @@ func runResumeTimer(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error getting timer: %w", err)
 	}
 
-	// Resume the timer
-	updatedTimer, err := timersClient.ResumeTimer(ctx, timerID)
-	if err != nil {
+	// Resume the timer. The optional *bool controls whether stored credentials
+	// are refreshed on resume; nil leaves them unchanged. Returns no body.
+	if err := timersClient.ResumeTimer(ctx, timerID, nil); err != nil {
 		return fmt.Errorf("error resuming timer: %w", err)
 	}
 
 	// Display success message
 	fmt.Fprintf(os.Stdout, "Timer resumed successfully!\n\n")
-	fmt.Fprintf(os.Stdout, "Timer ID:    %s\n", updatedTimer.ID)
+	fmt.Fprintf(os.Stdout, "Timer ID:    %s\n", timerID)
 	fmt.Fprintf(os.Stdout, "Name:        %s\n", timer.Name)
-	fmt.Fprintf(os.Stdout, "Status:      %s\n", updatedTimer.Status)
-	if updatedTimer.NextDue != nil {
-		fmt.Fprintf(os.Stdout, "Next Run:    %s\n", updatedTimer.NextDue.Format(time.RFC3339))
-	}
 
 	return nil
 }

@@ -80,17 +80,15 @@ func runPauseTimer(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error getting timer: %w", err)
 	}
 
-	// Pause the timer
-	updatedTimer, err := timersClient.PauseTimer(ctx, timerID)
-	if err != nil {
+	// Pause the timer (returns no body; success is signaled by a nil error).
+	if err := timersClient.PauseTimer(ctx, timerID); err != nil {
 		return fmt.Errorf("error pausing timer: %w", err)
 	}
 
 	// Display success message
 	fmt.Fprintf(os.Stdout, "Timer paused successfully!\n\n")
-	fmt.Fprintf(os.Stdout, "Timer ID:    %s\n", updatedTimer.ID)
+	fmt.Fprintf(os.Stdout, "Timer ID:    %s\n", timerID)
 	fmt.Fprintf(os.Stdout, "Name:        %s\n", timer.Name)
-	fmt.Fprintf(os.Stdout, "Status:      %s\n", updatedTimer.Status)
 
 	return nil
 }

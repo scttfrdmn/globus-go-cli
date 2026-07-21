@@ -87,14 +87,13 @@ func runSubjectDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error deleting subject: %w", err)
 	}
 
-	// Display success message
+	// Display success message. The delete response carries the top-level task_id.
 	fmt.Fprintf(os.Stdout, "Subject deletion task submitted!\n\n")
-	fmt.Fprintf(os.Stdout, "Task ID:    %s\n", response.Task.TaskID)
+	fmt.Fprintf(os.Stdout, "Task ID:    %s\n", response.TaskID)
 	fmt.Fprintf(os.Stdout, "Subject:    %s\n", subject)
-	fmt.Fprintf(os.Stdout, "Status:     %s\n", response.Task.ProcessingState)
 
-	if response.Task.TaskID != "" {
-		fmt.Fprintf(os.Stdout, "\nCheck task status with: globus search task show %s\n", response.Task.TaskID)
+	if response.TaskID != "" {
+		fmt.Fprintf(os.Stdout, "\nCheck task status with: globus search task show %s\n", response.TaskID)
 	}
 
 	return nil

@@ -86,8 +86,11 @@ func runMemberAdd(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Add member to group
-	err = groupsClient.AddMember(ctx, groupID, identityID, memberAddRole)
+	// Add member to group via a single batch membership action
+	// (POST /groups/{id}); the API has no dedicated add-member route.
+	_, err = groupsClient.BatchMembershipAction(ctx, groupID, &groups.BatchMembershipActions{
+		Add: []groups.MemberWithRole{{IdentityID: identityID, Role: memberAddRole}},
+	})
 	if err != nil {
 		return fmt.Errorf("error adding member: %w", err)
 	}

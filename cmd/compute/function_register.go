@@ -110,28 +110,27 @@ func runFunctionRegister(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Build register request
-	request := &compute.FunctionRegisterRequest{
-		Function:    functionCode,
-		Name:        registerName,
-		Description: registerDescription,
-		Public:      registerPublic,
-	}
-
-	// Register function
-	function, err := computeClient.RegisterFunction(ctx, request)
+	// Register function. The Compute API takes and returns open-ended documents.
+	function, err := computeClient.RegisterFunction(ctx, map[string]interface{}{
+		"function_name": registerName,
+		"function_code": functionCode,
+		"description":   registerDescription,
+		"public":        registerPublic,
+	})
 	if err != nil {
 		return fmt.Errorf("error registering function: %w", err)
 	}
 
-	// Display success message
-	fmt.Fprintf(os.Stdout, "Function registered successfully!\n\n")
-	fmt.Fprintf(os.Stdout, "Function ID:   %s\n", function.ID)
-	if function.Name != "" {
-		fmt.Fprintf(os.Stdout, "Name:          %s\n", function.Name)
+	// Display success message. The registered id is keyed under function_uuid.
+	functionID := mapStr(function, "function_uuid")
+	if functionID == "" {
+		functionID = mapStr(function, "function_id")
 	}
-	fmt.Fprintf(os.Stdout, "Public:        %t\n", function.Public)
-	fmt.Fprintf(os.Stdout, "Created:       %s\n", function.CreatedAt.Format(time.RFC3339))
+	fmt.Fprintf(os.Stdout, "Function registered successfully!\n\n")
+	fmt.Fprintf(os.Stdout, "Function ID:   %s\n", functionID)
+	if n := mapStr(function, "function_name"); n != "" {
+		fmt.Fprintf(os.Stdout, "Name:          %s\n", n)
+	}
 
 	return nil
 }

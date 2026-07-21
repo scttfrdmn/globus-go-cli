@@ -99,9 +99,8 @@ func runFunctionDelete(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Delete function
-	err = computeClient.DeleteFunction(ctx, functionID)
-	if err != nil {
+	// Delete function (returns the passthrough result document, ignored here)
+	if _, err = computeClient.DeleteFunction(ctx, functionID); err != nil {
 		return fmt.Errorf("error deleting function: %w", err)
 	}
 
