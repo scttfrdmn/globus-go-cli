@@ -9,12 +9,8 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/search"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -90,77 +86,50 @@ func runSearchIngest(cmd *cobra.Command, args []string) error {
 		documentsJSON = []byte(ingestData)
 	}
 
-	// Parse documents
-	var documents []search.SearchDocument
+	// Parse documents into GMeta entry documents.
+	var documents []search.GMetaEntryDocument
 	if err := json.Unmarshal(documentsJSON, &documents); err != nil {
 		// Try parsing as a single document
-		var singleDoc search.SearchDocument
+		var singleDoc search.GMetaEntryDocument
 		if err2 := json.Unmarshal(documentsJSON, &singleDoc); err2 != nil {
 			return fmt.Errorf("failed to parse documents (tried both array and single document): %w / %w", err, err2)
 		}
-		documents = []search.SearchDocument{singleDoc}
+		documents = []search.GMetaEntryDocument{singleDoc}
 	}
 
 	if len(documents) == 0 {
 		return fmt.Errorf("no documents found in input")
 	}
 
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create search client
-	searchClient, err := search.NewClient(
-		search.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create search client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	// Build ingest request
-	ingestRequest := &search.IngestRequest{
-		IndexID:   indexID,
-		Documents: documents,
+	// Build a v4 Search client authorized for the current profile.
+	searchClient, err := getClient(ctx)
+	if err != nil {
+		return err
 	}
 
+	// Build a GMetaList ingest document ({ingest_type:"GMetaList", ingest_data})
+	// and submit it. v4 wraps documents in the upstream ingest envelope.
+	ingestDoc := search.NewGMetaListIngest(documents)
+
 	// Execute ingest
-	response, err := searchClient.IngestDocuments(ctx, ingestRequest)
+	response, err := searchClient.Ingest(ctx, indexID, ingestDoc)
 	if err != nil {
 		return fmt.Errorf("error ingesting documents: %w", err)
 	}
 
 	// Display success message
 	fmt.Fprintf(os.Stdout, "Documents ingested successfully!\n\n")
-	fmt.Fprintf(os.Stdout, "Task ID:      %s\n", response.Task.TaskID)
-	fmt.Fprintf(os.Stdout, "Total:        %d documents\n", response.Total)
-	fmt.Fprintf(os.Stdout, "Succeeded:    %d documents\n", response.Succeeded)
-	fmt.Fprintf(os.Stdout, "Failed:       %d documents\n", response.Failed)
-	if response.Task.TaskID != "" {
-		fmt.Fprintf(os.Stdout, "\nCheck task status with: globus search task show %s\n", response.Task.TaskID)
+	fmt.Fprintf(os.Stdout, "Task ID:      %s\n", response.TaskID)
+	fmt.Fprintf(os.Stdout, "Total:        %d documents\n", len(documents))
+	if response.Message != "" {
+		fmt.Fprintf(os.Stdout, "Message:      %s\n", response.Message)
+	}
+	if response.TaskID != "" {
+		fmt.Fprintf(os.Stdout, "\nCheck task status with: globus search task show %s\n", response.TaskID)
 	}
 
 	return nil

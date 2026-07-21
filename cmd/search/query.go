@@ -9,11 +9,8 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/search"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -63,47 +60,26 @@ func init() {
 func runSearchQuery(cmd *cobra.Command, args []string) error {
 	indexID := args[0]
 
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create search client
-	searchClient, err := search.NewClient(
-		search.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create search client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Build a v4 Search client authorized for the current profile.
+	searchClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Execute a simple search. Upstream models this as GET
 	// /v1/index/{id}/search with q/offset/limit/advanced query params
-	// (GetSearch), not a POST body — the POST Search sends a malformed body and
+	// (SearchGet), not a POST body — the POST Search sends a malformed body and
 	// returns HTTP 400.
-	response, err := searchClient.GetSearch(ctx, indexID, queryString, queryOffset, queryLimit, queryAdvanced)
+	response, err := searchClient.SearchGet(ctx, indexID, &search.SearchGetOptions{
+		Q:        queryString,
+		Offset:   queryOffset,
+		Limit:    queryLimit,
+		Advanced: queryAdvanced,
+	})
 	if err != nil {
 		return fmt.Errorf("error executing search: %w", err)
 	}
@@ -113,44 +89,35 @@ func runSearchQuery(cmd *cobra.Command, args []string) error {
 
 	if format == "text" {
 		// Text output - human readable
-		if len(response.Results) == 0 {
+		if len(response.GMeta) == 0 {
 			fmt.Println("No results found.")
 			return nil
 		}
 
-		fmt.Printf("Search Results (showing %d of %d total)\n", len(response.Results), response.Total)
+		fmt.Printf("Search Results (showing %d of %d total)\n", len(response.GMeta), response.Total)
 		fmt.Printf("========================================\n\n")
 
-		for i, result := range response.Results {
+		for i, result := range response.GMeta {
 			fmt.Printf("Result %d:\n", i+1)
 			fmt.Printf("  Subject: %s\n", result.Subject)
-			fmt.Printf("  Score:   %.4f\n", result.Score)
 
 			// Display content
-			if result.Content != nil {
+			if len(result.Content) > 0 {
 				contentJSON, _ := json.MarshalIndent(result.Content, "    ", "  ")
 				fmt.Printf("  Content:\n    %s\n", string(contentJSON))
-			}
-
-			// Display highlights
-			if len(result.Highlight) > 0 {
-				fmt.Printf("  Highlights:\n")
-				for field, highlights := range result.Highlight {
-					fmt.Printf("    %s: %v\n", field, highlights)
-				}
 			}
 			fmt.Println()
 		}
 
-		if response.HasMore {
+		if response.HasNextPage {
 			nextOffset := queryOffset + queryLimit
 			fmt.Printf("More results available. Use --offset %d to see next page.\n", nextOffset)
 		}
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"Subject", "Content", "Score"}
-		if err := formatter.FormatOutput(response.Results, headers); err != nil {
+		headers := []string{"Subject", "Content", "Entries"}
+		if err := formatter.FormatOutput(response.GMeta, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}
 	}

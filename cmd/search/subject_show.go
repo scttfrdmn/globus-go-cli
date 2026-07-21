@@ -9,11 +9,7 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -41,55 +37,26 @@ func runSubjectShow(cmd *cobra.Command, args []string) error {
 	indexID := args[0]
 	subject := args[1]
 
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create search client
-	searchClient, err := search.NewClient(
-		search.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create search client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Search for the specific subject
-	searchRequest := &search.SearchRequest{
-		IndexID: indexID,
-		Query:   fmt.Sprintf("subject:%s", subject),
+	// Build a v4 Search client authorized for the current profile.
+	searchClient, err := getClient(ctx)
+	if err != nil {
+		return err
 	}
 
-	response, err := searchClient.Search(ctx, searchRequest)
+	// Fetch the subject directly. v4 exposes GET /index/{id}/subject?subject=...
+	// (GetSubject), which returns the visible entries for the subject — a
+	// cleaner match than the previous "subject:<id>" search query.
+	result, err := searchClient.GetSubject(ctx, indexID, subject)
 	if err != nil {
-		return fmt.Errorf("error searching for subject: %w", err)
+		return fmt.Errorf("error getting subject: %w", err)
 	}
 
 	// Check if subject was found
-	if len(response.Results) == 0 {
+	if len(result.Entries) == 0 && len(result.Content) == 0 {
 		return fmt.Errorf("subject '%s' not found or you don't have permission to view it", subject)
 	}
 
@@ -98,38 +65,32 @@ func runSubjectShow(cmd *cobra.Command, args []string) error {
 
 	if format == "text" {
 		// Text output - human readable
-		result := response.Results[0]
-
 		fmt.Printf("Subject: %s\n", result.Subject)
 		fmt.Printf("========================================\n\n")
 
-		// Display content
-		if result.Content != nil {
+		// Display entries and their content
+		if len(result.Entries) > 0 {
+			for i, entry := range result.Entries {
+				fmt.Printf("Entry %d", i+1)
+				if entry.EntryID != "" {
+					fmt.Printf(" (%s)", entry.EntryID)
+				}
+				fmt.Println(":")
+				if entry.Content != nil {
+					contentJSON, _ := json.MarshalIndent(entry.Content, "  ", "  ")
+					fmt.Printf("  %s\n\n", string(contentJSON))
+				}
+			}
+		} else if len(result.Content) > 0 {
 			fmt.Printf("Content:\n")
 			contentJSON, _ := json.MarshalIndent(result.Content, "  ", "  ")
 			fmt.Printf("  %s\n\n", string(contentJSON))
 		}
-
-		// Display score
-		if result.Score > 0 {
-			fmt.Printf("Relevance Score: %.4f\n", result.Score)
-		}
-
-		// Display highlights if any
-		if len(result.Highlight) > 0 {
-			fmt.Printf("\nHighlights:\n")
-			for field, highlights := range result.Highlight {
-				fmt.Printf("  %s:\n", field)
-				for _, hl := range highlights {
-					fmt.Printf("    - %s\n", hl)
-				}
-			}
-		}
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"Subject", "Content", "Score"}
-		if err := formatter.FormatOutput(response.Results[0], headers); err != nil {
+		headers := []string{"Subject", "Entries", "Content"}
+		if err := formatter.FormatOutput(result, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}
 	}

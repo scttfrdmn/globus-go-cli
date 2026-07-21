@@ -11,12 +11,8 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/transfer"
 )
 
 var (
@@ -71,67 +67,23 @@ Examples:
 
 // transferFiles transfers files between endpoints
 func transferFiles(cmd *cobra.Command, sourceEndpointID, sourcePath, destEndpointID, destPath string) error {
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration - not used with direct client initialization in v0.9.17
-	// We still load it for future use cases
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create a simple static token authorizer for v0.9.17
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-
-	// Create a core authorizer adapter for v0.9.17 compatibility
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create transfer client with v0.9.17 compatible options
-	transferOptions := []transfer.Option{
-		transfer.WithAuthorizer(coreAuthorizer),
-	}
-
-	transferClient, err := transfer.NewClient(transferOptions...)
-	if err != nil {
-		return fmt.Errorf("failed to create transfer client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Parse deadline if provided
-	var deadline *time.Time
+	// Build a v4 Transfer client authorized for the current profile.
+	transferClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Parse deadline if provided (validated here; formatted for the request below).
+	var deadline string
 	if transferDeadline != "" {
-		parsedDeadline, err := time.Parse("2006-01-02", transferDeadline)
-		if err != nil {
+		if _, err := time.Parse("2006-01-02", transferDeadline); err != nil {
 			return fmt.Errorf("invalid deadline format, use YYYY-MM-DD: %w", err)
 		}
-		deadline = &parsedDeadline
-	}
-
-	// Create transfer options map
-	optionsMap := map[string]interface{}{
-		"recursive":       transferRecursive,
-		"sync_level":      transferSync,
-		"preserve_mtime":  transferPreserveTime,
-		"verify_checksum": transferVerify,
-	}
-
-	if deadline != nil {
-		optionsMap["deadline"] = deadline
+		deadline = transferDeadline
 	}
 
 	// Show transfer details and confirm if not in dry run mode
@@ -159,14 +111,36 @@ func transferFiles(cmd *cobra.Command, sourceEndpointID, sourcePath, destEndpoin
 	s.Suffix = " Submitting transfer task..."
 	s.Start()
 
+	// Build the v4 transfer request. A submission ID minted from the service is
+	// required for idempotent submission.
+	submissionID, err := transferClient.GetSubmissionID(ctx)
+	if err != nil {
+		s.Stop()
+		return fmt.Errorf("failed to get submission ID: %w", err)
+	}
+
+	request := &transfer.Transfer{
+		DATA_TYPE:           "transfer",
+		SubmissionID:        submissionID,
+		SourceEndpoint:      sourceEndpointID,
+		DestinationEndpoint: destEndpointID,
+		Label:               transferLabel,
+		SyncLevel:           transferSync,
+		VerifyChecksum:      transferVerify,
+		PreserveTimestamp:   transferPreserveTime,
+		Deadline:            deadline,
+		Items: []transfer.TransferItem{
+			{
+				DATA_TYPE:       "transfer_item",
+				SourcePath:      sourcePath,
+				DestinationPath: destPath,
+				Recursive:       transferRecursive,
+			},
+		},
+	}
+
 	// Submit the transfer
-	taskResponse, err := transferClient.SubmitTransfer(
-		ctx,
-		sourceEndpointID, sourcePath,
-		destEndpointID, destPath,
-		transferLabel,
-		optionsMap,
-	)
+	taskResponse, err := transferClient.SubmitTransfer(ctx, request)
 	s.Stop()
 
 	if err != nil {

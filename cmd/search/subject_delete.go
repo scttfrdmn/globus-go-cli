@@ -8,12 +8,7 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // SubjectDeleteCmd represents the search subject delete command
@@ -39,50 +34,19 @@ func runSubjectDelete(cmd *cobra.Command, args []string) error {
 	indexID := args[0]
 	subject := args[1]
 
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create search client
-	searchClient, err := search.NewClient(
-		search.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create search client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Build delete request
-	deleteRequest := &search.DeleteDocumentsRequest{
-		IndexID:  indexID,
-		Subjects: []string{subject},
+	// Build a v4 Search client authorized for the current profile.
+	searchClient, err := getClient(ctx)
+	if err != nil {
+		return err
 	}
 
-	// Execute delete
-	response, err := searchClient.DeleteDocuments(ctx, deleteRequest)
+	// Execute delete. v4 deletes a single subject via DELETE
+	// /index/{id}/subject?subject=...
+	response, err := searchClient.DeleteSubject(ctx, indexID, subject)
 	if err != nil {
 		return fmt.Errorf("error deleting subject: %w", err)
 	}

@@ -161,3 +161,25 @@ func Authorizer(ctx context.Context, profile, clientID, clientSecret string, svc
 	}
 	return authz, nil
 }
+
+// ClientConfig builds a v4 SDK *core.Config authorized for the given service
+// from the stored tokens of the profile. Pass the result straight to a service
+// package's NewClient(ctx, cfg), e.g.:
+//
+//	cfg, err := globusauth.ClientConfig(ctx, profile, clientID, secret, globusauth.ServiceTransfer)
+//	client, err := transfer.NewClient(ctx, cfg)
+//
+// The returned config carries the auto-refreshing per-resource-server
+// authorizer and the service's scope, so every migrated command constructs its
+// client the same way.
+func ClientConfig(ctx context.Context, profile, clientID, clientSecret string, svc Service) (*core.Config, error) {
+	authz, err := Authorizer(ctx, profile, clientID, clientSecret, svc)
+	if err != nil {
+		return nil, err
+	}
+	cfg := &core.Config{Authorizer: authz}
+	if scope, ok := Scope(svc); ok {
+		cfg.Scopes = []string{scope}
+	}
+	return cfg, nil
+}

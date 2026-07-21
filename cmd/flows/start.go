@@ -9,12 +9,8 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/flows"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -90,38 +86,6 @@ func runFlowsStart(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse input JSON: %w", err)
 	}
 
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create flows client
-	flowsClient, err := flows.NewClient(
-		flows.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create flows client: %w", err)
-	}
-
 	// Create context with timeout
 	var ctx context.Context
 	var cancel context.CancelFunc
@@ -133,16 +97,22 @@ func runFlowsStart(cmd *cobra.Command, args []string) error {
 	}
 	defer cancel()
 
-	// Build run request
-	request := &flows.RunRequest{
-		FlowID: flowID,
-		Body:   input,
-		Label:  startLabel,
-		Tags:   startTags,
+	// Build a v4 Flows client authorized for the current profile.
+	flowsClient, err := getClient(ctx)
+	if err != nil {
+		return err
 	}
 
-	// Start the flow
-	run, err := flowsClient.RunFlow(ctx, request)
+	// Build run input. In v4 the flow ID is passed to RunFlow directly and the
+	// first-state input goes under Body.
+	runInput := &flows.FlowInput{
+		Body:  input,
+		Label: startLabel,
+		Tags:  startTags,
+	}
+
+	// Start the flow (v4 RunFlow replaces the v3 RunFlow(request) form).
+	run, err := flowsClient.RunFlow(ctx, flowID, runInput)
 	if err != nil {
 		return fmt.Errorf("error starting flow: %w", err)
 	}
@@ -152,7 +122,7 @@ func runFlowsStart(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(os.Stdout, "Run ID:    %s\n", run.RunID)
 	fmt.Fprintf(os.Stdout, "Flow ID:   %s\n", run.FlowID)
 	fmt.Fprintf(os.Stdout, "Status:    %s\n", run.Status)
-	fmt.Fprintf(os.Stdout, "Created:   %s\n", run.CreatedAt.Format(time.RFC3339))
+	fmt.Fprintf(os.Stdout, "Started:   %s\n", run.StartTime.Format(time.RFC3339))
 
 	// Wait for completion if requested
 	if startWait {
@@ -165,15 +135,15 @@ func runFlowsStart(cmd *cobra.Command, args []string) error {
 
 		fmt.Fprintf(os.Stdout, "\nFlow completed!\n")
 		fmt.Fprintf(os.Stdout, "Final Status:  %s\n", finalRun.Status)
-		if !finalRun.CompletedAt.IsZero() {
-			fmt.Fprintf(os.Stdout, "Completed At:  %s\n", finalRun.CompletedAt.Format(time.RFC3339))
+		if !finalRun.EndTime.IsZero() {
+			fmt.Fprintf(os.Stdout, "Completed At:  %s\n", finalRun.EndTime.Format(time.RFC3339))
 		}
 
-		// Display output if available
-		if finalRun.Output != nil {
-			fmt.Fprintf(os.Stdout, "\nOutput:\n")
-			outputJSON, _ := json.MarshalIndent(finalRun.Output, "  ", "  ")
-			fmt.Fprintf(os.Stdout, "%s\n", string(outputJSON))
+		// Display details if available
+		if finalRun.Details != nil {
+			fmt.Fprintf(os.Stdout, "\nDetails:\n")
+			detailsJSON, _ := json.MarshalIndent(finalRun.Details, "  ", "  ")
+			fmt.Fprintf(os.Stdout, "%s\n", string(detailsJSON))
 		}
 	} else {
 		fmt.Fprintf(os.Stdout, "\nMonitor run status with: globus flows run show %s\n", run.RunID)

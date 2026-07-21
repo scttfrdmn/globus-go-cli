@@ -11,11 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/transfer"
 )
 
 var (
@@ -70,56 +67,23 @@ func parseEndpointAndPath(s string) (endpointID, path string) {
 
 // listDirectory lists the contents of a directory on an endpoint
 func listDirectory(cmd *cobra.Command, endpointID, path string) error {
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration - not used with direct client initialization in v0.9.17
-	// We still load it for future use cases
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create a simple static token authorizer for v0.9.17
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-
-	// Create a core authorizer adapter for v0.9.17 compatibility
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create transfer client with v0.9.17 compatible options
-	transferOptions := []transfer.Option{
-		transfer.WithAuthorizer(coreAuthorizer),
-	}
-
-	transferClient, err := transfer.NewClient(transferOptions...)
-	if err != nil {
-		return fmt.Errorf("failed to create transfer client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
+	// Build a v4 Transfer client authorized for the current profile.
+	transferClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Prepare listing options
 	options := &transfer.ListDirectoryOptions{
-		EndpointID: endpointID,
-		Path:       path,
 		ShowHidden: lsShowHidden,
 	}
 
 	// Get the directory listing
-	listing, err := transferClient.ListDirectory(ctx, options)
+	listing, err := transferClient.ListDirectory(ctx, endpointID, path, options)
 	if err != nil {
 		return fmt.Errorf("failed to list directory: %w", err)
 	}
@@ -164,12 +128,9 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 			entry.Group = item.Group
 			entry.Size = item.Size
 
-			// Format last modified time
-			t, err := time.Parse(time.RFC3339, item.LastModified)
-			if err == nil {
-				entry.LastModified = t.Format("Jan 02 15:04")
-			} else {
-				entry.LastModified = item.LastModified
+			// Format last modified time (v4 exposes this as time.Time).
+			if !item.LastModified.IsZero() {
+				entry.LastModified = item.LastModified.Format("Jan 02 15:04")
 			}
 		}
 

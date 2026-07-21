@@ -8,11 +8,7 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -52,46 +48,20 @@ func init() {
 }
 
 func runIndexList(cmd *cobra.Command, args []string) error {
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create search client
-	searchClient, err := search.NewClient(
-		search.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create search client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Build a v4 Search client authorized for the current profile.
+	searchClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	// List indices. The Search index_list endpoint is NOT paginated — sending
 	// limit/offset returns HTTP 400 — so no options are passed. The --limit and
 	// --offset flags are retained as deprecated no-ops for compatibility.
-	indexList, err := searchClient.ListIndexes(ctx, nil)
+	indexList, err := searchClient.IndexList(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("error listing indices: %w", err)
 	}
@@ -106,11 +76,11 @@ func runIndexList(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 
-		fmt.Printf("%-36s  %-40s  %-10s  %-10s\n", "Index ID", "Display Name", "Active", "Public")
+		fmt.Printf("%-36s  %-40s  %-12s  %-10s\n", "Index ID", "Display Name", "Status", "Entries")
 		fmt.Printf("%s  %s  %s  %s\n",
 			"------------------------------------",
 			"----------------------------------------",
-			"----------",
+			"------------",
 			"----------")
 
 		for _, index := range indexList.Indexes {
@@ -119,28 +89,18 @@ func runIndexList(cmd *cobra.Command, args []string) error {
 				displayName = displayName[:37] + "..."
 			}
 
-			active := "No"
-			if index.IsActive {
-				active = "Yes"
-			}
-
-			public := "No"
-			if index.IsPublic {
-				public = "Yes"
-			}
-
-			fmt.Printf("%-36s  %-40s  %-10s  %-10s\n",
+			fmt.Printf("%-36s  %-40s  %-12s  %-10d\n",
 				index.ID,
 				displayName,
-				active,
-				public)
+				index.Status,
+				index.NumEntries)
 		}
 
 		fmt.Printf("\nTotal: %d index(es)\n", len(indexList.Indexes))
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"ID", "DisplayName", "Description", "IsActive", "IsPublic", "CreatedBy"}
+		headers := []string{"ID", "DisplayName", "Description", "Status", "NumEntries", "NumSubjects"}
 		if err := formatter.FormatOutput(indexList.Indexes, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}
