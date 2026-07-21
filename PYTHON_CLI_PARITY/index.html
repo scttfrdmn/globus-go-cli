@@ -1294,11 +1294,15 @@
 
 <h1 id="parity-with-the-upstream-python-globus-cli">Parity with the upstream Python Globus CLI<a class="headerlink" href="#parity-with-the-upstream-python-globus-cli" title="Permanent link">&para;</a></h1>
 <p>This tracks the Go CLI's command coverage against the reference
-<a href="https://github.com/globus/globus-cli">Globus CLI (Python)</a>. It is a
-functional comparison, not a 1:1 command-path map — the two CLIs organize
-commands differently (the Go CLI nests task/endpoint commands under each
-service; the Python CLI is flatter, e.g. top-level <code>task</code>, <code>bookmark</code>,
-<code>collection</code>, <code>endpoint</code>).</p>
+<a href="https://github.com/globus/globus-cli">Globus CLI (Python)</a>.</p>
+<p>As of <strong>Phase 3</strong>, the Go CLI uses a <strong>flat command structure matching the
+Python CLI</strong>: auth and transfer operations are top-level commands, not nested
+under <code>auth</code>/<code>transfer</code> groups. So <code>globus login</code>, <code>globus logout</code>,
+<code>globus whoami</code>, <code>globus get-identities</code>, <code>globus ls</code>, <code>globus mkdir</code>,
+<code>globus rm</code>, <code>globus transfer SRC DEST</code>, <code>globus task show</code>, and
+<code>globus endpoint search</code> are all invoked exactly as in the Python CLI.
+<code>group</code>, <code>search</code>, <code>flows</code>, and <code>timer</code> remain command groups (the Python CLI
+groups these too); <code>compute</code> is a Go-only extension group.</p>
 <ul>
 <li><strong>Python globus-cli compared:</strong> 3.42.0 (latest at time of writing), 164 commands.</li>
 <li><strong>Go CLI:</strong> ~112 command paths across auth, transfer, search, groups, flows,
@@ -1521,7 +1525,7 @@ commands, plus a compute extension. The material gaps are:</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 18:33:15 UTC">July 21, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 18:52:18 UTC">July 21, 2026</span>
   </span>
 
     

@@ -1768,7 +1768,7 @@
 <p>Practical examples for common operations with the Globus Go CLI.</p>
 <h2 id="file-transfer">File Transfer<a class="headerlink" href="#file-transfer" title="Permanent link">&para;</a></h2>
 <h3 id="transfer-a-single-file">Transfer a Single File<a class="headerlink" href="#transfer-a-single-file" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>--source-endpoint<span class="w"> </span>abc12345-6789-0def-ghij-klmnopqrstuv<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>--dest-endpoint<span class="w"> </span>xyz67890-abcd-efgh-ijkl-mnopqrstuvwx<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>--source-path<span class="w"> </span>/data/file.txt<span class="w"> </span><span class="se">\</span>
@@ -1776,7 +1776,7 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>--label<span class="w"> </span><span class="s2">&quot;Single file transfer&quot;</span>
 </code></pre></div>
 <h3 id="transfer-a-directory-recursively">Transfer a Directory Recursively<a class="headerlink" href="#transfer-a-directory-recursively" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>--source-endpoint<span class="w"> </span>abc12345-6789-0def-ghij-klmnopqrstuv<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>--dest-endpoint<span class="w"> </span>xyz67890-abcd-efgh-ijkl-mnopqrstuvwx<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>--source-path<span class="w"> </span>/data/mydir/<span class="w"> </span><span class="se">\</span>
@@ -1789,14 +1789,14 @@
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nv">TASK_ID</span><span class="o">=</span><span class="s2">&quot;01234567-89ab-cdef-0123-456789abcdef&quot;</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Check task status</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>globus<span class="w"> </span>transfer<span class="w"> </span>task<span class="w"> </span>show<span class="w"> </span><span class="nv">$TASK_ID</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>globus<span class="w"> </span>task<span class="w"> </span>show<span class="w"> </span><span class="nv">$TASK_ID</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># List all active tasks</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>globus<span class="w"> </span>transfer<span class="w"> </span>task<span class="w"> </span>list<span class="w"> </span>--filter-status<span class="w"> </span>ACTIVE
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>globus<span class="w"> </span>task<span class="w"> </span>list<span class="w"> </span>--filter-status<span class="w"> </span>ACTIVE
 </code></pre></div>
 <h3 id="sync-directories">Sync Directories<a class="headerlink" href="#sync-directories" title="Permanent link">&para;</a></h3>
 <p>Use sync level to avoid re-transferring unchanged files:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>--source-endpoint<span class="w"> </span>abc12345-6789-0def-ghij-klmnopqrstuv<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>--dest-endpoint<span class="w"> </span>xyz67890-abcd-efgh-ijkl-mnopqrstuvwx<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>--source-path<span class="w"> </span>/data/<span class="w"> </span><span class="se">\</span>
@@ -1814,24 +1814,24 @@
 <h2 id="working-with-endpoints">Working with Endpoints<a class="headerlink" href="#working-with-endpoints" title="Permanent link">&para;</a></h2>
 <h3 id="find-an-endpoint">Find an Endpoint<a class="headerlink" href="#find-an-endpoint" title="Permanent link">&para;</a></h3>
 <p>Search for endpoints by name or keyword:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>endpoint<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;Tutorial&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>globus<span class="w"> </span>endpoint<span class="w"> </span>search<span class="w"> </span><span class="s2">&quot;Tutorial&quot;</span>
 </code></pre></div>
 <h3 id="list-your-endpoints">List Your Endpoints<a class="headerlink" href="#list-your-endpoints" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>endpoint<span class="w"> </span>list<span class="w"> </span>--filter-scope<span class="w"> </span>my-endpoints
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>globus<span class="w"> </span>endpoint<span class="w"> </span>list<span class="w"> </span>--filter-scope<span class="w"> </span>my-endpoints
 </code></pre></div>
 <h3 id="get-endpoint-details">Get Endpoint Details<a class="headerlink" href="#get-endpoint-details" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>endpoint<span class="w"> </span>show<span class="w"> </span>abc12345-6789-0def-ghij-klmnopqrstuv
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>globus<span class="w"> </span>endpoint<span class="w"> </span>show<span class="w"> </span>abc12345-6789-0def-ghij-klmnopqrstuv
 </code></pre></div>
 <h2 id="browsing-files">Browsing Files<a class="headerlink" href="#browsing-files" title="Permanent link">&para;</a></h2>
 <h3 id="list-directory-contents">List Directory Contents<a class="headerlink" href="#list-directory-contents" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>ls<span class="w"> </span>abc12345-6789-0def-ghij-klmnopqrstuv:/data/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>globus<span class="w"> </span>ls<span class="w"> </span>abc12345-6789-0def-ghij-klmnopqrstuv:/data/
 </code></pre></div>
 <h3 id="show-file-details">Show File Details<a class="headerlink" href="#show-file-details" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>ls<span class="w"> </span>abc12345-6789-0def-ghij-klmnopqrstuv:/data/file.txt<span class="w"> </span>--long
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>globus<span class="w"> </span>ls<span class="w"> </span>abc12345-6789-0def-ghij-klmnopqrstuv:/data/file.txt<span class="w"> </span>--long
 </code></pre></div>
 <h2 id="using-output-with-jq">Using Output with jq<a class="headerlink" href="#using-output-with-jq" title="Permanent link">&para;</a></h2>
 <h3 id="extract-task-id">Extract Task ID<a class="headerlink" href="#extract-task-id" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">TASK_ID</span><span class="o">=</span><span class="k">$(</span>globus<span class="w"> </span>transfer<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">TASK_ID</span><span class="o">=</span><span class="k">$(</span>globus<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>--source-endpoint<span class="w"> </span>SRC<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>--dest-endpoint<span class="w"> </span>DST<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span>--source-path<span class="w"> </span>/src/path<span class="w"> </span><span class="se">\</span>
@@ -1841,10 +1841,10 @@
 <a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Task ID: </span><span class="nv">$TASK_ID</span><span class="s2">&quot;</span>
 </code></pre></div>
 <h3 id="count-active-tasks">Count Active Tasks<a class="headerlink" href="#count-active-tasks" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>task<span class="w"> </span>list<span class="w"> </span>--filter-status<span class="w"> </span>ACTIVE<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;length&#39;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>globus<span class="w"> </span>task<span class="w"> </span>list<span class="w"> </span>--filter-status<span class="w"> </span>ACTIVE<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;length&#39;</span>
 </code></pre></div>
 <h3 id="extract-endpoint-ids">Extract Endpoint IDs<a class="headerlink" href="#extract-endpoint-ids" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>globus<span class="w"> </span>transfer<span class="w"> </span>endpoint<span class="w"> </span>list<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.[].id&#39;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>globus<span class="w"> </span>endpoint<span class="w"> </span>list<span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.[].id&#39;</span>
 </code></pre></div>
 <h2 id="automation-and-scripting">Automation and Scripting<a class="headerlink" href="#automation-and-scripting" title="Permanent link">&para;</a></h2>
 <h3 id="batch-transfers">Batch Transfers<a class="headerlink" href="#batch-transfers" title="Permanent link">&para;</a></h3>
@@ -1852,7 +1852,7 @@
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nv">FILES</span><span class="o">=</span><span class="s2">&quot;file1.txt file2.txt file3.txt&quot;</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nv">$FILES</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span>globus<span class="w"> </span>transfer<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span>globus<span class="w"> </span>transfer<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span>--source-endpoint<span class="w"> </span><span class="nv">$SRC_EP</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span>--dest-endpoint<span class="w"> </span><span class="nv">$DST_EP</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span>--source-path<span class="w"> </span><span class="s2">&quot;/data/</span><span class="nv">$file</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
@@ -1865,7 +1865,7 @@
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nv">TASK_ID</span><span class="o">=</span><span class="nv">$1</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="k">while</span><span class="w"> </span>true<span class="p">;</span><span class="w"> </span><span class="k">do</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="nv">STATUS</span><span class="o">=</span><span class="k">$(</span>globus<span class="w"> </span>transfer<span class="w"> </span>task<span class="w"> </span>show<span class="w"> </span><span class="nv">$TASK_ID</span><span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.status&#39;</span><span class="k">)</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="nv">STATUS</span><span class="o">=</span><span class="k">$(</span>globus<span class="w"> </span>task<span class="w"> </span>show<span class="w"> </span><span class="nv">$TASK_ID</span><span class="w"> </span>--format<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">&#39;.status&#39;</span><span class="k">)</span>
 <a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
 <a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$STATUS</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;SUCCEEDED&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
 <a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Transfer completed successfully&quot;</span>
@@ -1907,7 +1907,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 26, 2025 18:03:25 UTC">October 26, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 18:52:18 UTC">July 21, 2026</span>
   </span>
 
     
