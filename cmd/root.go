@@ -129,7 +129,9 @@ func init() {
 	// Global flags. These mirror the Python Globus CLI so scripts are portable:
 	//   -F/--format [unix|json|text], --jmespath/--jq, --map-http-status, --quiet.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.globus-cli/config.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&profileName, "profile", "p", "default", "CLI profile to use (also settable via GLOBUS_PROFILE)")
+	// No -p shorthand: it collides with per-command flags (e.g. `mkdir -p`), and
+	// the Python CLI has no -p for profile either (it uses GLOBUS_PROFILE).
+	rootCmd.PersistentFlags().StringVar(&profileName, "profile", "default", "CLI profile to use (also settable via GLOBUS_PROFILE)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "control level of output, make it more verbose")
 	rootCmd.PersistentFlags().BoolVar(&quiet, "quiet", false, "suppress non-essential output (higher precedence than --verbose)")
 	rootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "F", "text", "output format: unix, json, or text")
