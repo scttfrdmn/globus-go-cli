@@ -60,3 +60,36 @@ func getRootCommandForTesting() *cobra.Command {
 
 	return cmd
 }
+
+// TestFlatCommandStructure asserts the top-level command tree is flat, matching
+// the Python Globus CLI: auth and transfer operations are top-level commands,
+// not nested under "auth"/"transfer" groups. Guards against a regression to the
+// old nested layout.
+func TestFlatCommandStructure(t *testing.T) {
+	cmd := Execute()
+
+	have := map[string]bool{}
+	for _, c := range cmd.Commands() {
+		// Command name is the first token of Use.
+		have[strings.Fields(c.Use)[0]] = true
+	}
+
+	// These must exist at the top level (flattened from auth/transfer).
+	wantTopLevel := []string{
+		"login", "logout", "whoami", "get-identities", "device", "refresh", "tokens",
+		"ls", "mkdir", "rm", "transfer", "task", "endpoint",
+		"group", "search", "flows", "timer", "compute", "config",
+	}
+	for _, name := range wantTopLevel {
+		if !have[name] {
+			t.Errorf("expected top-level command %q, but it is missing", name)
+		}
+	}
+
+	// The old service-group wrappers must NOT exist at the top level.
+	for _, name := range []string{"auth"} {
+		if have[name] {
+			t.Errorf("did not expect service group %q at the top level (should be flattened)", name)
+		}
+	}
+}

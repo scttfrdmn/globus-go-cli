@@ -35,6 +35,16 @@ managing Globus Auth identities.`,
 	return identitiesCmd
 }
 
+// GetIdentitiesCmd returns the flat top-level `get-identities` command, matching
+// the Python CLI's `globus get-identities`. It is the same lookup used by
+// `identities lookup`, exposed directly at the top level.
+func GetIdentitiesCmd() *cobra.Command {
+	cmd := identitiesLookupCmd()
+	cmd.Use = "get-identities [VALUES...]"
+	cmd.Short = "Look up Globus Auth identities"
+	return cmd
+}
+
 // Identity represents a Globus Auth identity
 type Identity struct {
 	ID         string `json:"id"`

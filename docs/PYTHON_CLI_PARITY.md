@@ -4,11 +4,16 @@
 # Parity with the upstream Python Globus CLI
 
 This tracks the Go CLI's command coverage against the reference
-[Globus CLI (Python)](https://github.com/globus/globus-cli). It is a
-functional comparison, not a 1:1 command-path map — the two CLIs organize
-commands differently (the Go CLI nests task/endpoint commands under each
-service; the Python CLI is flatter, e.g. top-level `task`, `bookmark`,
-`collection`, `endpoint`).
+[Globus CLI (Python)](https://github.com/globus/globus-cli).
+
+As of **Phase 3**, the Go CLI uses a **flat command structure matching the
+Python CLI**: auth and transfer operations are top-level commands, not nested
+under `auth`/`transfer` groups. So `globus login`, `globus logout`,
+`globus whoami`, `globus get-identities`, `globus ls`, `globus mkdir`,
+`globus rm`, `globus transfer SRC DEST`, `globus task show`, and
+`globus endpoint search` are all invoked exactly as in the Python CLI.
+`group`, `search`, `flows`, and `timer` remain command groups (the Python CLI
+groups these too); `compute` is a Go-only extension group.
 
 - **Python globus-cli compared:** 3.42.0 (latest at time of writing), 164 commands.
 - **Go CLI:** ~112 command paths across auth, transfer, search, groups, flows,
