@@ -10,7 +10,6 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/manifoldco/promptui v0.9.0
-	github.com/scttfrdmn/globus-go-sdk/v3 v3.65.0-2
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
 	gopkg.in/yaml.v3 v3.0.1

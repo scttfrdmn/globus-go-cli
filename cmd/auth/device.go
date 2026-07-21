@@ -3,18 +3,19 @@
 package auth
 
 import (
+	"context"
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-cli/pkg/globusauth"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/auth"
 )
 
 // DeviceCmd returns the device command
@@ -23,11 +24,11 @@ func DeviceCmd() *cobra.Command {
 	deviceCmd := &cobra.Command{
 		Use:   "device",
 		Short: "Login using device code flow",
-		Long: `Log in to Globus using the device code flow.
+		Long: `Log in to Globus using the OAuth2 device code flow.
 
 This method is useful for environments without a web browser or when browser-based
-login is not possible. It will provide a code that you need to enter at a specific URL
-using another device with a web browser.`,
+login is not possible. It provides a code to enter at a URL using another device
+with a web browser.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return deviceLogin(cmd)
 		},
@@ -40,104 +41,99 @@ using another device with a web browser.`,
 	return deviceCmd
 }
 
-// deviceLogin handles the device code flow login
+// deviceLogin handles the device code flow login using the v4 SDK.
 func deviceLogin(cmd *cobra.Command) error {
 	// Get the current profile
 	profile := viper.GetString("profile")
 	fmt.Printf("Using profile: %s\n", profile)
 
-	// Check if we already have valid tokens
+	// Check if we already have valid tokens for the transfer resource server.
 	if !forceLogin {
-		if tokenInfo, err := loadToken(profile); err == nil && isTokenValid(tokenInfo) {
+		if _, err := globusauth.TokenFor(profile, globusauth.ServiceTransfer); err == nil {
 			fmt.Println("You are already logged in with valid tokens.")
 			fmt.Println("Use --force to force a new login.")
 			return nil
 		}
 	}
 
-	// Load client configuration
+	// Load client configuration.
 	clientCfg, err := config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
-
-	// Create auth client directly
-	// NOTE: This client will be used in the future when SDK device flow is implemented
-	// For now, we're using a direct API approach below
-	_ = clientCfg // Mark as used
-
-	// Determine which scopes to request
-	var scopes []string
-	if len(loginScopes) > 0 {
-		scopes = loginScopes
-	} else {
-		// Request default scopes for all services
-		scopes = pkg.GetScopesByService("auth", "transfer", "groups", "search", "flows", "compute", "timers")
+	clientID := clientCfg.ClientID
+	if clientID == "" {
+		clientID = globusauth.DefaultClientID
 	}
 
-	// Start device code flow
-	fmt.Println("Starting device code flow...")
-
-	// Request device code
-	// Implementation for SDK v0.9.17
-	// TODO: Update this when SDK device flow implementation is found
-	// For now, we'll implement a temporary solution using the auth API directly
-
-	// OAuth 2.0 Device Code flow standard endpoint
-	// We'll make the API call directly when we implement this
-	// For now, this is just a placeholder implementation
-	// Display placeholder information
-	fmt.Println("\nPlease go to this URL on any device with a web browser:")
-	color.Cyan("https://app.globus.org/auth/device")
-	fmt.Println("\nEnter the code that will be provided by the API")
-	fmt.Println("This is a temporary implementation until the SDK is updated")
-
-	// Start spinner to show progress
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-	s.Suffix = " Waiting for authentication... "
-	s.Start()
-
-	// Poll for token exchange - temporary stub implementation
-	// TODO: Implement proper device code flow when SDK implementation is available
-
-	// This is a placeholder implementation
-	// We'll simulate waiting for user authentication
-	time.Sleep(2 * time.Second) // Simulate a short delay
-
-	// Temporary stub to simulate token response while we wait for SDK implementation
-	tokenResp := &auth.TokenResponse{
-		AccessToken:  "TEMPORARY_ACCESS_TOKEN",
-		RefreshToken: "TEMPORARY_REFRESH_TOKEN",
-		ExpiresIn:    3600,
-		Scope:        strings.Join(scopes, " "),
-		ExpiryTime:   time.Now().Add(1 * time.Hour),
+	// Determine which scopes to request (default: all services).
+	scopes := loginScopes
+	if len(scopes) == 0 {
+		for _, svc := range globusauth.AllServices {
+			if s, ok := globusauth.Scope(svc); ok {
+				scopes = append(scopes, s)
+			}
+		}
 	}
 
-	// Stop spinner
-	s.Stop()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
 
+	// The device authorization endpoints authenticate the client with Basic auth.
+	authClient, err := auth.NewClient(ctx, &core.Config{
+		Authorizer: authorizers.NewBasicAuthAuthorizer(clientID, clientCfg.ClientSecret),
+	})
 	if err != nil {
-		return fmt.Errorf("error polling for tokens: %w", err)
+		return fmt.Errorf("failed to create auth client: %w", err)
 	}
 
-	// Convert to our token format
-	tokenInfo := &TokenInfo{
-		AccessToken:  tokenResp.AccessToken,
-		RefreshToken: tokenResp.RefreshToken,
-		ExpiresAt:    tokenResp.ExpiryTime,
-		Scopes:       strings.Split(tokenResp.Scope, " "),
+	fmt.Println("Starting device code flow...")
+	deviceResp, err := authClient.StartDeviceAuthorization(ctx, clientID, scopes)
+	if err != nil {
+		return fmt.Errorf("failed to start device authorization: %w", err)
 	}
 
-	// Save the tokens if allowed
+	// Prompt the user to visit the verification URL and enter the code.
+	fmt.Println("\nPlease go to this URL on any device with a web browser:")
+	if deviceResp.VerificationURIComplete != "" {
+		color.Cyan("  %s", deviceResp.VerificationURIComplete)
+		fmt.Println("\n(or enter the code below at the base URL)")
+	}
+	color.Cyan("  %s", deviceResp.VerificationURI)
+	fmt.Printf("\nEnter this code when prompted: ")
+	color.Green("%s", deviceResp.UserCode)
+	fmt.Println("\nWaiting for authorization...")
+
+	// Poll until the user completes authorization (or the code expires).
+	tokenResp, err := authClient.WaitForDeviceAuthorization(ctx, clientID, deviceResp)
+	if err != nil {
+		return fmt.Errorf("device authorization failed: %w", err)
+	}
+
+	// Persist the returned tokens (primary + per-resource-server other_tokens).
 	if !noSaveTokens {
-		if err := saveToken(profile, tokenInfo); err != nil {
+		now := time.Now()
+		toStore := []globusauth.StoredToken{tokenResponseToStored(tokenResp)}
+		for i := range tokenResp.OtherTokens {
+			toStore = append(toStore, tokenResponseToStored(&tokenResp.OtherTokens[i]))
+		}
+		if err := globusauth.StoreTokens(profile, now, toStore...); err != nil {
 			return fmt.Errorf("error saving tokens: %w", err)
 		}
 	}
 
-	// Success!
 	fmt.Println("\nLogin successful! You are now authenticated with Globus.")
-	printTokenInfo(tokenInfo)
-
 	return nil
+}
+
+// tokenResponseToStored maps a v4 auth TokenResponse to a globusauth.StoredToken.
+func tokenResponseToStored(tr *auth.TokenResponse) globusauth.StoredToken {
+	return globusauth.StoredToken{
+		ResourceServer: tr.ResourceServer,
+		AccessToken:    tr.AccessToken,
+		RefreshToken:   tr.RefreshToken,
+		Scope:          tr.Scope,
+		ExpiresIn:      tr.ExpiresIn,
+		TokenType:      tr.TokenType,
+	}
 }

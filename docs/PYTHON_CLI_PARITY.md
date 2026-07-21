@@ -36,9 +36,12 @@ request field):
 - `search` index create/update `--monitored` / `--active` (v4 `IndexCreate`/
   `IndexUpdate` carry only display name + description).
 
-The **auth** package (`login` already uses v4 GlobusApp; `device`, `logout`,
-`refresh`, `tokens`, `whoami`) and `root.go` still reference the v3 SDK and the
-transitional legacy-token bridge — a separate follow-up (Phase 2c).
+As of **Phase 2c**, the auth package (`login`, `device`, `logout`, `refresh`,
+`tokens`, `whoami`, `identities`) and `root.go` are also on v4, and the
+transitional legacy-token bridge has been removed. The CLI now depends solely
+on the v4 SDK (v3 dropped from `go.mod`). `device` runs a real OAuth2
+device-code flow and `identities lookup` performs a real `GetIdentities` call
+(both were previously stubs).
 
 ## Coverage by area
 

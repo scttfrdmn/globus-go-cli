@@ -10,8 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-cli/pkg/globusauth"
 )
 
 // WhoamiCmd returns the whoami command
@@ -38,61 +37,35 @@ func whoami(cmd *cobra.Command) error {
 	profile := viper.GetString("profile")
 	fmt.Printf("Using profile: %s\n", profile)
 
-	// Load the token
-	tokenInfo, err := loadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if the token is valid
-	if !isTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	clientCfg, err := config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create auth client directly
-	authOptions := []auth.ClientOption{
-		auth.WithClientID(clientCfg.ClientID),
-		auth.WithClientSecret(clientCfg.ClientSecret),
-	}
-
-	authClient, err := auth.NewClient(authOptions...)
-	if err != nil {
-		return fmt.Errorf("failed to create auth client: %w", err)
-	}
-
-	// Get the current user's identity
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	introspection, err := authClient.IntrospectToken(ctx, tokenInfo.AccessToken)
+	authClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	// The OIDC userinfo endpoint returns the caller's identity directly.
+	userInfo, err := authClient.GetUserInfo(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get user identity: %w", err)
 	}
 
-	// Print user information - SDK v0.9.17 compatibility
 	fmt.Println("\nCurrent User:")
-	fmt.Printf("  Username: %s\n", introspection.Username)
-	fmt.Printf("  Identity ID: %s\n", introspection.Subject)
-	fmt.Printf("  Email: %s\n", introspection.Email)
-	fmt.Printf("  Name: %s\n", introspection.Name)
-
-	if len(introspection.IdentitySet) > 0 {
-		fmt.Println("  Linked Identities:")
-		for _, id := range introspection.IdentitySet {
-			fmt.Printf("    - %s\n", id)
-		}
+	fmt.Printf("  Username: %s\n", userInfo.PreferredUsername)
+	fmt.Printf("  Identity ID: %s\n", userInfo.Sub)
+	fmt.Printf("  Email: %s\n", userInfo.Email)
+	fmt.Printf("  Name: %s\n", userInfo.Name)
+	if userInfo.Organization != "" {
+		fmt.Printf("  Organization: %s\n", userInfo.Organization)
 	}
 
-	// Print token information
-	fmt.Println("\nToken Information:")
-	fmt.Printf("  Expires At: %s\n", tokenInfo.ExpiresAt.Format(time.RFC3339))
-	fmt.Printf("  Expires In: %s\n", time.Until(tokenInfo.ExpiresAt).Round(time.Second))
+	// Show token expiry for the auth resource server from the stored tokens.
+	if td, terr := globusauth.TokenFor(profile, globusauth.ServiceAuth); terr == nil {
+		fmt.Println("\nToken Information:")
+		fmt.Printf("  Expires At: %s\n", td.ExpiresAt.Format(time.RFC3339))
+		fmt.Printf("  Expires In: %s\n", time.Until(td.ExpiresAt).Round(time.Second))
+	}
 
 	return nil
 }

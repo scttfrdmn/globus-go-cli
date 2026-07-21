@@ -15,9 +15,10 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/testhelpers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/transfer"
 )
 
 func TestTransferIntegration(t *testing.T) {
@@ -46,36 +47,31 @@ func TestTransferIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Create auth client with test credentials
-	authClient, err := auth.NewClient(
-		auth.WithClientID(creds.ClientID),
-		auth.WithClientSecret(creds.ClientSecret),
-	)
+	// Create a v4 auth client (Basic auth) and obtain a transfer-scoped token
+	// via the client_credentials grant.
+	authClient, err := auth.NewClient(ctx, &core.Config{
+		Authorizer: authorizers.NewBasicAuthAuthorizer(creds.ClientID, creds.ClientSecret),
+	})
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
 
-	// Get a token with transfer scope
-	tokenResp, err := authClient.GetClientCredentialsToken(
+	tokenResp, err := authClient.ClientCredentialsTokens(
 		ctx,
-		"urn:globus:auth:scope:transfer.api.globus.org:all",
-		"openid",
-		"email",
-		"profile",
+		creds.ClientID, creds.ClientSecret,
+		[]string{
+			"urn:globus:auth:scope:transfer.api.globus.org:all",
+			"openid", "email", "profile",
+		},
 	)
 	if err != nil {
 		t.Fatalf("Failed to get token for transfer operations: %v", err)
 	}
 
-	// Create authorizer from token
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenResp.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create transfer client using the authorizer
-	transferOptions := []transfer.Option{
-		transfer.WithAuthorizer(coreAuthorizer),
-	}
-	transferClient, err := transfer.NewClient(transferOptions...)
+	// Create a transfer client authorized with the access token.
+	transferClient, err := transfer.NewClient(ctx, &core.Config{
+		Authorizer: authorizers.NewAccessTokenAuthorizer(tokenResp.AccessToken),
+	})
 	if err != nil {
 		t.Fatalf("Failed to create transfer client: %v", err)
 	}
@@ -85,13 +81,14 @@ func TestTransferIntegration(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Get endpoints with a filter
-		listOptions := &transfer.ListEndpointsOptions{
-			Limit: 5,
+		// Search endpoints with a small page size.
+		searchOptions := &transfer.EndpointSearchOptions{
+			FilterScope: "my-endpoints",
+			Limit:       5,
 		}
-		endpoints, err := transferClient.ListEndpoints(ctx, listOptions)
+		endpoints, err := transferClient.EndpointSearch(ctx, searchOptions)
 		if err != nil {
-			t.Fatalf("Failed to list endpoints: %v", err)
+			t.Fatalf("Failed to search endpoints: %v", err)
 		}
 
 		// Verify we got results
@@ -143,11 +140,7 @@ func TestTransferIntegration(t *testing.T) {
 		defer cancel()
 
 		// List the source directory
-		listOptions := &transfer.ListDirectoryOptions{
-			EndpointID: creds.SourceEndpoint,
-			Path:       creds.SourcePath,
-		}
-		listing, err := transferClient.ListDirectory(ctx, listOptions)
+		listing, err := transferClient.ListDirectory(ctx, creds.SourceEndpoint, creds.SourcePath, &transfer.ListDirectoryOptions{})
 		if err != nil {
 			t.Fatalf("Failed to list directory %s on endpoint %s: %v",
 				creds.SourcePath, creds.SourceEndpoint, err)
@@ -188,22 +181,28 @@ func TestTransferIntegration(t *testing.T) {
 		// Submit a transfer task
 		sourcePath := fmt.Sprintf("%s/test-transfer-file.txt", creds.SourcePath)
 		destPath := fmt.Sprintf("%s/test-transfer-file-%d.txt", creds.DestinationPath, time.Now().Unix())
-		label := "CLI Integration Test"
 
-		// Create transfer options
-		optionsMap := map[string]interface{}{
-			"sync_level":   0,
-			"verify_write": true,
+		// A submission ID is required for the v4 transfer submit.
+		submissionID, err := transferClient.GetSubmissionID(ctx)
+		if err != nil {
+			t.Fatalf("Failed to get submission ID: %v", err)
 		}
 
-		// Submit the transfer
-		task, err := transferClient.SubmitTransfer(
-			ctx,
-			creds.SourceEndpoint, sourcePath,
-			creds.DestinationEndpoint, destPath,
-			label,
-			optionsMap,
-		)
+		task, err := transferClient.SubmitTransfer(ctx, &transfer.Transfer{
+			DATA_TYPE:           "transfer",
+			SubmissionID:        submissionID,
+			SourceEndpoint:      creds.SourceEndpoint,
+			DestinationEndpoint: creds.DestinationEndpoint,
+			Label:               "CLI Integration Test",
+			VerifyChecksum:      true,
+			Items: []transfer.TransferItem{
+				{
+					DATA_TYPE:       "transfer_item",
+					SourcePath:      sourcePath,
+					DestinationPath: destPath,
+				},
+			},
+		})
 		if err != nil {
 			t.Fatalf("Failed to submit transfer task: %v", err)
 		}
