@@ -43,8 +43,12 @@ Examples:
 }
 
 func init() {
-	IndexListCmd.Flags().IntVar(&indexListLimit, "limit", 100, "Maximum number of indices to return")
-	IndexListCmd.Flags().IntVar(&indexListOffset, "offset", 0, "Offset for pagination")
+	// index_list is not paginated by the Search API, so these are no-ops kept
+	// for backward compatibility.
+	IndexListCmd.Flags().IntVar(&indexListLimit, "limit", 0, "Deprecated: index_list is not paginated")
+	IndexListCmd.Flags().IntVar(&indexListOffset, "offset", 0, "Deprecated: index_list is not paginated")
+	_ = IndexListCmd.Flags().MarkDeprecated("limit", "index_list is not paginated")
+	_ = IndexListCmd.Flags().MarkDeprecated("offset", "index_list is not paginated")
 }
 
 func runIndexList(cmd *cobra.Command, args []string) error {
@@ -84,13 +88,10 @@ func runIndexList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// List indices
-	options := &search.ListIndexesOptions{
-		Limit:  indexListLimit,
-		Offset: indexListOffset,
-	}
-
-	indexList, err := searchClient.ListIndexes(ctx, options)
+	// List indices. The Search index_list endpoint is NOT paginated — sending
+	// limit/offset returns HTTP 400 — so no options are passed. The --limit and
+	// --offset flags are retained as deprecated no-ops for compatibility.
+	indexList, err := searchClient.ListIndexes(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("error listing indices: %w", err)
 	}

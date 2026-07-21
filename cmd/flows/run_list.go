@@ -53,11 +53,16 @@ Examples:
 }
 
 func init() {
-	RunListCmd.Flags().IntVar(&runListLimit, "limit", 25, "Maximum number of runs to return")
-	RunListCmd.Flags().IntVar(&runListOffset, "offset", 0, "Offset for pagination")
+	// list_runs is marker-paginated; limit/offset are not accepted.
+	RunListCmd.Flags().IntVar(&runListLimit, "limit", 0, "Deprecated: list_runs is marker-paginated")
+	RunListCmd.Flags().IntVar(&runListOffset, "offset", 0, "Deprecated: list_runs is marker-paginated")
+	_ = RunListCmd.Flags().MarkDeprecated("limit", "list_runs is marker-paginated")
+	_ = RunListCmd.Flags().MarkDeprecated("offset", "list_runs is marker-paginated")
 	RunListCmd.Flags().StringVar(&runListFlowID, "flow-id", "", "Filter by flow ID")
 	RunListCmd.Flags().StringVar(&runListStatus, "status", "", "Filter by status (ACTIVE, SUCCEEDED, FAILED, INACTIVE)")
-	RunListCmd.Flags().StringVar(&runListOrderBy, "orderby", "created_at DESC", "Order results by field")
+	// Runs are ordered by run fields (e.g. start_time); created_at is a flow
+	// field and is rejected here.
+	RunListCmd.Flags().StringVar(&runListOrderBy, "orderby", "start_time DESC", "Order results by field (e.g. start_time DESC)")
 }
 
 func runFlowsRunList(cmd *cobra.Command, args []string) error {
@@ -97,10 +102,9 @@ func runFlowsRunList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Build list options
+	// Build list options. list_runs is marker-paginated and rejects
+	// limit/offset (HTTP 422), so only orderby/filters are sent.
 	options := &flows.ListRunsOptions{
-		Limit:   runListLimit,
-		Offset:  runListOffset,
 		OrderBy: runListOrderBy,
 	}
 	if runListFlowID != "" {
