@@ -14,8 +14,31 @@ service; the Python CLI is flatter, e.g. top-level `task`, `bookmark`,
 - **Go CLI:** ~112 command paths across auth, transfer, search, groups, flows,
   compute, timer, config.
 
-Note the version numbers are independent: the Go CLI tracks the Globus **SDK**
-(Python globus-sdk 3.65.0), while the Python **CLI** versions separately (3.42.0).
+Note the version numbers are independent: the Go CLI tracks the Globus **SDK**,
+while the Python **CLI** versions separately (3.42.0).
+
+## SDK backing: v4 migration (Phase 2b)
+
+The backable service command groups — **transfer, groups, search, flows,
+compute, timer** — now build on the **v4 Go SDK** (`globus-go-sdk/v4`, tracking
+Python globus-sdk 4.8.1) with per-resource-server GlobusApp tokens, replacing
+the previous v3 SDK + single-combined-token model. Each package has a
+`client.go` `getClient(ctx)` helper over `pkg/globusauth`.
+
+The v4 models differ from v3 in places, so a few flags are retained for
+command-surface stability but are currently **no-ops** (they do not map to a v4
+request field):
+
+- `flows update --public`; `flows` create/update auth-policy flags
+  (`--high-assurance`, `--required-mfa`, `--session-policies`) and run-list
+  `--orderby` (v4 run list has no server-side orderby; `--status` is filtered
+  client-side).
+- `search` index create/update `--monitored` / `--active` (v4 `IndexCreate`/
+  `IndexUpdate` carry only display name + description).
+
+The **auth** package (`login` already uses v4 GlobusApp; `device`, `logout`,
+`refresh`, `tokens`, `whoami`) and `root.go` still reference the v3 SDK and the
+transitional legacy-token bridge — a separate follow-up (Phase 2c).
 
 ## Coverage by area
 
@@ -67,12 +90,13 @@ hasn't wired up commands yet:
 
 ### B. Gaps with no v3 SDK support (need SDK work first, or are out of scope)
 
-- **GCS / collections management** (`collection`, `gcs`, ~32 commands) — there is
-  **no v3 `gcs` service** in the Go SDK. The v4 SDK module has a `gcs` service;
-  full support would require either a v4-based CLI or a v3 gcs port.
+- **GCS / collections management** (`collection`, `gcs`, ~32 commands) — the v4
+  SDK module has a `gcs` service. Now that the service commands build on v4
+  (Phase 2b), wiring these up is CLI work rather than an SDK blocker.
 - **GCP (Globus Connect Personal)** — local-agent management; not an SDK API.
-- **Streams / tunnels** — a Python globus-sdk v4.3.0+ feature, absent from the
-  frozen v3 SDK. Present as "unavailable" stubs.
+- **Streams / tunnels** — a Python globus-sdk v4.3.0+ feature. The v4 Go SDK
+  transfer client now exposes tunnel/stream-access-point methods, so these are
+  becoming supportable; the CLI currently ships "unavailable" stubs.
 - **`api` raw passthrough** — convenience for arbitrary API calls; no SDK method,
   would be a thin HTTP wrapper.
 
