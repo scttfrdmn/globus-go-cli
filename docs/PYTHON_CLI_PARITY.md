@@ -60,7 +60,7 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 | Endpoint roles | ✅ (create/delete/list/show) | ✅ (`endpoint role list/show/create/delete`) | Covered (Phase 4) |
 | Endpoint permissions (ACLs) | ✅ (5) | ✅ (`endpoint permission list/show/create/update/delete`) | Covered (Phase 4) |
 | Bookmarks | ✅ (5) | ✅ (`bookmark list/show/create/rename/delete`) | Covered (Phase 4) |
-| Collections / GCS management | ✅ (`collection`, `gcs`, 32 cmds) | ❌ none | Blocked — SDK lacks endpoint GCS-manager URL + per-collection consent (see below) |
+| Collections / GCS management | ✅ (`collection`, `gcs`, 32 cmds) | ✅ core set — `collection list/show/create/update/delete`, `gcs info`, `gcs storage-gateway list/show`, `gcs role list/show/create/delete` | Covered (Phase 7) |
 | GCP (Connect Personal) | ✅ (6) | ❌ none | Gap (no SDK support) |
 | Streams / tunnels | ✅ (8) | ✅ (`tunnel list/show/create/update/delete/events`, `stream-access-point list/show`) | Covered (Phase 5) |
 | Search (index/query/ingest/task/role/subject) | ✅ (14) | ✅ comparable | Covered |
@@ -111,20 +111,20 @@ Still available in the SDK but not yet wired:
 - **Streams / tunnels** — DONE (Phase 5). The v4 transfer client's
   tunnel/stream-access-point methods now back real `tunnel` and
   `stream-access-point` commands (the "unavailable" stubs are gone).
-- **GCS / collections management** (`collection`, `gcs`, ~32 commands) —
-  **still blocked**, and NOT merely CLI wiring. The v4 SDK's `gcs.CollectionClient`
-  needs two things the rest of the CLI doesn't have:
-  1. the endpoint's **GCS Manager URL** (`https://<gcs-host>/api`), which is not
-     exposed on the v4 SDK's transfer `Endpoint` struct — there is no field to
-     read it from, so the client address can't be constructed from a collection
-     ID alone; and
-  2. **dynamic per-collection consent** — each collection has its own
-     `.../<collection-id>/https` and `.../data_access` scopes, but the CLI's
-     GlobusApp login requests only a fixed scope set, so `GetAuthorizer` has no
-     token for a given collection's data-access scope.
-  Wiring `collection`/`gcs` needs SDK support to surface the manager URL (e.g. on
-  the endpoint document) and a consent/scope-escalation path in `pkg/globusauth`.
-  Deferred to a future phase (tracked as SDK work).
+- **GCS / collections management** (`collection`, `gcs`) — DONE (Phase 7). The
+  two former blockers were resolved with SDK support:
+  1. the endpoint's **GCS Manager URL** is now on the transfer `Endpoint`
+     (`gcs_manager_url`, SDK v4.8.1-2), so the CLI resolves the manager address
+     from the endpoint ID via the Transfer API; and
+  2. **dynamic consent escalation** — `pkg/globusauth.ScopedClientConfig` builds
+     a GlobusApp for an endpoint/collection's dynamic scope and runs a consent
+     login on first use. Management uses the endpoint's `manage_collections`
+     scope (`gcs.EndpointManageCollectionsScope`, SDK v4.8.1-3).
+  `collection list/show/create/update/delete` and `gcs info` +
+  `storage-gateway`/`role` subcommands are wired. Each takes the owning
+  `ENDPOINT_ID` as its first argument. Data-plane operations that need a
+  collection's `data_access`/`https` scope (e.g. GCS-hosted file listing) are a
+  possible future addition using the same consent-escalation helper.
 - **GCP (Globus Connect Personal)** — local-agent management; not an SDK API
   (out of scope).
 

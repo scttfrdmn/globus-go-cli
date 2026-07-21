@@ -292,3 +292,61 @@ func StoreTokens(profile string, now time.Time, tokens ...StoredToken) error {
 	}
 	return nil
 }
+
+// ScopedApp builds a UserApp registered for a single dynamic (resourceServer,
+// scope) pair rather than the fixed service registry. Used for GCS, whose
+// scopes are keyed on a specific endpoint or collection ID rather than a
+// well-known service resource server.
+func ScopedApp(profile, clientID, clientSecret, resourceServer, scope string) (*app.UserApp, error) {
+	if clientID == "" {
+		clientID = DefaultClientID
+	}
+	path, err := tokenStoragePath(profile)
+	if err != nil {
+		return nil, err
+	}
+	store, err := tokenstorage.NewJSONTokenStorageWithNamespace(path, "globus-cli")
+	if err != nil {
+		return nil, fmt.Errorf("cannot open token storage: %w", err)
+	}
+	userApp, err := app.NewUserApp(clientID, clientSecret, &app.AppConfig{
+		TokenStorage:         store,
+		RequestRefreshTokens: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	userApp.AddScopeRequirements(resourceServer, scope)
+	return userApp, nil
+}
+
+// ScopedClientConfig returns a *core.Config authorized for a dynamic
+// (resourceServer, scope) pair from the profile's stored tokens — used to build
+// a GCS CollectionClient. If no token is stored for that resource server and
+// allowConsent is true, it runs a consent login (the paste-code flow) to obtain
+// one; otherwise it returns an error advising the user to run the login. The
+// scope determines what the consent grants (an endpoint's manage_collections or
+// a collection's data_access).
+func ScopedClientConfig(ctx context.Context, profile, clientID, clientSecret, resourceServer, scope string, allowConsent bool) (*core.Config, error) {
+	userApp, err := ScopedApp(profile, clientID, clientSecret, resourceServer, scope)
+	if err != nil {
+		return nil, err
+	}
+
+	authz, err := userApp.GetAuthorizer(ctx, resourceServer)
+	if err != nil {
+		if !allowConsent {
+			return nil, fmt.Errorf("%w (run 'globus login' or retry with consent)", err)
+		}
+		// No stored token for this resource server: escalate consent.
+		if lerr := userApp.Login(ctx); lerr != nil {
+			return nil, fmt.Errorf("consent login failed: %w", lerr)
+		}
+		authz, err = userApp.GetAuthorizer(ctx, resourceServer)
+		if err != nil {
+			return nil, fmt.Errorf("no token after consent for %q: %w", resourceServer, err)
+		}
+	}
+
+	return &core.Config{Authorizer: authz, Scopes: []string{scope}}, nil
+}
