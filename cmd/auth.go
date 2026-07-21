@@ -20,5 +20,6 @@ func addAuthCommands(root *cobra.Command) {
 		auth.RefreshCmd(),
 		auth.TokensCmd(),
 		auth.GetIdentitiesCmd(),
+		auth.SessionCmd(),
 	)
 }

@@ -68,7 +68,7 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 | Flows (create/run/list/show/update/validate/logs) | ✅ (17) | ✅ comparable | Covered |
 | Timers | ✅ (7) | ✅ (create/list/show/pause/resume/delete) | Covered |
 | `api` raw passthrough | ✅ (7 services) | ✅ (`api auth/transfer/groups/search/flows/timer/compute`) | Covered (Phase 5) |
-| `session` (consent/show/update) | ✅ (3) | ❌ none | Gap — needs reauth/session-boundary support not in the v4 SDK (only `GetConsents`) |
+| `session` (consent/show/update) | ✅ (3) | Partial — `session show` (via `include=session_info`); `update`/`consent` still need a reauth/session-boundary flow | Partial (Phase 7) |
 | Endpoint-manager (admin) | ✅ | ✅ (`endpoint-manager` — monitored-endpoints, task-list/show/cancel/pause/resume, pause-rule, ...) | Covered (Phase 6) |
 | Endpoint set-subscription-id / my-shared-endpoint-list | ✅ | ✅ | Covered (Phase 6) |
 | `list-commands` / `version` | ✅ | ✅ | Covered (Phase 6) |

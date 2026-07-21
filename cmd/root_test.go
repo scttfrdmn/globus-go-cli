@@ -76,7 +76,7 @@ func TestFlatCommandStructure(t *testing.T) {
 
 	// These must exist at the top level (flattened from auth/transfer).
 	wantTopLevel := []string{
-		"login", "logout", "whoami", "get-identities", "device", "refresh", "tokens",
+		"login", "logout", "whoami", "get-identities", "device", "refresh", "tokens", "session",
 		"ls", "mkdir", "rm", "rename", "stat", "delete", "transfer", "task", "endpoint",
 		"bookmark", "tunnel", "stream-access-point", "endpoint-manager",
 		"group", "search", "flows", "timer", "compute", "api", "config",

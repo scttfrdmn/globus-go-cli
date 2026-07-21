@@ -77,6 +77,8 @@ func TestCommandParity(t *testing.T) {
 		"search query", "flows list", "timer list",
 		// Raw API passthrough.
 		"api transfer", "api auth",
+		// Session.
+		"session show",
 		// Meta commands.
 		"list-commands", "version",
 	}
