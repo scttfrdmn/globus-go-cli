@@ -4,3 +4,4 @@ toolchain go1.24.5
 
 use .
 use ../globus-go-sdk
+use ../globus-go-sdk/v4
