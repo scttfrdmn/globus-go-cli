@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/jmespath/go-jmespath"
 )
 
 // FormatType defines the output format
@@ -21,42 +23,108 @@ const (
 	FormatText FormatType = "text"
 	// FormatJSON outputs in JSON format
 	FormatJSON FormatType = "json"
-	// FormatCSV outputs in CSV format
+	// FormatCSV outputs in CSV format (a Go CLI extension; the Python CLI has no csv)
 	FormatCSV FormatType = "csv"
+	// FormatUnix outputs tab-delimited rows with no header, for line-oriented
+	// tools (grep/awk/cut). Mirrors the Python CLI's "unix" format.
+	FormatUnix FormatType = "unix"
 )
 
 // Formatter handles formatting output in different formats
 type Formatter struct {
 	Format FormatType
 	Writer io.Writer
+
+	// JMESPath, when non-empty, is applied to the data (as JSON) and forces JSON
+	// output — matching the Python CLI's --jmespath/--jq behavior.
+	JMESPath string
 }
 
-// NewFormatter creates a new formatter
+// JMESPathHook, when set by the CLI layer, supplies the active
+// --jmespath/--jq expression. It lets every command that builds a formatter via
+// NewFormatter honor the global flag without threading it through each call
+// site. pkg/output stays free of any CLI/viper import.
+var JMESPathHook func() string
+
+// NewFormatter creates a new formatter. If a JMESPathHook is set and returns a
+// non-empty expression, the formatter applies it and forces JSON output.
 func NewFormatter(format string, writer io.Writer) *Formatter {
-	formatType := FormatText
+	f := &Formatter{
+		Format: parseFormat(format),
+		Writer: writer,
+	}
+	if JMESPathHook != nil {
+		if expr := JMESPathHook(); expr != "" {
+			f.JMESPath = expr
+			f.Format = FormatJSON
+		}
+	}
+	return f
+}
+
+// NewFormatterWithJMESPath creates a formatter that applies a JMESPath/JQ
+// expression. A non-empty expression forces JSON output.
+func NewFormatterWithJMESPath(format, jmesPath string, writer io.Writer) *Formatter {
+	f := NewFormatter(format, writer)
+	f.JMESPath = jmesPath
+	if jmesPath != "" {
+		f.Format = FormatJSON
+	}
+	return f
+}
+
+// parseFormat maps a format string to a FormatType, defaulting to text.
+func parseFormat(format string) FormatType {
 	switch strings.ToLower(format) {
 	case "json":
-		formatType = FormatJSON
+		return FormatJSON
 	case "csv":
-		formatType = FormatCSV
-	}
-
-	return &Formatter{
-		Format: formatType,
-		Writer: writer,
+		return FormatCSV
+	case "unix":
+		return FormatUnix
+	default:
+		return FormatText
 	}
 }
 
 // FormatOutput formats the given data according to the configured format
 func (f *Formatter) FormatOutput(data interface{}, headers []string) error {
+	// A JMESPath expression filters the data (via JSON) and forces JSON output.
+	if f.JMESPath != "" {
+		filtered, err := applyJMESPath(f.JMESPath, data)
+		if err != nil {
+			return err
+		}
+		return f.formatJSON(filtered)
+	}
+
 	switch f.Format {
 	case FormatJSON:
 		return f.formatJSON(data)
 	case FormatCSV:
 		return f.formatCSV(data, headers)
+	case FormatUnix:
+		return f.formatUnix(data, headers)
 	default:
 		return f.formatText(data, headers)
 	}
+}
+
+// applyJMESPath round-trips data through JSON and evaluates the expression.
+func applyJMESPath(expr string, data interface{}) (interface{}, error) {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal data for jmespath: %w", err)
+	}
+	var generic interface{}
+	if err := json.Unmarshal(raw, &generic); err != nil {
+		return nil, fmt.Errorf("failed to decode data for jmespath: %w", err)
+	}
+	result, err := jmespath.Search(expr, generic)
+	if err != nil {
+		return nil, fmt.Errorf("invalid jmespath expression %q: %w", expr, err)
+	}
+	return result, nil
 }
 
 // formatJSON formats the data as JSON
@@ -190,6 +258,49 @@ func (f *Formatter) formatText(data interface{}, headers []string) error {
 		return fmt.Errorf("unsupported data type for text formatting: %v", value.Kind())
 	}
 
+	return nil
+}
+
+// formatUnix formats the data as tab-delimited rows with no header line, for
+// line-oriented processing (the Python CLI's "unix" format).
+func (f *Formatter) formatUnix(data interface{}, headers []string) error {
+	value := reflect.ValueOf(data)
+	if value.Kind() == reflect.Ptr {
+		value = value.Elem()
+	}
+
+	writeRow := func(item reflect.Value) {
+		if item.Kind() == reflect.Ptr {
+			item = item.Elem()
+		}
+		cols := make([]string, len(headers))
+		for i, header := range headers {
+			field := item.FieldByName(header)
+			if !field.IsValid() && item.Kind() == reflect.Struct {
+				for j := 0; j < item.NumField(); j++ {
+					if strings.EqualFold(item.Type().Field(j).Name, header) {
+						field = item.Field(j)
+						break
+					}
+				}
+			}
+			if field.IsValid() {
+				cols[i] = formatValue(field)
+			}
+		}
+		fmt.Fprintln(f.Writer, strings.Join(cols, "\t"))
+	}
+
+	switch value.Kind() {
+	case reflect.Slice:
+		for i := 0; i < value.Len(); i++ {
+			writeRow(value.Index(i))
+		}
+	case reflect.Struct:
+		writeRow(value)
+	default:
+		return fmt.Errorf("unsupported data type for unix formatting: %v", value.Kind())
+	}
 	return nil
 }
 
