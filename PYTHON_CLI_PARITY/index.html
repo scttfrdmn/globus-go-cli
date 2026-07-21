@@ -1447,6 +1447,24 @@ device-code flow and <code>identities lookup</code> performs a real <code>GetIde
 <td>Gap — needs reauth/session-boundary support not in the v4 SDK (only <code>GetConsents</code>)</td>
 </tr>
 <tr>
+<td>Endpoint-manager (admin)</td>
+<td>✅</td>
+<td>✅ (<code>endpoint-manager</code> — monitored-endpoints, task-list/show/cancel/pause/resume, pause-rule, ...)</td>
+<td>Covered (Phase 6)</td>
+</tr>
+<tr>
+<td>Endpoint set-subscription-id / my-shared-endpoint-list</td>
+<td>✅</td>
+<td>✅</td>
+<td>Covered (Phase 6)</td>
+</tr>
+<tr>
+<td><code>list-commands</code> / <code>version</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>Covered (Phase 6)</td>
+</tr>
+<tr>
 <td>Compute</td>
 <td>❌ (not in Python CLI)</td>
 <td>✅ (endpoint/function/task)</td>
@@ -1454,6 +1472,9 @@ device-code flow and <code>identities lookup</code> performs a real <code>GetIde
 </tr>
 </tbody>
 </table>
+<p><strong>JSON output shape (Phase 6):</strong> list commands emit the enveloped service
+document under <code>-F json</code> (<code>{"DATA_TYPE": ..., "DATA": [...]}</code>), matching the
+Python CLI, rather than a bare array. (Groups list is a bare array in both CLIs.)</p>
 <h2 id="gap-classification">Gap classification<a class="headerlink" href="#gap-classification" title="Permanent link">&para;</a></h2>
 <p>Two kinds of gap, important to distinguish:</p>
 <h3 id="a-cli-gaps-the-go-sdk-already-supports-exposing-them-is-cli-only-work">A. CLI gaps the Go SDK already supports (exposing them is CLI-only work)<a class="headerlink" href="#a-cli-gaps-the-go-sdk-already-supports-exposing-them-is-cli-only-work" title="Permanent link">&para;</a></h3>
@@ -1543,7 +1564,7 @@ surface are all wired. The remaining gaps are:</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 20:03:41 UTC">July 21, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 21:06:05 UTC">July 21, 2026</span>
   </span>
 
     
