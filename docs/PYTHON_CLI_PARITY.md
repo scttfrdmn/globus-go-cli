@@ -60,14 +60,14 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 | Endpoint roles | ✅ (create/delete/list/show) | ✅ (`endpoint role list/show/create/delete`) | Covered (Phase 4) |
 | Endpoint permissions (ACLs) | ✅ (5) | ✅ (`endpoint permission list/show/create/update/delete`) | Covered (Phase 4) |
 | Bookmarks | ✅ (5) | ✅ (`bookmark list/show/create/rename/delete`) | Covered (Phase 4) |
-| Collections / GCS management | ✅ (`collection`, `gcs`, 32 cmds) | ❌ none | Gap (Phase 5 — v4 gcs service) |
+| Collections / GCS management | ✅ (`collection`, `gcs`, 32 cmds) | ❌ none | Blocked — SDK lacks endpoint GCS-manager URL + per-collection consent (see below) |
 | GCP (Connect Personal) | ✅ (6) | ❌ none | Gap (no SDK support) |
-| Streams / tunnels | ✅ (8) | Stubs (report "unavailable") | Gap (v4 transfer tunnels exist; Phase 5) |
+| Streams / tunnels | ✅ (8) | ✅ (`tunnel list/show/create/update/delete/events`, `stream-access-point list/show`) | Covered (Phase 5) |
 | Search (index/query/ingest/task/role/subject) | ✅ (14) | ✅ comparable | Covered |
 | Groups (member/role/policy/invite/join/leave) | ✅ (19) | ✅ — create/delete/list/show/update, member add/invite/list/remove/accept/decline/approve/reject, join/leave, `policies show/set` | Covered (Phase 4) |
 | Flows (create/run/list/show/update/validate/logs) | ✅ (17) | ✅ comparable | Covered |
 | Timers | ✅ (7) | ✅ (create/list/show/pause/resume/delete) | Covered |
-| `api` raw passthrough | ✅ (7 services) | ❌ none | Gap (Phase 5) |
+| `api` raw passthrough | ✅ (7 services) | ✅ (`api auth/transfer/groups/search/flows/timer/compute`) | Covered (Phase 5) |
 | `session` (consent/show/update) | ✅ (3) | ❌ none | Gap — needs reauth/session-boundary support not in the v4 SDK (only `GetConsents`) |
 | Compute | ❌ (not in Python CLI) | ✅ (endpoint/function/task) | Go-only extension |
 
@@ -99,15 +99,27 @@ Still available in the SDK but not yet wired:
 
 ### B. Gaps with no v3 SDK support (need SDK work first, or are out of scope)
 
-- **GCS / collections management** (`collection`, `gcs`, ~32 commands) — the v4
-  SDK module has a `gcs` service. Now that the service commands build on v4
-  (Phase 2b), wiring these up is CLI work rather than an SDK blocker.
-- **GCP (Globus Connect Personal)** — local-agent management; not an SDK API.
-- **Streams / tunnels** — a Python globus-sdk v4.3.0+ feature. The v4 Go SDK
-  transfer client now exposes tunnel/stream-access-point methods, so these are
-  becoming supportable; the CLI currently ships "unavailable" stubs.
-- **`api` raw passthrough** — convenience for arbitrary API calls; no SDK method,
-  would be a thin HTTP wrapper.
+- **`api` raw passthrough** — DONE (Phase 5). `globus api <service> METHOD PATH`
+  for auth/transfer/groups/search/flows/timer/compute, over the core client.
+- **Streams / tunnels** — DONE (Phase 5). The v4 transfer client's
+  tunnel/stream-access-point methods now back real `tunnel` and
+  `stream-access-point` commands (the "unavailable" stubs are gone).
+- **GCS / collections management** (`collection`, `gcs`, ~32 commands) —
+  **still blocked**, and NOT merely CLI wiring. The v4 SDK's `gcs.CollectionClient`
+  needs two things the rest of the CLI doesn't have:
+  1. the endpoint's **GCS Manager URL** (`https://<gcs-host>/api`), which is not
+     exposed on the v4 SDK's transfer `Endpoint` struct — there is no field to
+     read it from, so the client address can't be constructed from a collection
+     ID alone; and
+  2. **dynamic per-collection consent** — each collection has its own
+     `.../<collection-id>/https` and `.../data_access` scopes, but the CLI's
+     GlobusApp login requests only a fixed scope set, so `GetAuthorizer` has no
+     token for a given collection's data-access scope.
+  Wiring `collection`/`gcs` needs SDK support to surface the manager URL (e.g. on
+  the endpoint document) and a consent/scope-escalation path in `pkg/globusauth`.
+  Deferred to a future phase (tracked as SDK work).
+- **GCP (Globus Connect Personal)** — local-agent management; not an SDK API
+  (out of scope).
 
 ## Compute is a Go-only extension
 
