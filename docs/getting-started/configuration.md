@@ -70,7 +70,7 @@ See [Environment Variables](../guides/environment-variables.md) for a complete l
 Flags override both configuration and environment variables:
 
 ```bash
-globus auth whoami --format text
+globus whoami --format text
 ```
 
 ## Priority Order

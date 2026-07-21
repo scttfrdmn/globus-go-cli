@@ -9,7 +9,7 @@ The Globus Go CLI supports multiple output formats for different use cases.
 Machine-readable JSON output, ideal for parsing and automation:
 
 ```bash
-globus auth whoami --format json
+globus whoami --format json
 ```
 
 Output:
@@ -28,7 +28,7 @@ Output:
 Human-readable tabular output:
 
 ```bash
-globus auth whoami --format text
+globus whoami --format text
 ```
 
 Output:
@@ -57,7 +57,7 @@ export GLOBUS_CLI_FORMAT=json
 ### Via Flag
 
 ```bash
-globus auth whoami --format text
+globus whoami --format text
 ```
 
 ## Parsing JSON Output
@@ -68,20 +68,20 @@ Extract specific fields:
 
 ```bash
 # Get just the username
-globus auth whoami --format json | jq -r '.username'
+globus whoami --format json | jq -r '.username'
 
 # Get identity ID
-globus auth whoami --format json | jq -r '.identity_id'
+globus whoami --format json | jq -r '.identity_id'
 ```
 
 List processing:
 
 ```bash
 # Get all endpoint IDs
-globus transfer endpoint list --format json | jq -r '.[].id'
+globus endpoint list --format json | jq -r '.[].id'
 
 # Get endpoint names and IDs
-globus transfer endpoint list --format json | \
+globus endpoint list --format json | \
   jq -r '.[] | "\(.display_name): \(.id)"'
 ```
 
@@ -109,16 +109,16 @@ Don't rely on defaults in scripts:
 
 ```bash
 # Good
-globus auth whoami --format json
+globus whoami --format json
 
 # Avoid
-globus auth whoami
+globus whoami
 ```
 
 ### Check Exit Codes
 
 ```bash
-if globus auth whoami --format json > /dev/null 2>&1; then
+if globus whoami --format json > /dev/null 2>&1; then
   echo "Authenticated"
 else
   echo "Not authenticated"
@@ -129,7 +129,7 @@ fi
 ### Handle Errors
 
 ```bash
-output=$(globus transfer task show $TASK_ID --format json 2>&1)
+output=$(globus task show $TASK_ID --format json 2>&1)
 
 if [ $? -ne 0 ]; then
   echo "Error: $output"

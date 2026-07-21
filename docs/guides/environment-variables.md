@@ -83,8 +83,8 @@ export GLOBUS_CLIENT_ID=abc123
 export GLOBUS_CLIENT_SECRET=secret456
 
 # Run commands
-globus auth whoami
-globus transfer endpoint list
+globus whoami
+globus endpoint list
 ```
 
 ### Python Example

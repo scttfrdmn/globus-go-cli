@@ -2,12 +2,12 @@
 
 Commands for authentication and identity management.
 
-## globus auth whoami
+## globus whoami
 
 Display information about the currently authenticated user.
 
 ```bash
-globus auth whoami [flags]
+globus whoami [flags]
 ```
 
 **Output:**

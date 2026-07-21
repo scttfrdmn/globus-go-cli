@@ -35,7 +35,7 @@ You have successfully logged in to the Globus CLI!
 Check that you're logged in:
 
 ```bash
-globus auth whoami
+globus whoami
 ```
 
 This displays your identity information:
@@ -56,7 +56,7 @@ This displays your identity information:
 View endpoints you have access to:
 
 ```bash
-globus transfer endpoint list
+globus endpoint list
 ```
 
 ### View Endpoint Details
@@ -64,7 +64,7 @@ globus transfer endpoint list
 Get details about a specific endpoint:
 
 ```bash
-globus transfer endpoint show ENDPOINT_ID
+globus endpoint show ENDPOINT_ID
 ```
 
 Replace `ENDPOINT_ID` with an actual endpoint UUID.
@@ -74,7 +74,7 @@ Replace `ENDPOINT_ID` with an actual endpoint UUID.
 Browse files on an endpoint:
 
 ```bash
-globus transfer ls ENDPOINT_ID:/path/to/directory
+globus ls ENDPOINT_ID:/path/to/directory
 ```
 
 ### Transfer Files
@@ -82,7 +82,7 @@ globus transfer ls ENDPOINT_ID:/path/to/directory
 Transfer a file between two endpoints:
 
 ```bash
-globus transfer transfer \
+globus transfer \
   --source-endpoint SOURCE_ENDPOINT_ID \
   --dest-endpoint DEST_ENDPOINT_ID \
   --source-path /path/to/source/file.txt \
@@ -92,7 +92,7 @@ globus transfer transfer \
 Check transfer status:
 
 ```bash
-globus transfer task show TASK_ID
+globus task show TASK_ID
 ```
 
 ## Output Formats
@@ -102,13 +102,13 @@ The CLI supports multiple output formats:
 ### JSON Output (Default)
 
 ```bash
-globus auth whoami --format json
+globus whoami --format json
 ```
 
 ### Text Output
 
 ```bash
-globus auth whoami --format text
+globus whoami --format text
 ```
 
 ### Quiet Mode
@@ -116,7 +116,7 @@ globus auth whoami --format text
 For scripting, use quiet mode to get minimal output:
 
 ```bash
-globus transfer task list --format json --limit 1 | jq -r '.[0].task_id'
+globus task list --format json --limit 1 | jq -r '.[0].task_id'
 ```
 
 ## Common Options
@@ -152,7 +152,7 @@ Get help for any command:
 ```bash
 globus --help
 globus transfer --help
-globus transfer task list --help
+globus task list --help
 ```
 
 ### Available Commands
@@ -163,10 +163,10 @@ List all available commands:
 globus --help
 ```
 
-Main command groups:
+Main commands and groups:
 
-- `auth` - Authentication and identity management
-- `transfer` - File transfer operations
+- `login` / `logout` / `whoami` - Authentication and identity management
+- `transfer` / `ls` / `mkdir` / `rm` / `task` / `endpoint` - File transfer operations
 - `search` - Search index management
 - `groups` - Group membership management
 - `flows` - Workflow automation

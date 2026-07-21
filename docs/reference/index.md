@@ -4,16 +4,16 @@ Complete reference documentation for all Globus Go CLI commands.
 
 ## Command Structure
 
-All commands follow this structure:
+Most commands follow this structure:
 
 ```bash
-globus <service> <command> [subcommand] [flags]
+globus <command> [subcommand] [flags]
 ```
 
 Example:
 
 ```bash
-globus transfer task list --limit 10
+globus task list --limit 10
 ```
 
 ## Available Services
@@ -25,7 +25,7 @@ The CLI provides commands for these Globus services:
 Authentication and identity management.
 
 ```bash
-globus auth whoami
+globus whoami
 globus login
 globus logout
 ```
@@ -35,9 +35,9 @@ globus logout
 File and directory transfer operations.
 
 ```bash
-globus transfer task list
-globus transfer ls ENDPOINT_ID:/path
-globus transfer transfer --source-endpoint SRC --dest-endpoint DST ...
+globus task list
+globus ls ENDPOINT_ID:/path
+globus transfer --source-endpoint SRC --dest-endpoint DST ...
 ```
 
 ### [Search Commands](search.md)
@@ -104,7 +104,7 @@ These flags are available for all commands:
 Default output format, suitable for parsing:
 
 ```bash
-globus auth whoami --format json
+globus whoami --format json
 ```
 
 Output:
@@ -122,7 +122,7 @@ Output:
 Human-readable tabular output:
 
 ```bash
-globus auth whoami --format text
+globus whoami --format text
 ```
 
 ## Getting Help
@@ -134,10 +134,10 @@ Get help for any command:
 globus transfer --help
 
 # Command-level help
-globus transfer task --help
+globus task --help
 
 # Subcommand-level help
-globus transfer task list --help
+globus task list --help
 ```
 
 ## Exit Codes

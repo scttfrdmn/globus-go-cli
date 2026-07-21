@@ -27,8 +27,8 @@ The Go CLI maintains command compatibility with the Python CLI. Most commands wo
 ```bash
 # These work the same in both CLIs
 globus login
-globus auth whoami
-globus transfer task list
+globus whoami
+globus task list
 globus search index list
 ```
 
@@ -119,7 +119,7 @@ source <(globus completion bash)
 ## Migration Checklist
 
 - [ ] Install Go CLI using preferred method
-- [ ] Verify authentication works: `globus auth whoami`
+- [ ] Verify authentication works: `globus whoami`
 - [ ] Test critical commands from your scripts
 - [ ] Update scripts to specify `--format` explicitly
 - [ ] Update shell completion configuration
