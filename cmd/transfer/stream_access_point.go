@@ -34,7 +34,7 @@ func streamAccessPointShowCmd() *cobra.Command {
 		Short: "Show details of a Globus Streams access point (unavailable)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("Globus Streams is not supported by this SDK version")
+			return fmt.Errorf("this SDK version does not support Globus Streams")
 		},
 	}
 }

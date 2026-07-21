@@ -71,8 +71,8 @@ func init() {
 	CreateCmd.Flags().BoolVar(&createRequiredMFA, "required-mfa", false, "Require multi-factor authentication for flow runs")
 	CreateCmd.Flags().StringSliceVar(&createSessionPolicies, "session-policies", []string{}, "Named authentication session policies required for flow runs")
 
-	CreateCmd.MarkFlagRequired("title")
-	CreateCmd.MarkFlagRequired("definition-file")
+	_ = CreateCmd.MarkFlagRequired("title")
+	_ = CreateCmd.MarkFlagRequired("definition-file")
 }
 
 func runFlowsCreate(cmd *cobra.Command, args []string) error {

@@ -22,7 +22,7 @@ func TestRootCommand(t *testing.T) {
 		// Execute with a new rootCmd instance for testing
 		cmd := getRootCommandForTesting()
 		cmd.SetArgs([]string{"--help"})
-		cmd.Execute()
+		_ = cmd.Execute()
 	})
 
 	// Check that the output contains expected content

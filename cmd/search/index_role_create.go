@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	roleCreateName string
 	roleCreateRole string
 )
 

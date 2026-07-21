@@ -140,12 +140,12 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&mapHTTPStatus, "map-http-status", "", "map HTTP statuses to exit codes, e.g. \"404=50,403=51\"")
 
 	// Bind flags to viper
-	viper.BindPFlag("profile", rootCmd.PersistentFlags().Lookup("profile"))
-	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
-	viper.BindPFlag("quiet", rootCmd.PersistentFlags().Lookup("quiet"))
-	viper.BindPFlag("format", rootCmd.PersistentFlags().Lookup("format"))
-	viper.BindPFlag("jmespath", rootCmd.PersistentFlags().Lookup("jmespath"))
-	viper.BindPFlag("map_http_status", rootCmd.PersistentFlags().Lookup("map-http-status"))
+	_ = viper.BindPFlag("profile", rootCmd.PersistentFlags().Lookup("profile"))
+	_ = viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
+	_ = viper.BindPFlag("quiet", rootCmd.PersistentFlags().Lookup("quiet"))
+	_ = viper.BindPFlag("format", rootCmd.PersistentFlags().Lookup("format"))
+	_ = viper.BindPFlag("jmespath", rootCmd.PersistentFlags().Lookup("jmespath"))
+	_ = viper.BindPFlag("map_http_status", rootCmd.PersistentFlags().Lookup("map-http-status"))
 
 	// Add service commands
 	addServiceCommands()

@@ -87,9 +87,9 @@ func init() {
 	CreateFlowCmd.Flags().StringVar(&createFlowStop, "stop", "", "Stop time (RFC3339 format)")
 	CreateFlowCmd.Flags().StringVar(&createFlowTimezone, "timezone", "UTC", "Deprecated: only used with the removed cron scheduling")
 
-	CreateFlowCmd.MarkFlagRequired("name")
-	CreateFlowCmd.MarkFlagRequired("start")
-	CreateFlowCmd.MarkFlagRequired("flow-scope")
+	_ = CreateFlowCmd.MarkFlagRequired("name")
+	_ = CreateFlowCmd.MarkFlagRequired("start")
+	_ = CreateFlowCmd.MarkFlagRequired("flow-scope")
 }
 
 func runCreateFlowTimer(cmd *cobra.Command, args []string) error {

@@ -27,14 +27,14 @@ func CaptureOutput(f func()) (string, string) {
 	// Goroutine to capture stdout
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, rOut)
+		_, _ = io.Copy(&buf, rOut)
 		outC <- buf.String()
 	}()
 
 	// Goroutine to capture stderr
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, rErr)
+		_, _ = io.Copy(&buf, rErr)
 		errC <- buf.String()
 	}()
 

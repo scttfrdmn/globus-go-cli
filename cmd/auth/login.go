@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -244,22 +243,3 @@ func printTokenInfo(token *TokenInfo) {
 	}
 }
 
-// openBrowser tries to open the default browser with the given URL
-func openBrowser(url string) {
-	var err error
-
-	switch os.Getenv("GOOS") {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = fmt.Errorf("unsupported platform")
-	}
-
-	if err != nil {
-		fmt.Printf("Failed to open browser: %v\n", err)
-	}
-}

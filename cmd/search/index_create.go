@@ -52,7 +52,7 @@ func init() {
 	IndexCreateCmd.Flags().StringVar(&indexCreateDescription, "description", "", "Description of the index")
 	IndexCreateCmd.Flags().BoolVar(&indexCreateMonitored, "monitored", false, "Enable monitoring for the index")
 
-	IndexCreateCmd.MarkFlagRequired("display-name")
+	_ = IndexCreateCmd.MarkFlagRequired("display-name")
 }
 
 func runIndexCreate(cmd *cobra.Command, args []string) error {

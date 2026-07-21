@@ -149,7 +149,7 @@ func (f *Formatter) formatCSV(data interface{}, headers []string) error {
 
 	// Write data
 	value := reflect.ValueOf(data)
-	if value.Kind() == reflect.Ptr {
+	if value.Kind() == reflect.Pointer {
 		value = value.Elem()
 	}
 
@@ -188,7 +188,7 @@ func (f *Formatter) formatCSV(data interface{}, headers []string) error {
 
 // writeCSVRow writes a single row of CSV data
 func writeCSVRow(w *csv.Writer, item reflect.Value, headers []string) error {
-	if item.Kind() == reflect.Ptr {
+	if item.Kind() == reflect.Pointer {
 		item = item.Elem()
 	}
 
@@ -224,7 +224,7 @@ func (f *Formatter) formatText(data interface{}, headers []string) error {
 
 	// Write data
 	value := reflect.ValueOf(data)
-	if value.Kind() == reflect.Ptr {
+	if value.Kind() == reflect.Pointer {
 		value = value.Elem()
 	}
 
@@ -265,12 +265,12 @@ func (f *Formatter) formatText(data interface{}, headers []string) error {
 // line-oriented processing (the Python CLI's "unix" format).
 func (f *Formatter) formatUnix(data interface{}, headers []string) error {
 	value := reflect.ValueOf(data)
-	if value.Kind() == reflect.Ptr {
+	if value.Kind() == reflect.Pointer {
 		value = value.Elem()
 	}
 
 	writeRow := func(item reflect.Value) {
-		if item.Kind() == reflect.Ptr {
+		if item.Kind() == reflect.Pointer {
 			item = item.Elem()
 		}
 		cols := make([]string, len(headers))
@@ -306,7 +306,7 @@ func (f *Formatter) formatUnix(data interface{}, headers []string) error {
 
 // writeTextRow writes a single row of tabular text data
 func writeTextRow(w *tabwriter.Writer, item reflect.Value, headers []string) error {
-	if item.Kind() == reflect.Ptr {
+	if item.Kind() == reflect.Pointer {
 		item = item.Elem()
 	}
 

@@ -43,7 +43,7 @@ func tunnelUnsupportedCmd(use, short string) *cobra.Command {
 		Use:   use,
 		Short: short + " (unavailable)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("Globus Streams tunnels are not supported by this SDK version")
+			return fmt.Errorf("this SDK version does not support Globus Streams tunnels")
 		},
 	}
 }
