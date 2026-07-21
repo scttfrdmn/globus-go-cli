@@ -75,7 +75,8 @@ func tunnelListCmd() *cobra.Command {
 
 			formatter := output.NewFormatter(viper.GetString("format"), cmd.OutOrStdout())
 			if formatter.Format == output.FormatJSON {
-				return formatter.FormatOutput(resp.Tunnels, nil)
+				// Emit the enveloped service document ({"DATA":[...],...}).
+				return formatter.FormatOutput(resp, nil)
 			}
 
 			type tunnelRow struct {
@@ -294,7 +295,7 @@ func tunnelEventsCmd() *cobra.Command {
 
 			formatter := output.NewFormatter(viper.GetString("format"), cmd.OutOrStdout())
 			if formatter.Format == output.FormatJSON {
-				return formatter.FormatOutput(resp.Events, nil)
+				return formatter.FormatOutput(resp, nil)
 			}
 
 			type eventRow struct {

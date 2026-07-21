@@ -247,7 +247,10 @@ func addServiceCommands() {
 		getSearchCommand(),
 		getFlowsCommand(),
 		getComputeCommand(),
+		getEndpointManagerCommand(),
 		getAPICommand(),
 		getConfigCommand(),
+		getListCommandsCommand(),
+		getVersionCommand(),
 	)
 }

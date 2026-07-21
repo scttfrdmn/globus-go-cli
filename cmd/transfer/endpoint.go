@@ -33,6 +33,8 @@ searching, and displaying endpoint details.`,
 		endpointDeleteCmd(),
 		endpointRoleCmd(),
 		endpointPermissionCmd(),
+		endpointSetSubscriptionIDCmd(),
+		endpointMySharedEndpointListCmd(),
 	)
 
 	return endpointCmd
@@ -163,7 +165,9 @@ func listEndpoints(cmd *cobra.Command) error {
 	formatter := output.NewFormatter(format, cmd.OutOrStdout())
 
 	if formatter.Format == output.FormatJSON {
-		return formatter.FormatOutput(endpoints.Data, nil)
+		// Emit the enveloped service document ({"DATA_TYPE","DATA":[...],...}),
+		// matching the Python CLI's JSON output shape.
+		return formatter.FormatOutput(endpoints, nil)
 	}
 
 	type endpointRow struct {

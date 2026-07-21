@@ -427,6 +427,60 @@ func endpointPermissionDeleteCmd() *cobra.Command {
 	}
 }
 
+// endpointSetSubscriptionIDCmd returns the "endpoint set-subscription-id"
+// command, which associates an endpoint with a managed endpoint subscription.
+func endpointSetSubscriptionIDCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-subscription-id ENDPOINT_ID SUBSCRIPTION_ID",
+		Short: "Set the subscription ID for an endpoint",
+		Long:  `Associate a Globus endpoint with a managed endpoint subscription.`,
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			client, err := getClient(ctx)
+			if err != nil {
+				return err
+			}
+
+			resp, err := client.SetSubscriptionID(ctx, args[0], args[1])
+			if err != nil {
+				return fmt.Errorf("failed to set subscription ID: %w", err)
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Endpoint %s subscription ID set to %s.\n", args[0], args[1])
+			printResponseCodeMessage(cmd, resp)
+			return nil
+		},
+	}
+}
+
+// endpointMySharedEndpointListCmd returns the "endpoint my-shared-endpoint-list"
+// command, which lists shared endpoints the current user has created on a host.
+func endpointMySharedEndpointListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "my-shared-endpoint-list ENDPOINT_ID",
+		Short: "List shared endpoints you created on a host endpoint",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			client, err := getClient(ctx)
+			if err != nil {
+				return err
+			}
+
+			resp, err := client.MySharedEndpointList(ctx, args[0])
+			if err != nil {
+				return fmt.Errorf("failed to list shared endpoints: %w", err)
+			}
+			return formatGenericResponse(cmd, resp)
+		},
+	}
+}
+
 // formatGenericResponse routes a GenericResponse (map[string]interface{})
 // through the shared formatter so -F (text/json/unix) and --jmespath/--jq
 // work uniformly. For text/unix, the whole map is emitted.

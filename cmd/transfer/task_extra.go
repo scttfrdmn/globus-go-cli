@@ -105,11 +105,15 @@ func listTaskEvents(cmd *cobra.Command, taskID string) error {
 		return fmt.Errorf("failed to list task events: %w", err)
 	}
 
-	// For json/unix or a --jmespath/--jq expression, route through the shared
-	// formatter (raw event documents). Otherwise render the text view.
+	// For a --jmespath/--jq expression or JSON, emit the enveloped service
+	// document ({"DATA_TYPE","DATA":[...]}), matching the Python CLI. For unix
+	// (tab-delimited) emit the flat event rows.
 	format := viper.GetString("format")
 	formatter := output.NewFormatter(format, cmd.OutOrStdout())
-	if formatter.Format == output.FormatJSON || formatter.Format == output.FormatUnix {
+	if formatter.Format == output.FormatJSON {
+		return formatter.FormatOutput(resp, nil)
+	}
+	if formatter.Format == output.FormatUnix {
 		return formatter.FormatOutput(resp.Data, nil)
 	}
 
