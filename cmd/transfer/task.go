@@ -37,6 +37,9 @@ showing details, canceling, and waiting for completion.`,
 		taskShowCmd(),
 		taskCancelCmd(),
 		taskWaitCmd(),
+		taskEventListCmd(),
+		taskPauseInfoCmd(),
+		taskUpdateCmd(),
 	)
 
 	return taskCmd

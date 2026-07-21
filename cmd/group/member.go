@@ -37,6 +37,10 @@ Examples:
 	memberCmd.AddCommand(MemberAddCmd)
 	memberCmd.AddCommand(MemberRemoveCmd)
 	memberCmd.AddCommand(MemberInviteCmd)
+	memberCmd.AddCommand(memberApproveCmd())
+	memberCmd.AddCommand(memberRejectCmd())
+	memberCmd.AddCommand(memberAcceptCmd())
+	memberCmd.AddCommand(memberDeclineCmd())
 
 	return memberCmd
 }

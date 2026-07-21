@@ -3,25 +3,25 @@
 package group
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"time"
 
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/groups"
 	"github.com/spf13/cobra"
 )
 
-var (
-	inviteRole              string
-	inviteProvisionIdentity bool
-)
+var inviteRole string
 
 // MemberInviteCmd represents the member invite command
 var MemberInviteCmd = &cobra.Command{
-	Use:   "invite GROUP_ID EMAIL",
+	Use:   "invite GROUP_ID IDENTITY_ID",
 	Short: "Invite a member to join a group",
-	Long: `Invite a user to join a Globus group by email address.
+	Long: `Invite a user to join a Globus group.
 
-The invitee will receive an email invitation to join the group.
-Use --provision-identity to create a Globus identity for users who
-don't have one yet.
+The invitee is identified by their Globus identity ID (not an email
+address); the Groups API requires an identity ID for invitations.
 
 Available roles:
   - member: Basic group membership (default)
@@ -30,29 +30,43 @@ Available roles:
 
 Examples:
   # Invite a basic member
-  globus group member invite GROUP_ID user@example.com
+  globus group member invite GROUP_ID IDENTITY_ID
 
   # Invite with a specific role
-  globus group member invite GROUP_ID user@example.com --role manager
-
-  # Invite and provision identity if needed
-  globus group member invite GROUP_ID user@example.com --provision-identity`,
+  globus group member invite GROUP_ID IDENTITY_ID --role manager`,
 	Args: cobra.ExactArgs(2),
 	RunE: runMemberInvite,
 }
 
 func init() {
 	MemberInviteCmd.Flags().StringVar(&inviteRole, "role", "member", "Role for the invited member (member, manager, admin)")
-	MemberInviteCmd.Flags().BoolVar(&inviteProvisionIdentity, "provision-identity", false, "Provision a Globus identity if the user doesn't have one")
 }
 
 func runMemberInvite(cmd *cobra.Command, args []string) error {
 	groupID := args[0]
+	identityID := args[1]
 
-	// Note: Invite functionality requires direct API integration
-	// The SDK v3.65.0-1 doesn't yet expose a high-level InviteMember method
-	// This would typically be done via the Groups API /groups/{group_id}/invite endpoint
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	return fmt.Errorf("member invite functionality is not yet available in SDK v3.65.0-1\n" +
-		"Please use the Globus web interface to invite members: https://app.globus.org/groups/%s", groupID)
+	// Build a v4 Groups client authorized for the current profile.
+	groupsClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Invite member via a single batch membership action
+	// (POST /groups/{id}); the API has no dedicated invite route.
+	_, err = groupsClient.BatchMembershipAction(ctx, groupID, &groups.BatchMembershipActions{
+		Invite: []groups.MemberWithRole{{IdentityID: identityID, Role: inviteRole}},
+	})
+	if err != nil {
+		return fmt.Errorf("error inviting member: %w", err)
+	}
+
+	// Display success message
+	fmt.Fprintf(os.Stdout, "Successfully invited identity %s to group %s with role '%s'.\n", identityID, groupID, inviteRole)
+
+	return nil
 }

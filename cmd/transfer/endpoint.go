@@ -29,6 +29,10 @@ searching, and displaying endpoint details.`,
 		endpointListCmd(),
 		endpointShowCmd(),
 		endpointSearchCmd(),
+		endpointUpdateCmd(),
+		endpointDeleteCmd(),
+		endpointRoleCmd(),
+		endpointPermissionCmd(),
 	)
 
 	return endpointCmd

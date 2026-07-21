@@ -43,6 +43,7 @@ Examples:
 	groupCmd.AddCommand(group.JoinCmd)
 	groupCmd.AddCommand(group.LeaveCmd)
 	groupCmd.AddCommand(group.GetMemberCmd())
+	groupCmd.AddCommand(group.PolicyCmd())
 
 	return groupCmd
 }
