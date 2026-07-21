@@ -10,12 +10,8 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/transfer"
 )
 
 var (
@@ -59,56 +55,22 @@ Examples:
 
 // removeItem removes a file or directory on an endpoint
 func removeItem(cmd *cobra.Command, endpointID, path string) error {
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration - not used with direct client initialization in v0.9.17
-	// We still load it for future use cases
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create a simple static token authorizer for v0.9.17
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-
-	// Create a core authorizer adapter for v0.9.17 compatibility
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create transfer client with v0.9.17 compatible options
-	transferOptions := []transfer.Option{
-		transfer.WithAuthorizer(coreAuthorizer),
-	}
-
-	transferClient, err := transfer.NewClient(transferOptions...)
-	if err != nil {
-		return fmt.Errorf("failed to create transfer client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Build a v4 Transfer client authorized for the current profile.
+	transferClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Check if we need to prompt for confirmation
 	if !rmForce {
 		// Get file/directory info
-		options := &transfer.ListDirectoryOptions{
-			EndpointID: endpointID,
-			Path:       path,
-		}
+		options := &transfer.ListDirectoryOptions{}
 
-		listing, err := transferClient.ListDirectory(ctx, options)
+		listing, err := transferClient.ListDirectory(ctx, endpointID, path, options)
 		if err != nil {
 			// If we can't get info, still prompt
 			prompt := fmt.Sprintf("Are you sure you want to delete %s:%s?", endpointID, path)
@@ -152,21 +114,25 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 		}
 	}
 
-	// Delete the item using a delete task request for v0.9.17
-	deleteItem := transfer.DeleteItem{
-		DataType: "delete_item",
-		Path:     path,
-		// Note: In SDK v0.9.17, recursive is handled at the task level
+	// Submit a delete task. The v4 SDK carries recursion on the Delete request
+	// itself, and requires a submission ID minted from the service.
+	submissionID, err := transferClient.GetSubmissionID(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get submission ID: %w", err)
 	}
 
-	deleteRequest := &transfer.DeleteTaskRequest{
-		DataType:   "delete",
-		EndpointID: endpointID,
-		Items:      []transfer.DeleteItem{deleteItem},
+	deleteRequest := &transfer.Delete{
+		DATA_TYPE:    "delete",
+		SubmissionID: submissionID,
+		Endpoint:     endpointID,
+		Recursive:    rmRecursive,
+		Items: []transfer.DeleteItem{
+			{DATA_TYPE: "delete_item", Path: path},
+		},
 	}
 
 	// Create a delete task
-	taskResponse, err := transferClient.CreateDeleteTask(ctx, deleteRequest)
+	taskResponse, err := transferClient.SubmitDelete(ctx, deleteRequest)
 	if err != nil {
 		return fmt.Errorf("failed to delete item: %w", err)
 	}

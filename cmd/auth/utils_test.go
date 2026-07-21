@@ -65,8 +65,9 @@ func TestGetTokenFilePath(t *testing.T) {
 		t.Fatalf("Error getting home directory: %v", err)
 	}
 
-	// Create a mock token file path
-	expectedPath := filepath.Join(homeDir, ".globus-cli", "tokens", "test-profile.json")
+	// The legacy bridge token file lives at "<profile>-legacy.json" so it does
+	// not collide with the v4 GlobusApp store at "<profile>.json".
+	expectedPath := filepath.Join(homeDir, ".globus-cli", "tokens", "test-profile-legacy.json")
 
 	// Test the function
 	tokenPath, err := GetTokenFilePathFunc("test-profile")

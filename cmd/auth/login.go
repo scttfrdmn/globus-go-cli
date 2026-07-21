@@ -200,19 +200,12 @@ func loadToken(profile string) (*TokenInfo, error) {
 	return &token, nil
 }
 
-// getTokenFilePath returns the path to the token file for a profile
+// getTokenFilePath returns the path to the legacy bridge token file for a
+// profile. It delegates to GetTokenFilePathFunc (utils.go) so the writer here
+// and the reader in LoadToken always agree on the location, and so both stay
+// distinct from the v4 GlobusApp store at "<profile>.json".
 func getTokenFilePath(profile string) (string, error) {
-	// Get the home directory
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("error getting home directory: %w", err)
-	}
-
-	// Create the token file path
-	tokensDir := filepath.Join(homeDir, ".globus-cli", "tokens")
-	tokenFile := filepath.Join(tokensDir, profile+".json")
-
-	return tokenFile, nil
+	return GetTokenFilePathFunc(profile)
 }
 
 // isTokenValid checks if a token is valid

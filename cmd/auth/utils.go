@@ -26,9 +26,12 @@ var GetTokenFilePathFunc = func(profile string) (string, error) {
 		return "", fmt.Errorf("error getting home directory: %w", err)
 	}
 
-	// Create the token file path
+	// Create the token file path. This is the *legacy* single-token bridge file
+	// used by commands not yet migrated to the v4 per-resource-server store. It
+	// deliberately lives at "<profile>-legacy.json" so it never collides with
+	// the v4 GlobusApp token store at "<profile>.json" (see pkg/globusauth).
 	tokensDir := filepath.Join(homeDir, ".globus-cli", "tokens")
-	tokenFile := filepath.Join(tokensDir, profile+".json")
+	tokenFile := filepath.Join(tokensDir, profile+"-legacy.json")
 
 	return tokenFile, nil
 }
