@@ -17,9 +17,13 @@ func addTransferCommands(root *cobra.Command) {
 		transfer.LsCmd(),
 		transfer.MkdirCmd(),
 		transfer.RmCmd(),
+		transfer.RenameCmd(),
+		transfer.StatCmd(),
+		transfer.DeleteCmd(),
 		transfer.CpCmd(), // exposed as the top-level `transfer` verb
 		transfer.TaskCmd(),
 		transfer.EndpointCmd(),
+		transfer.BookmarkCmd(),
 		transfer.TunnelCmd(),
 		transfer.StreamAccessPointCmd(),
 	)

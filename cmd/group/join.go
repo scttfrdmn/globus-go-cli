@@ -3,12 +3,16 @@
 package group
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"time"
 
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/groups"
 	"github.com/spf13/cobra"
 )
 
-var joinRequest bool
+var joinIdentity string
 
 // JoinCmd represents the group join command
 var JoinCmd = &cobra.Command{
@@ -16,28 +20,44 @@ var JoinCmd = &cobra.Command{
 	Short: "Join a Globus group",
 	Long: `Join a Globus group as a member.
 
-For open groups, you will be added immediately. For closed groups,
-use the --request flag to submit a membership request that requires approval.
+The --identity flag specifies the identity ID that joins the group.
 
 Examples:
-  # Join an open group
-  globus group join GROUP_ID
-
-  # Request to join a closed group
-  globus group join GROUP_ID --request`,
+  # Join a group as a specific identity
+  globus group join GROUP_ID --identity IDENTITY_ID`,
 	Args: cobra.ExactArgs(1),
 	RunE: runJoinGroup,
 }
 
 func init() {
-	JoinCmd.Flags().BoolVar(&joinRequest, "request", false, "Request membership (for groups requiring approval)")
+	JoinCmd.Flags().StringVar(&joinIdentity, "identity", "", "Identity ID to join the group as (required)")
+	_ = JoinCmd.MarkFlagRequired("identity")
 }
 
 func runJoinGroup(cmd *cobra.Command, args []string) error {
-	// Note: Join functionality requires direct API integration
-	// The SDK v3.65.0-1 doesn't yet expose a high-level JoinGroup method
-	// This would typically be done via the Groups API /groups/{group_id}/join endpoint
+	groupID := args[0]
 
-	return fmt.Errorf("group join functionality is not yet available in SDK v3.65.0-1\n" +
-		"Please use the Globus web interface to join groups: https://app.globus.org/groups")
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Build a v4 Groups client authorized for the current profile.
+	groupsClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Join the group via a single batch membership action
+	// (POST /groups/{id}); the API has no dedicated join route.
+	_, err = groupsClient.BatchMembershipAction(ctx, groupID, &groups.BatchMembershipActions{
+		Join: []groups.MemberID{{IdentityID: joinIdentity}},
+	})
+	if err != nil {
+		return fmt.Errorf("error joining group: %w", err)
+	}
+
+	// Display success message
+	fmt.Fprintf(os.Stdout, "Successfully joined group %s as identity %s.\n", groupID, joinIdentity)
+
+	return nil
 }

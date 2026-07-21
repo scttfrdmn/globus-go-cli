@@ -52,23 +52,23 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 
 | Area | Python CLI | Go CLI | Status |
 |------|-----------|--------|--------|
-| Login / logout / whoami | ✅ | ✅ (`auth login/logout/whoami`) | Covered |
-| Identity lookup | `get-identities` | ✅ (`auth identities lookup`) | Covered |
-| Transfer submit / ls / mkdir / rename / rm / stat | ✅ | Partial — `cp`, `ls`, `mkdir`, `rm`; **no `rename`, no `stat`** | Gap: rename, stat |
-| Tasks (show/list/cancel/wait/event-list/pause-info/update) | ✅ (8) | Partial — show/list/cancel/wait; **no event-list, pause-info, update, generate-submission-id** | Gap |
-| Endpoint search / show / update / delete | ✅ | Partial — search/show/list; **no update/delete** | Gap |
-| Endpoint roles | ✅ (create/delete/list/show) | ❌ none | Gap |
-| Endpoint permissions (ACLs) | ✅ (5) | ❌ none | Gap |
-| Bookmarks | ✅ (5) | ❌ none | Gap |
-| Collections / GCS management | ✅ (`collection`, `gcs`, 32 cmds) | ❌ none | Gap (no SDK support) |
+| Login / logout / whoami | ✅ | ✅ (`login`/`logout`/`whoami`) | Covered |
+| Identity lookup | `get-identities` | ✅ (`get-identities`) | Covered |
+| Transfer submit / ls / mkdir / rename / rm / stat | ✅ | ✅ — `transfer`, `ls`, `mkdir`, `rm`, `rename`, `stat`, `delete` | Covered (Phase 4) |
+| Tasks (show/list/cancel/wait/event-list/pause-info/update) | ✅ (8) | ✅ — show/list/cancel/wait/event-list/pause-info/update | Covered (Phase 4) |
+| Endpoint search / show / update / delete | ✅ | ✅ — search/show/list/update/delete | Covered (Phase 4) |
+| Endpoint roles | ✅ (create/delete/list/show) | ✅ (`endpoint role list/show/create/delete`) | Covered (Phase 4) |
+| Endpoint permissions (ACLs) | ✅ (5) | ✅ (`endpoint permission list/show/create/update/delete`) | Covered (Phase 4) |
+| Bookmarks | ✅ (5) | ✅ (`bookmark list/show/create/rename/delete`) | Covered (Phase 4) |
+| Collections / GCS management | ✅ (`collection`, `gcs`, 32 cmds) | ❌ none | Gap (Phase 5 — v4 gcs service) |
 | GCP (Connect Personal) | ✅ (6) | ❌ none | Gap (no SDK support) |
-| Streams / tunnels | ✅ (8) | Stubs (report "unavailable") | Gap (not in v3 SDK) |
+| Streams / tunnels | ✅ (8) | Stubs (report "unavailable") | Gap (v4 transfer tunnels exist; Phase 5) |
 | Search (index/query/ingest/task/role/subject) | ✅ (14) | ✅ comparable | Covered |
-| Groups (member/role/policy/invite/join/leave) | ✅ (19) | Partial — create/delete/list/show/update, member add/invite/list/remove, join/leave; **no group role commands** | Mostly covered |
+| Groups (member/role/policy/invite/join/leave) | ✅ (19) | ✅ — create/delete/list/show/update, member add/invite/list/remove/accept/decline/approve/reject, join/leave, `policies show/set` | Covered (Phase 4) |
 | Flows (create/run/list/show/update/validate/logs) | ✅ (17) | ✅ comparable | Covered |
 | Timers | ✅ (7) | ✅ (create/list/show/pause/resume/delete) | Covered |
-| `api` raw passthrough | ✅ (7 services) | ❌ none | Gap |
-| `session` (consent/show/update) | ✅ (3) | ❌ none | Gap |
+| `api` raw passthrough | ✅ (7 services) | ❌ none | Gap (Phase 5) |
+| `session` (consent/show/update) | ✅ (3) | ❌ none | Gap — needs reauth/session-boundary support not in the v4 SDK (only `GetConsents`) |
 | Compute | ❌ (not in Python CLI) | ✅ (endpoint/function/task) | Go-only extension |
 
 ## Gap classification
@@ -77,24 +77,25 @@ Two kinds of gap, important to distinguish:
 
 ### A. CLI gaps the Go SDK already supports (exposing them is CLI-only work)
 
-The v3 SDK parity audit added the wire methods for most of these; the CLI simply
-hasn't wired up commands yet:
+**Phase 4 wired up most of these** — now covered: bookmarks
+(`bookmark list/show/create/rename/delete`), endpoint roles
+(`endpoint role list/show/create/delete`), endpoint ACLs
+(`endpoint permission list/show/create/update/delete`), endpoint
+`update`/`delete`, transfer `rename`/`stat`/`delete`, task
+`event-list`/`pause-info`/`update`, and group membership actions
+(`member accept/decline/approve/reject`, real `join`/`leave`/`invite`) plus
+`group policies show/set`.
 
-- **Bookmarks** — SDK: `BookmarkList`/`CreateBookmark`/`GetBookmark`/
-  `UpdateBookmark`/`DeleteBookmark`.
-- **Endpoint roles** — SDK: `EndpointRoleList`/`AddEndpointRole`/
-  `GetEndpointRole`/`DeleteEndpointRole`.
-- **Endpoint ACLs / permissions** — SDK: `EndpointACLList`/`GetEndpointACLRule`/
-  `AddEndpointACLRule`/`UpdateEndpointACLRule`/`DeleteEndpointACLRule`.
-- **Endpoint update/delete, set-subscription-id, shared-endpoint list** — SDK:
-  `UpdateEndpoint`/`DeleteEndpoint`/`SetSubscriptionID`/`MySharedEndpointList`/
-  `GetSharedEndpointList`.
-- **Transfer `stat`** — SDK: `OperationStat`. **`rename`** — SDK: `Rename`.
-- **Task `event-list`/`pause-info`/`update`** — SDK: `TaskEventList`/
-  `TaskPauseInfo`/`UpdateTask` (+ `TaskSuccessfulTransfers`/`TaskSkippedErrors`).
-- **Endpoint-manager admin surface** — SDK: full `EndpointManager*` family.
-- **Group roles**, **session/consents** — SDK: groups membership actions and
-  auth `GetConsents`/`GetIdentities` exist.
+Still available in the SDK but not yet wired:
+
+- **Endpoint `set-subscription-id`, shared-endpoint list** — SDK:
+  `SetSubscriptionID`/`MySharedEndpointList`/`GetSharedEndpointList`.
+- **Endpoint-manager admin surface** — SDK: full `EndpointManager*` family
+  (monitored endpoints, admin task list/cancel/pause, pause rules).
+- **`session` show/update/consent** — the Python CLI's session commands drive a
+  high-assurance **reauthentication / session-boundary** flow. The v4 Go SDK
+  exposes `GetConsents` but no reauth/session-update endpoint, so a faithful
+  `session` is deferred pending SDK support (see Phase 6 / SDK work).
 
 ### B. Gaps with no v3 SDK support (need SDK work first, or are out of scope)
 
@@ -118,10 +119,16 @@ or functions server-side — those require the Globus Compute serialization SDK)
 ## Summary
 
 The Go CLI covers the **core data-management workflows** (transfer, search,
-groups, flows, timers, auth) at rough parity with the Python CLI's most-used
-commands, plus a compute extension. The material gaps are:
+groups, flows, timers, auth) at parity with the Python CLI's most-used commands,
+plus a compute extension. After Phase 4, endpoint administration (roles,
+ACLs/permissions, update/delete), bookmarks, transfer `rename`/`stat`/`delete`,
+task `event-list`/`pause-info`/`update`, and the full group membership + policy
+surface are all wired. The remaining gaps are:
 
-1. **Endpoint administration** (roles, ACLs/permissions, update/delete) and
-   **bookmarks** — all SDK-supported; CLI wiring is the remaining work.
-2. **GCS/collections and GCP** — larger, need a v4-gcs path or are out of scope.
-3. **`api` passthrough** and **`session`** — convenience features.
+1. **GCS/collections** (`collection`, `gcs`) — Phase 5, via the v4 `gcs` service.
+2. **`api` raw passthrough** — Phase 5, a thin HTTP wrapper.
+3. **Streams/tunnels** — v4 transfer client has the methods; Phase 5 can replace
+   the "unavailable" stubs.
+4. **`session`** — needs reauth/session-boundary SDK support not yet available.
+5. **GCP (Connect Personal)** — local-agent management; not an SDK API
+   (out of scope).
