@@ -7,6 +7,7 @@ toolchain go1.24.5
 require (
 	github.com/briandowns/spinner v1.23.0
 	github.com/fatih/color v1.15.0
+	github.com/jmespath/go-jmespath v0.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/manifoldco/promptui v0.9.0
 	github.com/scttfrdmn/globus-go-sdk/v3 v3.65.0-1

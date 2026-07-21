@@ -4,9 +4,7 @@ package transfer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -289,22 +287,15 @@ func showTask(cmd *cobra.Command, taskID string) error {
 		return fmt.Errorf("failed to get task: %w", err)
 	}
 
-	// Get output format
+	// For json/unix or a --jmespath/--jq expression, route through the shared
+	// formatter (raw task document). Otherwise render the text detail view.
 	format := viper.GetString("format")
-	if format == "" {
-		format = "text"
+	formatter := output.NewFormatter(format, cmd.OutOrStdout())
+	if formatter.Format == output.FormatJSON || formatter.Format == output.FormatUnix {
+		return formatter.FormatOutput(task, nil)
 	}
 
-	// Display the results based on format
-	switch strings.ToLower(format) {
-	case "json":
-		// Output as JSON
-		jsonData, err := json.MarshalIndent(task, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to format JSON: %w", err)
-		}
-		fmt.Println(string(jsonData))
-	default:
+	{
 		// Output as text
 		fmt.Println("Task Details:")
 		fmt.Printf("  Task ID:        %s\n", task.TaskID)

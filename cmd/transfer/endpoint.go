@@ -4,9 +4,7 @@ package transfer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,6 +12,7 @@ import (
 
 	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-cli/pkg/output"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
@@ -188,53 +187,31 @@ func listEndpoints(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to list endpoints: %w", err)
 	}
 
-	// Get output format
+	// Route all formats through the shared formatter so -F (text/json/unix) and
+	// --jmespath/--jq work uniformly. For JSON/JMESPath, emit the raw endpoint
+	// documents; for text/unix, a projected row set.
 	format := viper.GetString("format")
-	if format == "" {
-		format = "text"
+	formatter := output.NewFormatter(format, cmd.OutOrStdout())
+
+	if formatter.Format == output.FormatJSON {
+		return formatter.FormatOutput(endpoints.Data, nil)
 	}
 
-	// Display the results based on format
-	switch strings.ToLower(format) {
-	case "json":
-		// Output as JSON
-		jsonData, err := json.MarshalIndent(endpoints, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to format JSON: %w", err)
-		}
-		fmt.Println(string(jsonData))
-	case "csv":
-		// Output as CSV
-		fmt.Println("id,display_name,owner_string,activated,gcp_connected")
-		for _, endpoint := range endpoints.Data {
-			fmt.Printf("%s,%s,%s,%t,%t\n",
-				endpoint.ID,
-				strings.ReplaceAll(endpoint.DisplayName, ",", " "),
-				strings.ReplaceAll(endpoint.OwnerString, ",", " "),
-				endpoint.Activated,
-				endpoint.GCPConnected,
-			)
-		}
-	default:
-		// Output as simple table for v0.9.17 compatibility
-		fmt.Println("ID\tName\tOwner\tActivated\tConnected")
-		fmt.Println("---\t----\t-----\t---------\t---------")
-
-		for _, endpoint := range endpoints.Data {
-			fmt.Printf("%s\t%s\t%s\t%t\t%t\n",
-				endpoint.ID,
-				endpoint.DisplayName,
-				endpoint.OwnerString,
-				endpoint.Activated,
-				endpoint.GCPConnected,
-			)
-		}
-
-		// Display count
-		fmt.Printf("\nShowing %d endpoints\n", len(endpoints.Data))
+	type endpointRow struct {
+		ID        string
+		Name      string
+		Owner     string
+		Activated bool
+		Connected bool
 	}
-
-	return nil
+	rows := make([]endpointRow, 0, len(endpoints.Data))
+	for _, e := range endpoints.Data {
+		rows = append(rows, endpointRow{
+			ID: e.ID, Name: e.DisplayName, Owner: e.OwnerString,
+			Activated: e.Activated, Connected: e.GCPConnected,
+		})
+	}
+	return formatter.FormatOutput(rows, []string{"ID", "Name", "Owner", "Activated", "Connected"})
 }
 
 // showEndpoint shows details for a specific endpoint
@@ -286,22 +263,16 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 		return fmt.Errorf("failed to get endpoint: %w", err)
 	}
 
-	// Get output format
+	// For json/unix or a --jmespath/--jq expression, route through the shared
+	// formatter (emitting the raw endpoint document). Otherwise render the text
+	// detail view below.
 	format := viper.GetString("format")
-	if format == "" {
-		format = "text"
+	formatter := output.NewFormatter(format, cmd.OutOrStdout())
+	if formatter.Format == output.FormatJSON || formatter.Format == output.FormatUnix {
+		return formatter.FormatOutput(endpoint, nil)
 	}
 
-	// Display the results based on format
-	switch strings.ToLower(format) {
-	case "json":
-		// Output as JSON
-		jsonData, err := json.MarshalIndent(endpoint, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to format JSON: %w", err)
-		}
-		fmt.Println(string(jsonData))
-	default:
+	{
 		// Output as text
 		fmt.Println("Endpoint Details:")
 		fmt.Printf("  ID:             %s\n", endpoint.ID)
