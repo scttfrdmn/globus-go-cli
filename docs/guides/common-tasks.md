@@ -7,7 +7,7 @@ Practical examples for common operations with the Globus Go CLI.
 ### Transfer a Single File
 
 ```bash
-globus transfer transfer \
+globus transfer \
   --source-endpoint abc12345-6789-0def-ghij-klmnopqrstuv \
   --dest-endpoint xyz67890-abcd-efgh-ijkl-mnopqrstuvwx \
   --source-path /data/file.txt \
@@ -18,7 +18,7 @@ globus transfer transfer \
 ### Transfer a Directory Recursively
 
 ```bash
-globus transfer transfer \
+globus transfer \
   --source-endpoint abc12345-6789-0def-ghij-klmnopqrstuv \
   --dest-endpoint xyz67890-abcd-efgh-ijkl-mnopqrstuvwx \
   --source-path /data/mydir/ \
@@ -34,10 +34,10 @@ globus transfer transfer \
 TASK_ID="01234567-89ab-cdef-0123-456789abcdef"
 
 # Check task status
-globus transfer task show $TASK_ID
+globus task show $TASK_ID
 
 # List all active tasks
-globus transfer task list --filter-status ACTIVE
+globus task list --filter-status ACTIVE
 ```
 
 ### Sync Directories
@@ -45,7 +45,7 @@ globus transfer task list --filter-status ACTIVE
 Use sync level to avoid re-transferring unchanged files:
 
 ```bash
-globus transfer transfer \
+globus transfer \
   --source-endpoint abc12345-6789-0def-ghij-klmnopqrstuv \
   --dest-endpoint xyz67890-abcd-efgh-ijkl-mnopqrstuvwx \
   --source-path /data/ \
@@ -68,19 +68,19 @@ Sync levels:
 Search for endpoints by name or keyword:
 
 ```bash
-globus transfer endpoint search "Tutorial"
+globus endpoint search "Tutorial"
 ```
 
 ### List Your Endpoints
 
 ```bash
-globus transfer endpoint list --filter-scope my-endpoints
+globus endpoint list --filter-scope my-endpoints
 ```
 
 ### Get Endpoint Details
 
 ```bash
-globus transfer endpoint show abc12345-6789-0def-ghij-klmnopqrstuv
+globus endpoint show abc12345-6789-0def-ghij-klmnopqrstuv
 ```
 
 ## Browsing Files
@@ -88,13 +88,13 @@ globus transfer endpoint show abc12345-6789-0def-ghij-klmnopqrstuv
 ### List Directory Contents
 
 ```bash
-globus transfer ls abc12345-6789-0def-ghij-klmnopqrstuv:/data/
+globus ls abc12345-6789-0def-ghij-klmnopqrstuv:/data/
 ```
 
 ### Show File Details
 
 ```bash
-globus transfer ls abc12345-6789-0def-ghij-klmnopqrstuv:/data/file.txt --long
+globus ls abc12345-6789-0def-ghij-klmnopqrstuv:/data/file.txt --long
 ```
 
 ## Using Output with jq
@@ -102,7 +102,7 @@ globus transfer ls abc12345-6789-0def-ghij-klmnopqrstuv:/data/file.txt --long
 ### Extract Task ID
 
 ```bash
-TASK_ID=$(globus transfer transfer \
+TASK_ID=$(globus transfer \
   --source-endpoint SRC \
   --dest-endpoint DST \
   --source-path /src/path \
@@ -115,13 +115,13 @@ echo "Task ID: $TASK_ID"
 ### Count Active Tasks
 
 ```bash
-globus transfer task list --filter-status ACTIVE --format json | jq 'length'
+globus task list --filter-status ACTIVE --format json | jq 'length'
 ```
 
 ### Extract Endpoint IDs
 
 ```bash
-globus transfer endpoint list --format json | jq -r '.[].id'
+globus endpoint list --format json | jq -r '.[].id'
 ```
 
 ## Automation and Scripting
@@ -133,7 +133,7 @@ globus transfer endpoint list --format json | jq -r '.[].id'
 FILES="file1.txt file2.txt file3.txt"
 
 for file in $FILES; do
-  globus transfer transfer \
+  globus transfer \
     --source-endpoint $SRC_EP \
     --dest-endpoint $DST_EP \
     --source-path "/data/$file" \
@@ -149,7 +149,7 @@ done
 TASK_ID=$1
 
 while true; do
-  STATUS=$(globus transfer task show $TASK_ID --format json | jq -r '.status')
+  STATUS=$(globus task show $TASK_ID --format json | jq -r '.status')
 
   if [ "$STATUS" = "SUCCEEDED" ]; then
     echo "Transfer completed successfully"

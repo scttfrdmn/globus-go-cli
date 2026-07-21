@@ -25,7 +25,7 @@ This opens your browser for authentication and stores credentials locally.
 View your current identity:
 
 ```bash
-globus auth whoami
+globus whoami
 ```
 
 Check session information:

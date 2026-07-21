@@ -93,28 +93,28 @@ mv globus /usr/local/bin/
 
 ```bash
 # Login to Globus
-globus auth login
+globus login
 
 # Or login without a browser
-globus auth device
+globus device
 
 # Show information about the current user
-globus auth whoami
+globus whoami
 
 # List your endpoints
-globus transfer endpoint list
+globus endpoint list
 
 # List files on an endpoint
-globus transfer ls ENDPOINT_ID:/path
+globus ls ENDPOINT_ID:/path
 
 # Transfer files between endpoints
-globus transfer cp SOURCE_ENDPOINT:/source/path DEST_ENDPOINT:/dest/path
+globus transfer SOURCE_ENDPOINT:/source/path DEST_ENDPOINT:/dest/path
 
 # Check transfer status
-globus transfer task show TASK_ID
+globus task show TASK_ID
 
 # Logout when done
-globus auth logout
+globus logout
 ```
 
 ## Configuration
@@ -146,13 +146,13 @@ Most commands support different output formats:
 
 ```bash
 # Default text format
-globus transfer endpoint list
+globus endpoint list
 
 # JSON output for scripting
-globus transfer endpoint list --format=json
+globus endpoint list --format=json
 
 # CSV output for importing into spreadsheets
-globus transfer endpoint list --format=csv
+globus endpoint list --format=csv
 ```
 
 ## Detailed Command Reference
@@ -161,69 +161,69 @@ globus transfer endpoint list --format=csv
 
 ```bash
 # Log in using browser
-globus auth login
+globus login
 
 # Log in with device code (no browser)
-globus auth device
+globus device
 
 # Show current user info
-globus auth whoami
+globus whoami
 
 # List tokens
-globus auth tokens show
+globus tokens show
 
 # Refresh tokens
-globus auth refresh
+globus refresh
 
 # Revoke tokens
-globus auth tokens revoke --type=access
+globus tokens revoke --type=access
 
 # Look up identities
-globus auth identities lookup user@example.com
+globus get-identities user@example.com
 
 # Log out
-globus auth logout
+globus logout
 ```
 
 ### Transfer Commands
 
 ```bash
 # List endpoints
-globus transfer endpoint list
+globus endpoint list
 
 # Search for endpoints
-globus transfer endpoint search "my data"
+globus endpoint search "my data"
 
 # Show endpoint details
-globus transfer endpoint show ENDPOINT_ID
+globus endpoint show ENDPOINT_ID
 
 # List files on endpoint
-globus transfer ls ENDPOINT_ID:/path
-globus transfer ls -l ENDPOINT_ID:/path  # long format
+globus ls ENDPOINT_ID:/path
+globus ls -l ENDPOINT_ID:/path  # long format
 
 # Create directory
-globus transfer mkdir ENDPOINT_ID:/new/directory
-globus transfer mkdir -p ENDPOINT_ID:/nested/directory  # create parents
+globus mkdir ENDPOINT_ID:/new/directory
+globus mkdir -p ENDPOINT_ID:/nested/directory  # create parents
 
 # Delete files/directories
-globus transfer rm ENDPOINT_ID:/path/to/file
-globus transfer rm -r ENDPOINT_ID:/directory  # recursive
+globus rm ENDPOINT_ID:/path/to/file
+globus rm -r ENDPOINT_ID:/directory  # recursive
 
 # Transfer files
-globus transfer cp SOURCE_EP:/file DEST_EP:/path
-globus transfer cp -r SOURCE_EP:/dir DEST_EP:/path  # recursive
+globus transfer SOURCE_EP:/file DEST_EP:/path
+globus transfer -r SOURCE_EP:/dir DEST_EP:/path  # recursive
 
 # List tasks
-globus transfer task list
+globus task list
 
 # View task details
-globus transfer task show TASK_ID
+globus task show TASK_ID
 
 # Wait for task completion
-globus transfer task wait TASK_ID
+globus task wait TASK_ID
 
 # Cancel task
-globus transfer task cancel TASK_ID
+globus task cancel TASK_ID
 ```
 
 ### Shell Completion

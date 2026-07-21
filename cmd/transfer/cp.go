@@ -29,7 +29,7 @@ var (
 // CpCmd returns the cp command
 func CpCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "cp SOURCE_ENDPOINT:SOURCE_PATH DEST_ENDPOINT:DEST_PATH",
+		Use:   "transfer SOURCE_ENDPOINT:SOURCE_PATH DEST_ENDPOINT:DEST_PATH",
 		Short: "Transfer files between Globus endpoints",
 		Long: `Transfer files between Globus endpoints.
 

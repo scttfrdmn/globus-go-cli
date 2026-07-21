@@ -225,18 +225,28 @@ func OutputFormat() string { return viper.GetString("format") }
 // MapHTTPStatus returns the raw --map-http-status spec.
 func MapHTTPStatus() string { return mapHTTPStatus }
 
-// addServiceCommands adds all service commands to the root command
+// addServiceCommands adds all commands to the root command.
+//
+// The command tree is flat, matching the Python Globus CLI: auth and transfer
+// operations live at the top level (globus login, globus ls, globus task show,
+// globus endpoint ...) rather than nested under a service group. Services that
+// the Python CLI also groups (group, search, flows, timer) remain groups, as
+// does the Go-only compute extension and config.
 func addServiceCommands() {
-	// Import and add all service commands
+	// Flat auth commands (globus login/logout/whoami/...).
+	addAuthCommands(rootCmd)
+
+	// Flat transfer commands (globus ls/mkdir/rm/transfer/task/endpoint/...).
+	addTransferCommands(rootCmd)
+
+	// Grouped services (already flat-compatible with the Python CLI) and Go
+	// extensions.
 	rootCmd.AddCommand(
-		getAuthCommand(),
-		getTransferCommand(),
 		getGroupCommand(),
 		getTimerCommand(),
 		getSearchCommand(),
 		getFlowsCommand(),
 		getComputeCommand(),
-		// All services now implemented!
 		getConfigCommand(),
 	)
 }

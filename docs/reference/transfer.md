@@ -13,26 +13,26 @@ The Transfer service provides commands for:
 
 ## Common Commands
 
-### globus transfer ls
+### globus ls
 
 List contents of a directory on an endpoint.
 
 ```bash
-globus transfer ls ENDPOINT_ID:/path [flags]
+globus ls ENDPOINT_ID:/path [flags]
 ```
 
 **Example:**
 
 ```bash
-globus transfer ls abc12345-6789-0def-ghij-klmnopqrstuv:/~/
+globus ls abc12345-6789-0def-ghij-klmnopqrstuv:/~/
 ```
 
-### globus transfer transfer
+### globus transfer
 
 Initiate a file or directory transfer.
 
 ```bash
-globus transfer transfer [flags]
+globus transfer [flags]
 ```
 
 **Required Flags:**
@@ -51,7 +51,7 @@ globus transfer transfer [flags]
 **Example:**
 
 ```bash
-globus transfer transfer \
+globus transfer \
   --source-endpoint abc12345-6789-0def-ghij-klmnopqrstuv \
   --dest-endpoint xyz67890-abcd-efgh-ijkl-mnopqrstuvwx \
   --source-path /path/to/source \
@@ -59,12 +59,12 @@ globus transfer transfer \
   --recursive
 ```
 
-### globus transfer task list
+### globus task list
 
 List recent transfer tasks.
 
 ```bash
-globus transfer task list [flags]
+globus task list [flags]
 ```
 
 **Flags:**
@@ -75,49 +75,49 @@ globus transfer task list [flags]
 **Example:**
 
 ```bash
-globus transfer task list --limit 10 --filter-status ACTIVE
+globus task list --limit 10 --filter-status ACTIVE
 ```
 
-### globus transfer task show
+### globus task show
 
 Show details for a specific transfer task.
 
 ```bash
-globus transfer task show TASK_ID
+globus task show TASK_ID
 ```
 
-### globus transfer task cancel
+### globus task cancel
 
 Cancel a transfer task.
 
 ```bash
-globus transfer task cancel TASK_ID
+globus task cancel TASK_ID
 ```
 
 ## Endpoint Commands
 
-### globus transfer endpoint list
+### globus endpoint list
 
 List endpoints.
 
 ```bash
-globus transfer endpoint list [flags]
+globus endpoint list [flags]
 ```
 
-### globus transfer endpoint show
+### globus endpoint show
 
 Show details for an endpoint.
 
 ```bash
-globus transfer endpoint show ENDPOINT_ID
+globus endpoint show ENDPOINT_ID
 ```
 
-### globus transfer endpoint search
+### globus endpoint search
 
 Search for endpoints.
 
 ```bash
-globus transfer endpoint search SEARCH_TERMS [flags]
+globus endpoint search SEARCH_TERMS [flags]
 ```
 
 ## See Also
