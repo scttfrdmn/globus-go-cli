@@ -84,44 +84,37 @@ func runEndpointShow(cmd *cobra.Command, args []string) error {
 	format := viper.GetString("format")
 
 	if format == "text" {
-		// Text output - human readable
+		// Text output - human readable. The endpoint is an open-ended document;
+		// render the well-known fields and fall back to keys where present.
 		fmt.Printf("Endpoint Details\n")
 		fmt.Printf("================\n\n")
 
-		fmt.Printf("Endpoint ID:   %s\n", endpoint.UUID)
-		fmt.Printf("Name:          %s\n", endpoint.Name)
-		if endpoint.Description != "" {
-			fmt.Printf("Description:   %s\n", endpoint.Description)
+		uuid := mapStr(endpoint, "uuid")
+		if uuid == "" {
+			uuid = mapStr(endpoint, "endpoint_id")
 		}
-		fmt.Printf("Status:        %s\n", endpoint.Status)
-		fmt.Printf("Connected:     %t\n", endpoint.Connected)
-		fmt.Printf("Public:        %t\n", endpoint.Public)
-		if endpoint.Type != "" {
-			fmt.Printf("Type:          %s\n", endpoint.Type)
+		fmt.Printf("Endpoint ID:   %s\n", uuid)
+		fmt.Printf("Name:          %s\n", mapStr(endpoint, "name"))
+		if d := mapStr(endpoint, "description"); d != "" {
+			fmt.Printf("Description:   %s\n", d)
 		}
-		fmt.Printf("Owner:         %s\n", endpoint.Owner)
-		if !endpoint.CreatedAt.IsZero() {
-			fmt.Printf("Created:       %s\n", endpoint.CreatedAt.Format(time.RFC3339))
+		fmt.Printf("Status:        %s\n", mapStr(endpoint, "status"))
+		if b, ok := endpoint["connected"].(bool); ok {
+			fmt.Printf("Connected:     %t\n", b)
 		}
-		if !endpoint.LastModified.IsZero() {
-			fmt.Printf("Modified:      %s\n", endpoint.LastModified.Format(time.RFC3339))
+		if b, ok := endpoint["public"].(bool); ok {
+			fmt.Printf("Public:        %t\n", b)
 		}
-
-		// Display metrics if available
-		if endpoint.Metrics != nil {
-			fmt.Printf("\nMetrics:\n")
-			fmt.Printf("  Utilization:     %.2f%%\n", endpoint.Metrics.Utilization*100)
-			if len(endpoint.Metrics.OutstandingCounts) > 0 {
-				fmt.Printf("  Outstanding:     %v\n", endpoint.Metrics.OutstandingCounts)
-			}
-			if len(endpoint.Metrics.RunningCounts) > 0 {
-				fmt.Printf("  Running:         %v\n", endpoint.Metrics.RunningCounts)
-			}
+		if t := mapStr(endpoint, "endpoint_type"); t != "" {
+			fmt.Printf("Type:          %s\n", t)
+		}
+		if o := mapStr(endpoint, "owner"); o != "" {
+			fmt.Printf("Owner:         %s\n", o)
 		}
 	} else {
-		// JSON or CSV output
+		// JSON or CSV output — emit the raw passthrough document.
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"UUID", "Name", "Description", "Status", "Connected", "Public", "Type", "Owner", "CreatedAt", "LastModified"}
+		headers := []string{"uuid", "name", "description", "status", "connected", "public", "endpoint_type", "owner"}
 		if err := formatter.FormatOutput(endpoint, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}

@@ -136,7 +136,7 @@ func runFlowsStart(cmd *cobra.Command, args []string) error {
 	// Build run request
 	request := &flows.RunRequest{
 		FlowID: flowID,
-		Input:  input,
+		Body:   input,
 		Label:  startLabel,
 		Tags:   startTags,
 	}

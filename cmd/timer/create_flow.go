@@ -78,14 +78,14 @@ Examples:
 
 func init() {
 	CreateFlowCmd.Flags().StringVar(&createFlowName, "name", "", "Name for the timer (required)")
-	CreateFlowCmd.Flags().StringVar(&createFlowInterval, "interval", "", "ISO 8601 interval for recurring execution (e.g., P1D, P1W, PT1H)")
-	CreateFlowCmd.Flags().StringVar(&createFlowCron, "cron", "", "Cron expression for scheduled execution")
+	CreateFlowCmd.Flags().StringVar(&createFlowInterval, "interval", "", "Interval for recurring execution as a Go duration (e.g., 1h, 30m, 24h)")
+	CreateFlowCmd.Flags().StringVar(&createFlowCron, "cron", "", "Deprecated: cron scheduling is not supported by the Timers API")
 	CreateFlowCmd.Flags().StringVar(&createFlowInput, "input", "{}", "Flow input parameters as JSON string")
 	CreateFlowCmd.Flags().StringVar(&createFlowScope, "flow-scope", "", "Flow scope (required for flow execution)")
 	CreateFlowCmd.Flags().StringVar(&createFlowLabel, "flow-label", "", "Label for the flow run")
 	CreateFlowCmd.Flags().StringVar(&createFlowStart, "start", "", "Start time (RFC3339 format, required)")
 	CreateFlowCmd.Flags().StringVar(&createFlowStop, "stop", "", "Stop time (RFC3339 format)")
-	CreateFlowCmd.Flags().StringVar(&createFlowTimezone, "timezone", "UTC", "Timezone for cron schedule (default: UTC)")
+	CreateFlowCmd.Flags().StringVar(&createFlowTimezone, "timezone", "UTC", "Deprecated: only used with the removed cron scheduling")
 
 	CreateFlowCmd.MarkFlagRequired("name")
 	CreateFlowCmd.MarkFlagRequired("start")
@@ -165,81 +165,57 @@ func runCreateFlowTimer(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Create FlowTimer configuration
-	flowTimer := &timers.FlowTimer{
-		FlowID:    flowID,
-		FlowScope: createFlowScope,
-		FlowInput: flowInput,
-		FlowLabel: createFlowLabel,
+	// Cron scheduling does not exist in the Globus Timers API at this SDK
+	// version; only once and recurring (fixed interval) schedules are supported.
+	if createFlowCron != "" {
+		return fmt.Errorf("cron scheduling is not supported by the Globus Timers API; use --interval for recurring timers")
 	}
 
-	// Additional user data (empty for now)
-	userData := make(map[string]interface{})
-
-	// Create the timer using appropriate FlowTimer helper
-	var createdTimer *timers.Timer
-	var scheduleType string
-
-	if createFlowCron != "" {
-		// Cron-based scheduling (v3.65.0 feature)
-		scheduleType = "cron"
-		createdTimer, err = timersClient.CreateFlowTimerCron(
-			ctx,
-			createFlowName,
-			createFlowCron,
-			createFlowTimezone,
-			stopTime,
-			flowTimer,
-			userData,
-		)
-		if err != nil {
-			return fmt.Errorf("error creating cron flow timer: %w", err)
+	// Build the schedule (once, or recurring by fixed interval).
+	var schedule *timers.Schedule
+	scheduleType := "once"
+	if createFlowInterval != "" {
+		d, derr := time.ParseDuration(createFlowInterval)
+		if derr != nil || d <= 0 {
+			return fmt.Errorf("invalid --interval %q: use a Go duration such as 1h, 30m, or 24h", createFlowInterval)
 		}
-	} else if createFlowInterval != "" {
-		// Recurring scheduling (v3.65.0 feature)
+		var end *timers.ScheduleEnd
+		if stopTime != nil {
+			end = &timers.ScheduleEnd{Condition: "time", Datetime: stopTime.Format(time.RFC3339)}
+		}
+		schedule = timers.NewRecurringSchedule(int(d.Seconds()), startTime.Format(time.RFC3339), end)
 		scheduleType = "recurring"
-		createdTimer, err = timersClient.CreateFlowTimerRecurring(
-			ctx,
-			createFlowName,
-			startTime,
-			createFlowInterval,
-			stopTime,
-			flowTimer,
-			userData,
-		)
-		if err != nil {
-			return fmt.Errorf("error creating recurring flow timer: %w", err)
-		}
 	} else {
-		// One-time execution (v3.65.0 feature)
-		scheduleType = "once"
-		createdTimer, err = timersClient.CreateFlowTimerOnce(
-			ctx,
-			createFlowName,
-			startTime,
-			flowTimer,
-			userData,
-		)
-		if err != nil {
-			return fmt.Errorf("error creating one-time flow timer: %w", err)
-		}
+		schedule = timers.NewOnceSchedule(startTime.Format(time.RFC3339))
+	}
+
+	// Build the flow timer document. Flow input is carried in the body; scope
+	// and label are supplied through the body when the flow requires them.
+	body := map[string]interface{}{"body": flowInput}
+	if createFlowLabel != "" {
+		body["label"] = createFlowLabel
+	}
+	if createFlowScope != "" {
+		body["scope"] = createFlowScope
+	}
+	flowTimer := timers.NewFlowTimer(createFlowName, flowID, schedule, body)
+
+	createdTimer, err := timersClient.CreateTimer(ctx, flowTimer)
+	if err != nil {
+		return fmt.Errorf("error creating flow timer: %w", err)
 	}
 
 	// Display success message
 	fmt.Fprintf(os.Stdout, "Flow timer created successfully!\n\n")
-	fmt.Fprintf(os.Stdout, "Timer ID:    %s\n", createdTimer.ID)
+	fmt.Fprintf(os.Stdout, "Timer ID:    %s\n", createdTimer.JobID)
 	fmt.Fprintf(os.Stdout, "Name:        %s\n", createdTimer.Name)
 	fmt.Fprintf(os.Stdout, "Flow ID:     %s\n", flowID)
 	fmt.Fprintf(os.Stdout, "Schedule:    %s\n", scheduleType)
 	if createFlowInterval != "" {
 		fmt.Fprintf(os.Stdout, "Interval:    %s\n", createFlowInterval)
 	}
-	if createFlowCron != "" {
-		fmt.Fprintf(os.Stdout, "Cron:        %s\n", createFlowCron)
-		fmt.Fprintf(os.Stdout, "Timezone:    %s\n", createFlowTimezone)
-	}
-	if createdTimer.NextDue != nil {
-		fmt.Fprintf(os.Stdout, "Next Run:    %s\n", createdTimer.NextDue.Format(time.RFC3339))
+	if !createdTimer.NextRun.IsZero() {
+		fmt.Fprintf(os.Stdout, "Next Run:    %s\n", createdTimer.NextRun.Format(time.RFC3339))
 	}
 
 	return nil

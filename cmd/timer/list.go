@@ -105,10 +105,10 @@ func runListTimers(cmd *cobra.Command, args []string) error {
 				name = name[:27] + "..."
 			}
 
-			// Determine timer type from callback
+			// Timer type is derived from the schedule (once/recurring).
 			timerType := "unknown"
-			if timer.Callback != nil {
-				timerType = timer.Callback.Type
+			if timer.Schedule != nil && timer.Schedule.Type != "" {
+				timerType = timer.Schedule.Type
 			}
 
 			status := "active"
@@ -117,7 +117,7 @@ func runListTimers(cmd *cobra.Command, args []string) error {
 			}
 
 			fmt.Printf("%-36s  %-30s  %-20s  %-10s\n",
-				timer.ID,
+				timer.JobID,
 				name,
 				timerType,
 				status)
@@ -127,7 +127,7 @@ func runListTimers(cmd *cobra.Command, args []string) error {
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"ID", "Name", "CallbackType", "Status"}
+		headers := []string{"JobID", "Name", "Status", "Schedule"}
 		if err := formatter.FormatOutput(timerList.Timers, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}

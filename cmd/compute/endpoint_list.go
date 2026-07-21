@@ -48,9 +48,14 @@ Examples:
 }
 
 func init() {
-	EndpointListCmd.Flags().IntVar(&endpointListLimit, "limit", 25, "Maximum number of endpoints to return")
-	EndpointListCmd.Flags().StringVar(&endpointListSearch, "search", "", "Search endpoints by name")
-	EndpointListCmd.Flags().StringVar(&endpointListStatus, "status", "", "Filter by status")
+	// The Compute endpoints API has no server-side paging or name search, so
+	// these two flags are no-ops kept for backward compatibility. --status is
+	// applied client-side.
+	EndpointListCmd.Flags().IntVar(&endpointListLimit, "limit", 25, "Deprecated: the API does not paginate endpoints")
+	EndpointListCmd.Flags().StringVar(&endpointListSearch, "search", "", "Deprecated: the API has no endpoint name search")
+	EndpointListCmd.Flags().StringVar(&endpointListStatus, "status", "", "Filter by status (applied client-side)")
+	_ = EndpointListCmd.Flags().MarkDeprecated("limit", "the API does not paginate endpoints")
+	_ = EndpointListCmd.Flags().MarkDeprecated("search", "the API has no endpoint name search")
 }
 
 func runEndpointList(cmd *cobra.Command, args []string) error {
@@ -90,22 +95,23 @@ func runEndpointList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Build list options
-	options := &compute.ListEndpointsOptions{
-		PerPage:     endpointListLimit,
-		IncludeInfo: true,
-	}
-	if endpointListSearch != "" {
-		options.Search = endpointListSearch
-	}
-	if endpointListStatus != "" {
-		options.FilterStatus = endpointListStatus
-	}
-
-	// List endpoints
-	endpointList, err := computeClient.ListEndpoints(ctx, options)
+	// The Compute API returns a top-level array of endpoint documents. It has no
+	// server-side search/status/per-page filters, so those flags are applied
+	// client-side where possible. Only the "role" query param is supported.
+	endpoints, err := computeClient.GetEndpoints(ctx, &compute.GetEndpointsOptions{Role: "owner"})
 	if err != nil {
 		return fmt.Errorf("error listing endpoints: %w", err)
+	}
+
+	// Optional client-side status filter.
+	if endpointListStatus != "" {
+		filtered := endpoints[:0]
+		for _, ep := range endpoints {
+			if mapStr(ep, "status") == endpointListStatus {
+				filtered = append(filtered, ep)
+			}
+		}
+		endpoints = filtered
 	}
 
 	// Format output
@@ -113,7 +119,7 @@ func runEndpointList(cmd *cobra.Command, args []string) error {
 
 	if format == "text" {
 		// Text output - human readable table
-		if len(endpointList.Endpoints) == 0 {
+		if len(endpoints) == 0 {
 			fmt.Println("No endpoints found.")
 			return nil
 		}
@@ -125,38 +131,51 @@ func runEndpointList(cmd *cobra.Command, args []string) error {
 			"----------",
 			"----------")
 
-		for _, endpoint := range endpointList.Endpoints {
-			name := endpoint.Name
+		for _, endpoint := range endpoints {
+			name := mapStr(endpoint, "name")
 			if len(name) > 30 {
 				name = name[:27] + "..."
 			}
 
-			status := endpoint.Status
+			status := mapStr(endpoint, "status")
 			if status == "" {
 				status = "unknown"
 			}
 
 			connected := "No"
-			if endpoint.Connected {
+			if b, ok := endpoint["connected"].(bool); ok && b {
 				connected = "Yes"
 			}
 
+			uuid := mapStr(endpoint, "uuid")
+			if uuid == "" {
+				uuid = mapStr(endpoint, "endpoint_id")
+			}
+
 			fmt.Printf("%-36s  %-30s  %-10s  %-10s\n",
-				endpoint.UUID,
+				uuid,
 				name,
 				status,
 				connected)
 		}
 
-		fmt.Printf("\nTotal: %d endpoint(s)\n", len(endpointList.Endpoints))
+		fmt.Printf("\nTotal: %d endpoint(s)\n", len(endpoints))
 	} else {
-		// JSON or CSV output
+		// JSON or CSV output — emit the raw passthrough documents.
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"UUID", "Name", "Description", "Status", "Connected", "Owner", "CreatedAt"}
-		if err := formatter.FormatOutput(endpointList.Endpoints, headers); err != nil {
+		headers := []string{"uuid", "name", "description", "status", "connected", "owner"}
+		if err := formatter.FormatOutput(endpoints, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}
 	}
 
 	return nil
+}
+
+// mapStr returns the string value at key in m, or "" if absent/not a string.
+func mapStr(m map[string]interface{}, key string) string {
+	if v, ok := m[key].(string); ok {
+		return v
+	}
+	return ""
 }

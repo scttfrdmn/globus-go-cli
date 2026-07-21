@@ -89,25 +89,16 @@ func runTaskShow(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Task Information\n")
 		fmt.Printf("================\n\n")
 		fmt.Printf("Task ID:    %s\n", taskStatus.TaskID)
+		fmt.Printf("Index ID:   %s\n", taskStatus.IndexID)
 		fmt.Printf("State:      %s\n", taskStatus.State)
-		fmt.Printf("Created At: %s\n", taskStatus.CreatedAt)
+		if taskStatus.CreatedAt != "" {
+			fmt.Printf("Created At: %s\n", taskStatus.CreatedAt)
+		}
 		if taskStatus.CompletedAt != "" {
 			fmt.Printf("Completed:  %s\n", taskStatus.CompletedAt)
 		}
-
-		fmt.Printf("\nDocument Status\n")
-		fmt.Printf("---------------\n")
-		fmt.Printf("Total:      %d documents\n", taskStatus.TotalDocuments)
-		fmt.Printf("Succeeded:  %d documents\n", taskStatus.SuccessDocuments)
-		fmt.Printf("Failed:     %d documents\n", taskStatus.FailedDocuments)
-		fmt.Printf("Errors:     %d\n", taskStatus.ErrorCount)
-
-		// Show failed subjects if any
-		if len(taskStatus.FailedSubjects) > 0 {
-			fmt.Printf("\nFailed Subjects:\n")
-			for _, subject := range taskStatus.FailedSubjects {
-				fmt.Printf("  - %s\n", subject)
-			}
+		if taskStatus.Message != "" {
+			fmt.Printf("Message:    %s\n", taskStatus.Message)
 		}
 
 		if taskStatus.DetailLocation != "" {
@@ -116,7 +107,7 @@ func runTaskShow(cmd *cobra.Command, args []string) error {
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"TaskID", "State", "TotalDocuments", "SuccessDocuments", "FailedDocuments", "ErrorCount"}
+		headers := []string{"TaskID", "IndexID", "State", "CreatedAt", "CompletedAt", "Message"}
 		if err := formatter.FormatOutput(taskStatus, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}

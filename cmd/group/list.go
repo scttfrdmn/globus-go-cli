@@ -46,7 +46,10 @@ Output Formats:
 }
 
 func init() {
-	ListCmd.Flags().BoolVar(&listMyGroupsOnly, "my-groups", false, "List only groups where you are a member")
+	// The Groups API only returns the caller's own groups, so this flag is a
+	// no-op kept for backward compatibility.
+	ListCmd.Flags().BoolVar(&listMyGroupsOnly, "my-groups", false, "Deprecated: the API always lists only your groups")
+	_ = ListCmd.Flags().MarkDeprecated("my-groups", "the API only lists your groups")
 	ListCmd.Flags().StringArrayVar(&listIncludeStatuses, "include-status", []string{}, "Include groups with specific statuses (active, pending, etc.)")
 }
 
@@ -89,18 +92,9 @@ func runListGroups(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Prepare options for listing groups
-	options := &groups.ListGroupsOptions{
-		MyGroups: listMyGroupsOnly,
-	}
-
-	// SDK v3.65.0-1 supports status filtering via Statuses field
-	if len(listIncludeStatuses) > 0 {
-		options.Statuses = listIncludeStatuses
-	}
-
-	// List groups
-	groupList, err := groupsClient.ListGroups(ctx, options)
+	// The Globus Groups API only lists the caller's own groups
+	// (GET /groups/my_groups); optional status filtering is passed through.
+	groupList, err := groupsClient.GetMyGroups(ctx, listIncludeStatuses)
 	if err != nil {
 		return fmt.Errorf("error listing groups: %w", err)
 	}

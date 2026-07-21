@@ -136,11 +136,6 @@ func runIndexList(cmd *cobra.Command, args []string) error {
 		}
 
 		fmt.Printf("\nTotal: %d index(es)\n", len(indexList.Indexes))
-
-		if indexList.HasMore {
-			nextOffset := indexListOffset + indexListLimit
-			fmt.Printf("More indices available. Use --offset %d to see next page.\n", nextOffset)
-		}
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)

@@ -77,18 +77,22 @@ func runMemberList(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// List members
-	memberList, err := groupsClient.ListMembers(ctx, groupID, nil)
+	// Members are returned by fetching the group with the memberships
+	// representation (the API has no standalone list-members route).
+	group, err := groupsClient.GetGroup(ctx, groupID, &groups.GetGroupOptions{
+		Include: []string{"memberships"},
+	})
 	if err != nil {
 		return fmt.Errorf("error listing members: %w", err)
 	}
+	members := group.Memberships
 
 	// Format output
 	format := viper.GetString("format")
 
 	if format == "text" {
 		// Text output - human readable table
-		if len(memberList.Members) == 0 {
+		if len(members) == 0 {
 			fmt.Println("No members found.")
 			return nil
 		}
@@ -100,13 +104,13 @@ func runMemberList(cmd *cobra.Command, args []string) error {
 			"--------------------",
 			"----------")
 
-		for _, member := range memberList.Members {
+		for _, member := range members {
 			username := member.Username
 			if username == "" {
 				username = "(unknown)"
 			}
 
-			role := member.RoleID
+			role := member.Role
 			if role == "" {
 				role = "member"
 			}
@@ -123,12 +127,12 @@ func runMemberList(cmd *cobra.Command, args []string) error {
 				status)
 		}
 
-		fmt.Printf("\nTotal: %d member(s)\n", len(memberList.Members))
+		fmt.Printf("\nTotal: %d member(s)\n", len(members))
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"IdentityID", "Username", "RoleID", "Status"}
-		if err := formatter.FormatOutput(memberList.Members, headers); err != nil {
+		headers := []string{"IdentityID", "Username", "Role", "Status"}
+		if err := formatter.FormatOutput(members, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}
 	}

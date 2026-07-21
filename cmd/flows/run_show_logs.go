@@ -110,7 +110,7 @@ func runFlowsRunShowLogs(cmd *cobra.Command, args []string) error {
 
 		for i, entry := range logs.Entries {
 			fmt.Printf("Entry %d:\n", i+1)
-			fmt.Printf("  Time:    %s\n", entry.CreatedAt.Format(time.RFC3339))
+			fmt.Printf("  Time:    %s\n", entry.Time.Format(time.RFC3339))
 			fmt.Printf("  Code:    %s\n", entry.Code)
 			if entry.Description != "" {
 				fmt.Printf("  Desc:    %s\n", entry.Description)

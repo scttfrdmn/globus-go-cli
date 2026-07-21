@@ -71,8 +71,11 @@ func runMemberRemove(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Remove member from group
-	err = groupsClient.RemoveMember(ctx, groupID, identityID)
+	// Remove member from group via a single batch membership action
+	// (POST /groups/{id}); the API has no dedicated remove-member route.
+	_, err = groupsClient.BatchMembershipAction(ctx, groupID, &groups.BatchMembershipActions{
+		Remove: []groups.MemberID{{IdentityID: identityID}},
+	})
 	if err != nil {
 		return fmt.Errorf("error removing member: %w", err)
 	}

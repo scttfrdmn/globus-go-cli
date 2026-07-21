@@ -80,8 +80,9 @@ func runShowGroup(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Get group details
-	group, err := groupsClient.GetGroup(ctx, groupID)
+	// Get group details (include memberships/policies via GetGroupOptions;
+	// nil requests the default representation).
+	group, err := groupsClient.GetGroup(ctx, groupID, nil)
 	if err != nil {
 		return fmt.Errorf("error getting group: %w", err)
 	}
