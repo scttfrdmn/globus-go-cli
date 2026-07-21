@@ -1396,7 +1396,7 @@ device-code flow and <code>identities lookup</code> performs a real <code>GetIde
 <td>Collections / GCS management</td>
 <td>✅ (<code>collection</code>, <code>gcs</code>, 32 cmds)</td>
 <td>❌ none</td>
-<td>Gap (Phase 5 — v4 gcs service)</td>
+<td>Blocked — SDK lacks endpoint GCS-manager URL + per-collection consent (see below)</td>
 </tr>
 <tr>
 <td>GCP (Connect Personal)</td>
@@ -1407,8 +1407,8 @@ device-code flow and <code>identities lookup</code> performs a real <code>GetIde
 <tr>
 <td>Streams / tunnels</td>
 <td>✅ (8)</td>
-<td>Stubs (report "unavailable")</td>
-<td>Gap (v4 transfer tunnels exist; Phase 5)</td>
+<td>✅ (<code>tunnel list/show/create/update/delete/events</code>, <code>stream-access-point list/show</code>)</td>
+<td>Covered (Phase 5)</td>
 </tr>
 <tr>
 <td>Search (index/query/ingest/task/role/subject)</td>
@@ -1437,8 +1437,8 @@ device-code flow and <code>identities lookup</code> performs a real <code>GetIde
 <tr>
 <td><code>api</code> raw passthrough</td>
 <td>✅ (7 services)</td>
-<td>❌ none</td>
-<td>Gap (Phase 5)</td>
+<td>✅ (<code>api auth/transfer/groups/search/flows/timer/compute</code>)</td>
+<td>Covered (Phase 5)</td>
 </tr>
 <tr>
 <td><code>session</code> (consent/show/update)</td>
@@ -1478,15 +1478,27 @@ device-code flow and <code>identities lookup</code> performs a real <code>GetIde
 </ul>
 <h3 id="b-gaps-with-no-v3-sdk-support-need-sdk-work-first-or-are-out-of-scope">B. Gaps with no v3 SDK support (need SDK work first, or are out of scope)<a class="headerlink" href="#b-gaps-with-no-v3-sdk-support-need-sdk-work-first-or-are-out-of-scope" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>GCS / collections management</strong> (<code>collection</code>, <code>gcs</code>, ~32 commands) — the v4
-  SDK module has a <code>gcs</code> service. Now that the service commands build on v4
-  (Phase 2b), wiring these up is CLI work rather than an SDK blocker.</li>
-<li><strong>GCP (Globus Connect Personal)</strong> — local-agent management; not an SDK API.</li>
-<li><strong>Streams / tunnels</strong> — a Python globus-sdk v4.3.0+ feature. The v4 Go SDK
-  transfer client now exposes tunnel/stream-access-point methods, so these are
-  becoming supportable; the CLI currently ships "unavailable" stubs.</li>
-<li><strong><code>api</code> raw passthrough</strong> — convenience for arbitrary API calls; no SDK method,
-  would be a thin HTTP wrapper.</li>
+<li><strong><code>api</code> raw passthrough</strong> — DONE (Phase 5). <code>globus api &lt;service&gt; METHOD PATH</code>
+  for auth/transfer/groups/search/flows/timer/compute, over the core client.</li>
+<li><strong>Streams / tunnels</strong> — DONE (Phase 5). The v4 transfer client's
+  tunnel/stream-access-point methods now back real <code>tunnel</code> and
+  <code>stream-access-point</code> commands (the "unavailable" stubs are gone).</li>
+<li><strong>GCS / collections management</strong> (<code>collection</code>, <code>gcs</code>, ~32 commands) —
+  <strong>still blocked</strong>, and NOT merely CLI wiring. The v4 SDK's <code>gcs.CollectionClient</code>
+  needs two things the rest of the CLI doesn't have:</li>
+<li>the endpoint's <strong>GCS Manager URL</strong> (<code>https://&lt;gcs-host&gt;/api</code>), which is not
+     exposed on the v4 SDK's transfer <code>Endpoint</code> struct — there is no field to
+     read it from, so the client address can't be constructed from a collection
+     ID alone; and</li>
+<li><strong>dynamic per-collection consent</strong> — each collection has its own
+     <code>.../&lt;collection-id&gt;/https</code> and <code>.../data_access</code> scopes, but the CLI's
+     GlobusApp login requests only a fixed scope set, so <code>GetAuthorizer</code> has no
+     token for a given collection's data-access scope.
+  Wiring <code>collection</code>/<code>gcs</code> needs SDK support to surface the manager URL (e.g. on
+  the endpoint document) and a consent/scope-escalation path in <code>pkg/globusauth</code>.
+  Deferred to a future phase (tracked as SDK work).</li>
+<li><strong>GCP (Globus Connect Personal)</strong> — local-agent management; not an SDK API
+  (out of scope).</li>
 </ul>
 <h2 id="compute-is-a-go-only-extension">Compute is a Go-only extension<a class="headerlink" href="#compute-is-a-go-only-extension" title="Permanent link">&para;</a></h2>
 <p>The Go CLI exposes a <code>compute</code> command tree; the Python CLI has <strong>no</strong> compute
@@ -1531,7 +1543,7 @@ surface are all wired. The remaining gaps are:</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 19:45:22 UTC">July 21, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 20:03:41 UTC">July 21, 2026</span>
   </span>
 
     
