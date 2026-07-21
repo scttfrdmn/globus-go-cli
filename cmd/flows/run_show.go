@@ -9,11 +9,7 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -39,44 +35,18 @@ Examples:
 func runFlowsRunShow(cmd *cobra.Command, args []string) error {
 	runID := args[0]
 
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create flows client
-	flowsClient, err := flows.NewClient(
-		flows.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create flows client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Build a v4 Flows client authorized for the current profile.
+	flowsClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Get run
-	run, err := flowsClient.GetRun(ctx, runID)
+	run, err := flowsClient.GetRun(ctx, runID, nil)
 	if err != nil {
 		return fmt.Errorf("error getting run: %w", err)
 	}
@@ -98,35 +68,24 @@ func runFlowsRunShow(cmd *cobra.Command, args []string) error {
 		if run.Label != "" {
 			fmt.Printf("Label:         %s\n", run.Label)
 		}
-		if len(run.Tags) > 0 {
-			fmt.Printf("Tags:          %v\n", run.Tags)
-		}
 		fmt.Printf("Owner:         %s\n", run.RunOwner)
-		fmt.Printf("Created:       %s\n", run.CreatedAt.Format(time.RFC3339))
-		if !run.StartedAt.IsZero() {
-			fmt.Printf("Started:       %s\n", run.StartedAt.Format(time.RFC3339))
+		if !run.StartTime.IsZero() {
+			fmt.Printf("Started:       %s\n", run.StartTime.Format(time.RFC3339))
 		}
-		if !run.CompletedAt.IsZero() {
-			fmt.Printf("Completed:     %s\n", run.CompletedAt.Format(time.RFC3339))
-		}
-
-		// Display input
-		if run.Input != nil {
-			fmt.Printf("\nInput:\n")
-			inputJSON, _ := json.MarshalIndent(run.Input, "  ", "  ")
-			fmt.Printf("%s\n", string(inputJSON))
+		if !run.EndTime.IsZero() {
+			fmt.Printf("Completed:     %s\n", run.EndTime.Format(time.RFC3339))
 		}
 
-		// Display output
-		if run.Output != nil {
-			fmt.Printf("\nOutput:\n")
-			outputJSON, _ := json.MarshalIndent(run.Output, "  ", "  ")
-			fmt.Printf("%s\n", string(outputJSON))
+		// Display details
+		if run.Details != nil {
+			fmt.Printf("\nDetails:\n")
+			detailsJSON, _ := json.MarshalIndent(run.Details, "  ", "  ")
+			fmt.Printf("%s\n", string(detailsJSON))
 		}
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"RunID", "FlowID", "Status", "Label", "RunOwner", "CreatedAt", "StartedAt", "CompletedAt"}
+		headers := []string{"RunID", "FlowID", "FlowTitle", "Status", "Label", "RunOwner", "StartTime", "EndTime"}
 		if err := formatter.FormatOutput(run, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}

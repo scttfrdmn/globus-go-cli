@@ -9,11 +9,8 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/flows"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -53,44 +50,20 @@ func init() {
 func runFlowsRunShowLogs(cmd *cobra.Command, args []string) error {
 	runID := args[0]
 
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create flows client
-	flowsClient, err := flows.NewClient(
-		flows.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create flows client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Get run logs
-	logs, err := flowsClient.GetRunLogs(ctx, runID, runShowLogsLimit, runShowLogsOffset)
+	// Build a v4 Flows client authorized for the current profile.
+	flowsClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Get run logs. v4 uses marker pagination; offset is no longer accepted.
+	logs, err := flowsClient.GetRunLogs(ctx, runID, &flows.ListRunLogsOptions{
+		Limit: runShowLogsLimit,
+	})
 	if err != nil {
 		return fmt.Errorf("error getting run logs: %w", err)
 	}

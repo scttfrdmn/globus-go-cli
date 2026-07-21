@@ -9,11 +9,7 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -39,41 +35,15 @@ Examples:
 func runFlowsShow(cmd *cobra.Command, args []string) error {
 	flowID := args[0]
 
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create flows client
-	flowsClient, err := flows.NewClient(
-		flows.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create flows client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+
+	// Build a v4 Flows client authorized for the current profile.
+	flowsClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
 
 	// Get flow
 	flow, err := flowsClient.GetFlow(ctx, flowID)
@@ -94,16 +64,9 @@ func runFlowsShow(cmd *cobra.Command, args []string) error {
 		if flow.Description != "" {
 			fmt.Printf("Description:   %s\n", flow.Description)
 		}
-		fmt.Printf("Owner:         %s\n", flow.FlowOwner)
-		fmt.Printf("Public:        %t\n", flow.Public)
-		fmt.Printf("Managed:       %t\n", flow.Managed)
-		fmt.Printf("Run Count:     %d\n", flow.RunCount)
-		fmt.Printf("Created:       %s\n", flow.CreatedAt.Format(time.RFC3339))
-		fmt.Printf("Updated:       %s\n", flow.UpdatedAt.Format(time.RFC3339))
-
-		if len(flow.Keywords) > 0 {
-			fmt.Printf("Keywords:      %v\n", flow.Keywords)
-		}
+		fmt.Printf("Owner:         %s\n", flow.OwnerID)
+		fmt.Printf("Created:       %s\n", flow.Created.Format(time.RFC3339))
+		fmt.Printf("Updated:       %s\n", flow.Updated.Format(time.RFC3339))
 
 		// Display definition
 		if flow.Definition != nil {
@@ -121,7 +84,7 @@ func runFlowsShow(cmd *cobra.Command, args []string) error {
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"ID", "Title", "Description", "FlowOwner", "Public", "Managed", "RunCount", "CreatedAt", "UpdatedAt"}
+		headers := []string{"ID", "Title", "Description", "OwnerID", "Created", "Updated"}
 		if err := formatter.FormatOutput(flow, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}

@@ -8,12 +8,8 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/search"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -66,56 +62,26 @@ func runIndexUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("at least one update flag must be provided")
 	}
 
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create search client
-	searchClient, err := search.NewClient(
-		search.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create search client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Build update request
-	updateRequest := &search.IndexUpdateRequest{}
+	// Build a v4 Search client authorized for the current profile.
+	searchClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Build update request. Upstream update_index accepts only display_name and
+	// description; the --active and --monitored flags are retained but have no
+	// effect.
+	updateRequest := &search.IndexUpdate{}
 
 	if cmd.Flags().Changed("display-name") {
 		updateRequest.DisplayName = indexUpdateDisplayName
 	}
 	if cmd.Flags().Changed("description") {
 		updateRequest.Description = indexUpdateDescription
-	}
-	if cmd.Flags().Changed("active") {
-		updateRequest.IsActive = indexUpdateActive
-	}
-	if cmd.Flags().Changed("monitored") {
-		updateRequest.IsMonitored = indexUpdateMonitored
 	}
 
 	// Update index
@@ -131,9 +97,10 @@ func runIndexUpdate(cmd *cobra.Command, args []string) error {
 	if index.Description != "" {
 		fmt.Fprintf(os.Stdout, "Description:  %s\n", index.Description)
 	}
-	fmt.Fprintf(os.Stdout, "Active:       %t\n", index.IsActive)
-	fmt.Fprintf(os.Stdout, "Monitored:    %t\n", index.IsMonitored)
-	fmt.Fprintf(os.Stdout, "Updated At:   %s\n", index.UpdatedAt.Format(time.RFC3339))
+	fmt.Fprintf(os.Stdout, "Status:       %s\n", index.Status)
+	if !index.LastModified.IsZero() {
+		fmt.Fprintf(os.Stdout, "Updated At:   %s\n", index.LastModified.Format(time.RFC3339))
+	}
 
 	return nil
 }

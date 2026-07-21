@@ -9,12 +9,8 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/flows"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -23,7 +19,6 @@ var (
 	updateDefinitionFile string
 	updateSchemaFile     string
 	updateKeywords       []string
-	updatePublic         *bool
 
 	// Authentication policy flags (Python SDK v4.1.0)
 	updateHighAssurance   bool
@@ -66,10 +61,10 @@ func init() {
 	UpdateCmd.Flags().StringVar(&updateSchemaFile, "schema-file", "", "Path to input schema JSON file")
 	UpdateCmd.Flags().StringSliceVar(&updateKeywords, "keywords", []string{}, "Comma-separated keywords")
 
-	// Use a pointer so we can detect if flag was set
+	// Retained for CLI-surface compatibility; the v4 FlowUpdate model does not
+	// carry a visibility field, so this flag is currently a no-op.
 	var publicFlag bool
-	UpdateCmd.Flags().BoolVar(&publicFlag, "public", false, "Make flow publicly visible")
-	updatePublic = &publicFlag
+	UpdateCmd.Flags().BoolVar(&publicFlag, "public", false, "Make flow publicly visible (currently a no-op)")
 
 	// Authentication policy flags (Python SDK v4.1.0)
 	UpdateCmd.Flags().BoolVar(&updateHighAssurance, "high-assurance", false, "Require high-assurance authentication for flow runs")
@@ -81,7 +76,7 @@ func runFlowsUpdate(cmd *cobra.Command, args []string) error {
 	flowID := args[0]
 
 	// Build update request with only specified fields
-	request := &flows.FlowUpdateRequest{}
+	request := &flows.FlowUpdate{}
 
 	if updateTitle != "" {
 		request.Title = updateTitle
@@ -121,60 +116,18 @@ func runFlowsUpdate(cmd *cobra.Command, args []string) error {
 		request.Keywords = updateKeywords
 	}
 
-	if cmd.Flags().Changed("public") {
-		request.Public = updatePublic
-	}
-
-	// Apply authentication policy if any policy flag was changed
-	if cmd.Flags().Changed("high-assurance") || cmd.Flags().Changed("required-mfa") || cmd.Flags().Changed("session-policies") {
-		policy := &flows.FlowAuthenticationPolicy{}
-		if cmd.Flags().Changed("high-assurance") {
-			policy.HighAssurance = &updateHighAssurance
-		}
-		if cmd.Flags().Changed("required-mfa") {
-			policy.RequiredMFA = &updateRequiredMFA
-		}
-		if cmd.Flags().Changed("session-policies") {
-			policy.SessionPolicies = updateSessionPolicies
-		}
-		request.AuthenticationPolicy = policy
-	}
-
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create flows client
-	flowsClient, err := flows.NewClient(
-		flows.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create flows client: %w", err)
-	}
+	// Note: the v4 FlowUpdate model does not carry the --public visibility flag
+	// or the authentication-policy flags, so those flags are currently no-ops.
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+
+	// Build a v4 Flows client authorized for the current profile.
+	flowsClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
 
 	// Update flow
 	flow, err := flowsClient.UpdateFlow(ctx, flowID, request)
@@ -186,7 +139,7 @@ func runFlowsUpdate(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(os.Stdout, "Flow updated successfully!\n\n")
 	fmt.Fprintf(os.Stdout, "Flow ID:   %s\n", flow.ID)
 	fmt.Fprintf(os.Stdout, "Title:     %s\n", flow.Title)
-	fmt.Fprintf(os.Stdout, "Updated:   %s\n", flow.UpdatedAt.Format(time.RFC3339))
+	fmt.Fprintf(os.Stdout, "Updated:   %s\n", flow.Updated.Format(time.RFC3339))
 
 	return nil
 }

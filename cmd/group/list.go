@@ -8,11 +8,7 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -54,43 +50,15 @@ func init() {
 }
 
 func runListGroups(cmd *cobra.Command, args []string) error {
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create a simple static token authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-
-	// Create a core authorizer adapter for compatibility
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create groups client
-	groupsClient, err := groups.NewClient(
-		groups.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create groups client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+
+	// Build a v4 Groups client authorized for the current profile.
+	groupsClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
 
 	// The Globus Groups API only lists the caller's own groups
 	// (GET /groups/my_groups); optional status filtering is passed through.
@@ -104,7 +72,7 @@ func runListGroups(cmd *cobra.Command, args []string) error {
 
 	if format == "text" {
 		// Text output - human readable table
-		if len(groupList.Groups) == 0 {
+		if len(groupList) == 0 {
 			fmt.Println("No groups found.")
 			return nil
 		}
@@ -116,7 +84,7 @@ func runListGroups(cmd *cobra.Command, args []string) error {
 			"--------",
 			"--------")
 
-		for _, group := range groupList.Groups {
+		for _, group := range groupList {
 			name := group.Name
 			if len(name) > 40 {
 				name = name[:37] + "..."
@@ -134,12 +102,12 @@ func runListGroups(cmd *cobra.Command, args []string) error {
 				admin)
 		}
 
-		fmt.Printf("\nTotal: %d group(s)\n", len(groupList.Groups))
+		fmt.Printf("\nTotal: %d group(s)\n", len(groupList))
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
 		headers := []string{"ID", "Name", "Description", "MemberCount", "IsGroupAdmin", "IsMember"}
-		if err := formatter.FormatOutput(groupList.Groups, headers); err != nil {
+		if err := formatter.FormatOutput(groupList, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}
 	}

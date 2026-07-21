@@ -8,11 +8,8 @@ import (
 	"os"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/flows"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -66,58 +63,39 @@ func init() {
 }
 
 func runFlowsRunList(cmd *cobra.Command, args []string) error {
-	// Get current profile
-	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
-	if err != nil {
-		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
-	}
-
-	// Create authorizer
-	tokenAuthorizer := authorizers.NewStaticTokenAuthorizer(tokenInfo.AccessToken)
-	coreAuthorizer := authorizers.ToCore(tokenAuthorizer)
-
-	// Create flows client
-	flowsClient, err := flows.NewClient(
-		flows.WithAuthorizer(coreAuthorizer),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create flows client: %w", err)
-	}
-
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Build a v4 Flows client authorized for the current profile.
+	flowsClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Build list options. list_runs is marker-paginated and rejects
-	// limit/offset (HTTP 422), so only orderby/filters are sent.
-	options := &flows.ListRunsOptions{
-		OrderBy: runListOrderBy,
-	}
+	// limit/offset (HTTP 422), so only filters are sent.
+	options := &flows.ListRunsOptions{}
 	if runListFlowID != "" {
-		options.FlowID = runListFlowID
-	}
-	if runListStatus != "" {
-		options.Status = runListStatus
+		options.FilterFlowID = []string{runListFlowID}
 	}
 
 	// List runs
 	runList, err := flowsClient.ListRuns(ctx, options)
 	if err != nil {
 		return fmt.Errorf("error listing runs: %w", err)
+	}
+
+	// The v4 ListRunsOptions has no server-side status filter, so apply the
+	// --status filter client-side to preserve the previous behavior.
+	if runListStatus != "" {
+		filtered := runList.Runs[:0]
+		for _, run := range runList.Runs {
+			if run.Status == runListStatus {
+				filtered = append(filtered, run)
+			}
+		}
+		runList.Runs = filtered
 	}
 
 	// Format output
@@ -130,7 +108,7 @@ func runFlowsRunList(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 
-		fmt.Printf("%-36s  %-36s  %-12s  %-20s\n", "Run ID", "Flow ID", "Status", "Created")
+		fmt.Printf("%-36s  %-36s  %-12s  %-20s\n", "Run ID", "Flow ID", "Status", "Started")
 		fmt.Printf("%s  %s  %s  %s\n",
 			"------------------------------------",
 			"------------------------------------",
@@ -142,14 +120,14 @@ func runFlowsRunList(cmd *cobra.Command, args []string) error {
 				run.RunID,
 				run.FlowID,
 				run.Status,
-				run.CreatedAt.Format("2006-01-02 15:04:05"))
+				run.StartTime.Format("2006-01-02 15:04:05"))
 		}
 
 		fmt.Printf("\nTotal: %d run(s)\n", len(runList.Runs))
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"RunID", "FlowID", "Status", "Label", "CreatedAt", "StartedAt", "CompletedAt", "UserID"}
+		headers := []string{"RunID", "FlowID", "FlowTitle", "Status", "Label", "RunOwner", "StartTime", "EndTime"}
 		if err := formatter.FormatOutput(runList.Runs, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}
