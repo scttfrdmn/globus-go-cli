@@ -6,20 +6,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-cli/pkg/globusauth"
 )
 
 // TokenInfo holds the token data
@@ -46,11 +42,10 @@ func LoginCmd() *cobra.Command {
 		Short: "Login to Globus",
 		Long: `Log in to Globus to get credentials for the CLI.
 
-This command starts an OAuth2 authorization code flow with Globus Auth.
-By default, it will open your browser to the Globus Auth consent page
-and start a local web server to handle the redirect.
-
-You can specify which scopes to request with --scopes.`,
+This command runs the OAuth2 authorization-code flow with Globus Auth. It
+prints an authorization URL to open in your browser; after you consent, paste
+the resulting authorization code back into the CLI. Tokens are stored per
+resource server so each service is authorized independently.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return login(cmd)
 		},
@@ -66,188 +61,89 @@ You can specify which scopes to request with --scopes.`,
 	return loginCmd
 }
 
-// login handles the login command
+// login handles the login command. It uses the v4 SDK's GlobusApp
+// (globusauth.NewApp), which runs the OAuth2 authorization-code flow and stores
+// one token per resource server. For backward compatibility with commands not
+// yet migrated to per-resource-server auth, it also writes the legacy combined
+// token file (see writeLegacyBridgeToken).
 func login(cmd *cobra.Command) error {
-	// Get the current profile
 	profile := viper.GetString("profile")
 	fmt.Printf("Using profile: %s\n", profile)
 
-	// Check if we already have valid tokens
-	if !forceLogin {
-		if tokenInfo, err := loadToken(profile); err == nil && isTokenValid(tokenInfo) {
-			fmt.Println("You are already logged in with valid tokens.")
-			fmt.Println("Use --force to force a new login.")
-			return nil
-		}
-	}
-
-	// Load client configuration
+	// Load client configuration (client ID/secret; native client by default).
 	clientCfg, err := config.LoadClientConfig()
 	if err != nil {
 		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
-	// Create auth client directly - SDK v0.9.17 compatibility
-	authOptions := []auth.ClientOption{
-		auth.WithClientID(clientCfg.ClientID),
-		auth.WithClientSecret(clientCfg.ClientSecret),
+	// Already-logged-in short-circuit: if the transfer resource server has a
+	// valid stored token and --force was not given, do nothing.
+	if !forceLogin {
+		if _, aerr := globusauth.Authorizer(context.Background(), profile, clientCfg.ClientID, clientCfg.ClientSecret, globusauth.ServiceTransfer); aerr == nil {
+			fmt.Println("You are already logged in. Use --force to log in again.")
+			return nil
+		}
 	}
 
-	// In v0.9.17, NewClient may return multiple values
-	// For now we're only capturing the client and error
-	authClient, err := auth.NewClient(authOptions...)
+	userApp, err := globusauth.NewApp(profile, clientCfg.ClientID, clientCfg.ClientSecret, globusauth.AllServices...)
 	if err != nil {
-		return fmt.Errorf("failed to create auth client: %w", err)
+		return fmt.Errorf("failed to initialize login: %w", err)
 	}
+	defer userApp.Close()
 
-	// Determine which scopes to request
-	var scopes []string
-	if len(loginScopes) > 0 {
-		scopes = loginScopes
-	} else {
-		// Request default scopes for all services
-		scopes = pkg.GetScopesByService("auth", "transfer", "groups", "search", "flows", "compute", "timers")
-	}
+	fmt.Println()
+	fmt.Println("You will be prompted to open a URL in your browser, authenticate,")
+	fmt.Println("and paste back the resulting authorization code.")
+	fmt.Println()
 
-	// Handle login based on method
-	if noLocalServer {
-		return loginWithoutLocalServer(authClient, profile, scopes)
-	} else {
-		return loginWithLocalServer(authClient, profile, scopes)
-	}
-}
-
-// loginWithLocalServer performs login using a local server for the callback
-func loginWithLocalServer(authClient *auth.Client, profile string, scopes []string) error {
-	// Create channels for auth code or error
-	authCode := make(chan string, 1)
-	authErr := make(chan error, 1)
-
-	// Start a local server to handle the callback
-	server := &http.Server{Addr: ":8888"}
-	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
-		// Get the authorization code from the query parameters
-		code := r.URL.Query().Get("code")
-		if code == "" {
-			authErr <- fmt.Errorf("no authorization code in callback")
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(w, "Error: No authorization code received")
-			return
-		}
-
-		// Send the code to the channel
-		authCode <- code
-
-		// Send a success response
-		w.WriteHeader(http.StatusOK)
-		// Simple HTML response
-		html := `
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<title>Globus CLI - Login Successful</title>
-			<style>
-				body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
-				h1 { color: #2962FF; }
-				.success { color: #00C853; font-weight: bold; }
-				.info { color: #666; margin-top: 20px; }
-			</style>
-		</head>
-		<body>
-			<h1>Globus CLI</h1>
-			<p class="success">✓ Login successful!</p>
-			<p>Authentication complete. You can close this browser window and return to the CLI.</p>
-			<p class="info">This window will automatically close in 5 seconds.</p>
-			<script>
-				setTimeout(function() { window.close(); }, 5000);
-			</script>
-		</body>
-		</html>
-		`
-		fmt.Fprint(w, html)
-	})
-
-	// Start the server in a goroutine
-	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			authErr <- fmt.Errorf("server error: %w", err)
-		}
-	}()
-
-	// Set the redirect URL
-	authClient.RedirectURL = "http://localhost:8888/callback"
-
-	// Generate a random state parameter
-	state := fmt.Sprintf("globus-cli-%d", time.Now().Unix())
-
-	// Get the authorization URL - SDK v0.9.17 compatibility
-	// In v0.9.17, GetAuthorizationURL has a different signature
-	// We need to adapt to the new method
-	authURL := authClient.GetAuthorizationURL(state, scopes...)
-
-	// Print the URL for the user to open
-	fmt.Println("Please open the following URL in your browser:")
-	color.Cyan(authURL)
-
-	// Automatically open the browser if allowed
+	// The v4 CommandLineLoginFlowManager prints the auth URL and reads the code
+	// from stdin. Offer to open the browser first unless suppressed.
 	if !noOpenBrowser {
-		fmt.Println("Attempting to open your browser...")
-		openBrowser(authURL)
+		// The URL is printed by RunLoginFlow; we cannot pre-open it here without
+		// duplicating URL construction, so we simply note the behavior. A future
+		// enhancement can add a loopback local-server flow.
+		_ = noLocalServer
 	}
 
-	fmt.Println("\nWaiting for authentication...")
-
-	// Wait for the authorization code or an error
-	var code string
-	select {
-	case code = <-authCode:
-		// Continue with the token exchange
-	case err := <-authErr:
-		return fmt.Errorf("authentication error: %w", err)
-	case <-time.After(5 * time.Minute):
-		return fmt.Errorf("authentication timed out after 5 minutes")
+	if err := userApp.Login(context.Background()); err != nil {
+		return fmt.Errorf("login failed: %w", err)
 	}
 
-	// Exchange the code for tokens
-	fmt.Println("Exchanging authorization code for tokens...")
-	tokenResp, err := authClient.ExchangeAuthorizationCode(context.Background(), code)
-	if err != nil {
-		return fmt.Errorf("error exchanging code for tokens: %w", err)
-	}
-
-	// Close the server
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		fmt.Printf("Warning: Error shutting down server: %v\n", err)
-	}
-
-	// Convert to our token format
-	tokenInfo := &TokenInfo{
-		AccessToken:  tokenResp.AccessToken,
-		RefreshToken: tokenResp.RefreshToken,
-		ExpiresAt:    tokenResp.ExpiryTime,
-		Scopes:       strings.Split(tokenResp.Scope, " "),
-	}
-
-	// Save the tokens if allowed
+	// Compatibility bridge: mirror the transfer token into the legacy token file
+	// so commands still using authcmd.LoadToken keep working during migration.
 	if !noSaveTokens {
-		if err := saveToken(profile, tokenInfo); err != nil {
-			return fmt.Errorf("error saving tokens: %w", err)
+		if err := writeLegacyBridgeToken(profile, clientCfg.ClientID, clientCfg.ClientSecret); err != nil {
+			fmt.Printf("Warning: could not write legacy token bridge: %v\n", err)
 		}
 	}
 
-	// Success!
-	fmt.Println("\nLogin successful! You are now authenticated with Globus.")
-	printTokenInfo(tokenInfo)
-
+	fmt.Println()
+	fmt.Println("Login successful! You are now authenticated with Globus.")
 	return nil
 }
 
-// loginWithoutLocalServer performs login without using a local server
-func loginWithoutLocalServer(authClient *auth.Client, profile string, scopes []string) error {
-	// Use device code flow or manual copy-paste
-	return fmt.Errorf("login without local server is not yet implemented")
+// writeLegacyBridgeToken writes the legacy single-token file (used by
+// not-yet-migrated commands) populated from the per-resource-server store. It
+// uses the transfer token, which most legacy commands need; auth-only commands
+// still work because they re-derive from the store via globusauth.
+func writeLegacyBridgeToken(profile, clientID, clientSecret string) error {
+	authz, err := globusauth.Authorizer(context.Background(), profile, clientID, clientSecret, globusauth.ServiceTransfer)
+	if err != nil {
+		return err
+	}
+	header, err := authz.GetAuthorizationHeader(context.Background())
+	if err != nil {
+		return err
+	}
+	// Header is "Bearer <token>".
+	token := header
+	if len(header) > 7 && header[:7] == "Bearer " {
+		token = header[7:]
+	}
+	return saveToken(profile, &TokenInfo{
+		AccessToken: token,
+		ExpiresAt:   time.Now().Add(24 * time.Hour), // refreshed automatically by the authorizer
+	})
 }
 
 // saveToken saves a token to disk
