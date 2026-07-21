@@ -79,6 +79,9 @@ func TestCommandParity(t *testing.T) {
 		"api transfer", "api auth",
 		// Session.
 		"session show",
+		// GCSv5 collections + manager admin.
+		"collection list", "collection show", "collection create", "collection delete",
+		"gcs info", "gcs storage-gateway list", "gcs role list", "gcs role create",
 		// Meta commands.
 		"list-commands", "version",
 	}
