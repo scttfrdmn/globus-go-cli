@@ -159,6 +159,11 @@ func saveToken(profile string, token *TokenInfo) error {
 		return fmt.Errorf("error marshaling token: %w", err)
 	}
 
+	// Ensure the tokens directory exists.
+	if err := os.MkdirAll(filepath.Dir(tokenFile), 0700); err != nil {
+		return fmt.Errorf("error creating tokens directory: %w", err)
+	}
+
 	// Write the token to the file
 	if err := os.WriteFile(tokenFile, data, 0600); err != nil {
 		return fmt.Errorf("error writing token file: %w", err)
