@@ -1395,8 +1395,8 @@ device-code flow and <code>identities lookup</code> performs a real <code>GetIde
 <tr>
 <td>Collections / GCS management</td>
 <td>✅ (<code>collection</code>, <code>gcs</code>, 32 cmds)</td>
-<td>❌ none</td>
-<td>Blocked — SDK lacks endpoint GCS-manager URL + per-collection consent (see below)</td>
+<td>✅ core set — <code>collection list/show/create/update/delete</code>, <code>gcs info</code>, <code>gcs storage-gateway list/show</code>, <code>gcs role list/show/create/delete</code></td>
+<td>Covered (Phase 7)</td>
 </tr>
 <tr>
 <td>GCP (Connect Personal)</td>
@@ -1504,20 +1504,20 @@ Python CLI, rather than a bare array. (Groups list is a bare array in both CLIs.
 <li><strong>Streams / tunnels</strong> — DONE (Phase 5). The v4 transfer client's
   tunnel/stream-access-point methods now back real <code>tunnel</code> and
   <code>stream-access-point</code> commands (the "unavailable" stubs are gone).</li>
-<li><strong>GCS / collections management</strong> (<code>collection</code>, <code>gcs</code>, ~32 commands) —
-  <strong>still blocked</strong>, and NOT merely CLI wiring. The v4 SDK's <code>gcs.CollectionClient</code>
-  needs two things the rest of the CLI doesn't have:</li>
-<li>the endpoint's <strong>GCS Manager URL</strong> (<code>https://&lt;gcs-host&gt;/api</code>), which is not
-     exposed on the v4 SDK's transfer <code>Endpoint</code> struct — there is no field to
-     read it from, so the client address can't be constructed from a collection
-     ID alone; and</li>
-<li><strong>dynamic per-collection consent</strong> — each collection has its own
-     <code>.../&lt;collection-id&gt;/https</code> and <code>.../data_access</code> scopes, but the CLI's
-     GlobusApp login requests only a fixed scope set, so <code>GetAuthorizer</code> has no
-     token for a given collection's data-access scope.
-  Wiring <code>collection</code>/<code>gcs</code> needs SDK support to surface the manager URL (e.g. on
-  the endpoint document) and a consent/scope-escalation path in <code>pkg/globusauth</code>.
-  Deferred to a future phase (tracked as SDK work).</li>
+<li><strong>GCS / collections management</strong> (<code>collection</code>, <code>gcs</code>) — DONE (Phase 7). The
+  two former blockers were resolved with SDK support:</li>
+<li>the endpoint's <strong>GCS Manager URL</strong> is now on the transfer <code>Endpoint</code>
+     (<code>gcs_manager_url</code>, SDK v4.8.1-2), so the CLI resolves the manager address
+     from the endpoint ID via the Transfer API; and</li>
+<li><strong>dynamic consent escalation</strong> — <code>pkg/globusauth.ScopedClientConfig</code> builds
+     a GlobusApp for an endpoint/collection's dynamic scope and runs a consent
+     login on first use. Management uses the endpoint's <code>manage_collections</code>
+     scope (<code>gcs.EndpointManageCollectionsScope</code>, SDK v4.8.1-3).
+  <code>collection list/show/create/update/delete</code> and <code>gcs info</code> +
+  <code>storage-gateway</code>/<code>role</code> subcommands are wired. Each takes the owning
+  <code>ENDPOINT_ID</code> as its first argument. Data-plane operations that need a
+  collection's <code>data_access</code>/<code>https</code> scope (e.g. GCS-hosted file listing) are a
+  possible future addition using the same consent-escalation helper.</li>
 <li><strong>GCP (Globus Connect Personal)</strong> — local-agent management; not an SDK API
   (out of scope).</li>
 </ul>
@@ -1564,7 +1564,7 @@ surface are all wired. The remaining gaps are:</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 21:37:22 UTC">July 21, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 21:57:54 UTC">July 21, 2026</span>
   </span>
 
     
