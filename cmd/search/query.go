@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	queryString string
-	queryLimit  int
-	queryOffset int
+	queryString   string
+	queryLimit    int
+	queryOffset   int
 	queryAdvanced bool
 )
 
@@ -99,18 +99,11 @@ func runSearchQuery(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Build search request
-	searchRequest := &search.SearchRequest{
-		IndexID: indexID,
-		Query:   queryString,
-		Options: &search.SearchOptions{
-			Limit:  queryLimit,
-			Offset: queryOffset,
-		},
-	}
-
-	// Execute search
-	response, err := searchClient.Search(ctx, searchRequest)
+	// Execute a simple search. Upstream models this as GET
+	// /v1/index/{id}/search with q/offset/limit/advanced query params
+	// (GetSearch), not a POST body — the POST Search sends a malformed body and
+	// returns HTTP 400.
+	response, err := searchClient.GetSearch(ctx, indexID, queryString, queryOffset, queryLimit, queryAdvanced)
 	if err != nil {
 		return fmt.Errorf("error executing search: %w", err)
 	}
