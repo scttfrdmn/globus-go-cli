@@ -23,8 +23,7 @@ import (
 	"strings"
 	"time"
 
-	authcmd "github.com/scttfrdmn/globus-go-cli/cmd/auth"
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
+	"github.com/scttfrdmn/globus-go-cli/pkg/globusauth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -128,24 +127,14 @@ func runCreateTransferTimer(cmd *cobra.Command, args []string) error {
 	destEndpoint := destParts[0]
 	destPath := destParts[1]
 
-	// Get current profile
+	// Get current profile and its stored Timers token. This command still uses a
+	// direct HTTP call to the Timers v2 API (the SDK's schedule model takes an
+	// interval in seconds, not the ISO 8601 duration this command accepts), but
+	// sources the bearer token from the v4 per-resource-server store.
 	profile := viper.GetString("profile")
-
-	// Load token
-	tokenInfo, err := authcmd.LoadToken(profile)
+	timerToken, err := globusauth.TokenFor(profile, globusauth.ServiceTimers)
 	if err != nil {
 		return fmt.Errorf("not logged in: %w", err)
-	}
-
-	// Check if token is valid
-	if !authcmd.IsTokenValid(tokenInfo) {
-		return fmt.Errorf("token is expired, please login again")
-	}
-
-	// Load client configuration
-	_, err = config.LoadClientConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load client configuration: %w", err)
 	}
 
 	// Build transfer task document
@@ -239,7 +228,7 @@ func runCreateTransferTimer(cmd *cobra.Command, args []string) error {
 	}
 
 	// Set headers
-	req.Header.Set("Authorization", "Bearer "+tokenInfo.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+timerToken.AccessToken)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 

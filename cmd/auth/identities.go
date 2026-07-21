@@ -3,14 +3,16 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/scttfrdmn/globus-go-cli/pkg/config"
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
+	sdkauth "github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/auth"
 )
 
 // IdentitiesCmd returns the identities command
@@ -74,49 +76,48 @@ provided criteria.`,
 				}
 			}
 
-			// Get the current profile
-			profile := viper.GetString("profile")
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
-			// Load the token
-			tokenInfo, err := loadToken(profile)
+			authClient, err := getClient(ctx)
 			if err != nil {
-				return fmt.Errorf("not logged in: %w", err)
+				return err
 			}
 
-			// Check if the token is valid
-			if !isTokenValid(tokenInfo) {
-				return fmt.Errorf("token is expired, please login again")
+			// Build the lookup options. ID lookups query by identity ID;
+			// username/email lookups query by username (email is a username in
+			// Globus Auth).
+			opts := &sdkauth.GetIdentitiesOptions{}
+			switch {
+			case id != "":
+				opts.IDs = []string{id}
+			case username != "":
+				opts.Usernames = []string{username}
+			case email != "":
+				opts.Usernames = []string{email}
 			}
 
-			// Load client configuration
-			clientCfg, err := config.LoadClientConfig()
+			sdkIdentities, err := authClient.GetIdentities(ctx, opts)
 			if err != nil {
-				return fmt.Errorf("failed to load client configuration: %w", err)
+				return fmt.Errorf("failed to look up identities: %w", err)
 			}
 
-			// Create auth client - SDK v0.9.17 compatibility
-			// This is a stub implementation for now
-			// Mark as used to avoid warnings
-			_ = clientCfg
-
-			// TODO: Update identity lookup implementation for v0.9.17
-			// For now, returning a stub response for compatibility
-			var identities []Identity
-
-			// Add a sample identity for testing
-			identities = append(identities, Identity{
-				ID:         "urn:globus:auth:identity:12345",
-				Username:   "user@example.org",
-				Name:       "User Example",
-				Email:      "user@example.org",
-				Status:     "active",
-				IDProvider: "globus.org",
-			})
-
-			// Check if we found any identities
-			if len(identities) == 0 {
+			if len(sdkIdentities) == 0 {
 				fmt.Println("No identities found")
 				return nil
+			}
+
+			// Project to the CLI's display shape.
+			identities := make([]Identity, 0, len(sdkIdentities))
+			for _, si := range sdkIdentities {
+				identities = append(identities, Identity{
+					ID:         si.ID,
+					Username:   si.Username,
+					Name:       si.Name,
+					Email:      si.Email,
+					Status:     si.Status,
+					IDProvider: si.IdentityProvider,
+				})
 			}
 
 			// Format and display the results

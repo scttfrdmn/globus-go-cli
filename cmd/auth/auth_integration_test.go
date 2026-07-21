@@ -14,7 +14,9 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/testhelpers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/auth"
 )
 
 func TestAuthIntegration(t *testing.T) {
@@ -40,21 +42,19 @@ func TestAuthIntegration(t *testing.T) {
 	}
 
 	t.Run("TestClientCredentialsFlow", func(t *testing.T) {
-		// Create auth client with test credentials
-		authClient, err := auth.NewClient(
-			auth.WithClientID(creds.ClientID),
-			auth.WithClientSecret(creds.ClientSecret),
-		)
+		// Create a v4 auth client authenticated with client Basic auth.
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		authClient, err := auth.NewClient(ctx, &core.Config{
+			Authorizer: authorizers.NewBasicAuthAuthorizer(creds.ClientID, creds.ClientSecret),
+		})
 		if err != nil {
 			t.Fatalf("Failed to create auth client: %v", err)
 		}
 
-		// Test client credentials flow
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		// Get a token using client credentials
-		tokenResp, err := authClient.GetClientCredentialsToken(ctx, "openid", "email", "profile")
+		// Get a token using the client_credentials grant.
+		tokenResp, err := authClient.ClientCredentialsTokens(ctx, creds.ClientID, creds.ClientSecret, []string{"openid", "email", "profile"})
 		if err != nil {
 			t.Fatalf("Failed to get client credentials token: %v", err)
 		}
@@ -68,7 +68,7 @@ func TestAuthIntegration(t *testing.T) {
 		}
 
 		// Introspect the token to verify it's valid
-		introResp, err := authClient.IntrospectToken(ctx, tokenResp.AccessToken)
+		introResp, err := authClient.IntrospectToken(ctx, tokenResp.AccessToken, nil)
 		if err != nil {
 			t.Fatalf("Failed to introspect token: %v", err)
 		}
@@ -77,7 +77,8 @@ func TestAuthIntegration(t *testing.T) {
 			t.Fatal("Token reported as inactive by introspection endpoint")
 		}
 
-		t.Logf("Successfully validated client credentials flow with token: %s...", tokenResp.AccessToken[:10])
+		// Do not log any token content.
+		t.Log("Successfully validated client credentials flow")
 	})
 
 	// TODO: Re-enable when SDK provides identity lookup functionality

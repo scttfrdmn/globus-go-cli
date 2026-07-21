@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/app"
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
@@ -182,4 +183,112 @@ func ClientConfig(ctx context.Context, profile, clientID, clientSecret string, s
 		cfg.Scopes = []string{scope}
 	}
 	return cfg, nil
+}
+
+// Store opens the profile's raw JSON token storage. Callers that need direct
+// access to stored tokens (to display, revoke, or delete them) use this rather
+// than going through a UserApp/authorizer.
+func Store(profile string) (*tokenstorage.JSONTokenStorage, error) {
+	path, err := tokenStoragePath(profile)
+	if err != nil {
+		return nil, err
+	}
+	store, err := tokenstorage.NewJSONTokenStorageWithNamespace(path, "globus-cli")
+	if err != nil {
+		return nil, fmt.Errorf("cannot open token storage: %w", err)
+	}
+	return store, nil
+}
+
+// TokenFor returns the stored token data for a service's resource server, or an
+// error advising login if none is stored.
+func TokenFor(profile string, svc Service) (*tokenstorage.TokenData, error) {
+	info, ok := registry[svc]
+	if !ok {
+		return nil, fmt.Errorf("unknown service %q", svc)
+	}
+	store, err := Store(profile)
+	if err != nil {
+		return nil, err
+	}
+	data, err := store.Get(info.resourceServer)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return nil, fmt.Errorf("no stored token for %s (run 'globus login')", svc)
+	}
+	return data, nil
+}
+
+// AllTokens returns every stored token (one per resource server) for a profile.
+func AllTokens(profile string) ([]*tokenstorage.TokenData, error) {
+	store, err := Store(profile)
+	if err != nil {
+		return nil, err
+	}
+	return store.GetAll()
+}
+
+// RemoveAllTokens deletes every stored token for a profile (used by logout).
+func RemoveAllTokens(profile string) error {
+	store, err := Store(profile)
+	if err != nil {
+		return err
+	}
+	all, err := store.GetAll()
+	if err != nil {
+		return err
+	}
+	for _, td := range all {
+		if rmErr := store.Remove(td.ResourceServer); rmErr != nil {
+			return rmErr
+		}
+	}
+	return nil
+}
+
+// AuthClientConfig builds a *core.Config for the Auth service, minted from the
+// profile's stored auth token. Convenience wrapper over ClientConfig with
+// ServiceAuth.
+func AuthClientConfig(ctx context.Context, profile, clientID, clientSecret string) (*core.Config, error) {
+	return ClientConfig(ctx, profile, clientID, clientSecret, ServiceAuth)
+}
+
+// StoredToken is a minimal view of an OAuth2 token response for one resource
+// server, used by StoreTokens to persist tokens obtained outside the UserApp
+// login flow (e.g. the device-code flow).
+type StoredToken struct {
+	ResourceServer string
+	AccessToken    string
+	RefreshToken   string
+	Scope          string
+	ExpiresIn      int
+	TokenType      string
+}
+
+// StoreTokens persists a set of per-resource-server tokens into the profile's
+// store, so subsequent commands (which read the store via ClientConfig) find
+// them. ExpiresIn is converted to an absolute expiry using the provided now.
+func StoreTokens(profile string, now time.Time, tokens ...StoredToken) error {
+	store, err := Store(profile)
+	if err != nil {
+		return err
+	}
+	for _, t := range tokens {
+		if t.ResourceServer == "" || t.AccessToken == "" {
+			continue
+		}
+		if err := store.Store(&tokenstorage.TokenData{
+			ResourceServer: t.ResourceServer,
+			Scope:          t.Scope,
+			AccessToken:    t.AccessToken,
+			RefreshToken:   t.RefreshToken,
+			ExpiresAt:      now.Add(time.Duration(t.ExpiresIn) * time.Second),
+			TokenType:      t.TokenType,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

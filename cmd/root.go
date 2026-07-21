@@ -12,12 +12,12 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 )
 
 // statusFromError extracts an HTTP status code from an SDK API error, or 0.
 func statusFromError(err error) int {
-	var apiErr *core.Error
+	var apiErr *core.APIError
 	if errors.As(err, &apiErr) {
 		return apiErr.StatusCode
 	}

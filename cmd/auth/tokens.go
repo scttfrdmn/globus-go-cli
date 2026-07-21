@@ -11,7 +11,10 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/config"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-cli/pkg/globusauth"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/auth"
 )
 
 // TokensCmd returns the tokens command
@@ -41,26 +44,52 @@ func tokensShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "show",
 		Short: "Show token information",
-		Long: `Show information about the current Globus Auth tokens.
+		Long: `Show information about the stored Globus Auth tokens.
 
-This command displays details about your current access and refresh tokens
-including when they expire and what scopes they have.`,
+This command lists the stored tokens (one per resource server) for the
+current profile, including when each expires and its scopes.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Get the current profile
 			profile := viper.GetString("profile")
 			fmt.Printf("Using profile: %s\n", profile)
 
-			// Load the token
-			tokenInfo, err := loadToken(profile)
+			tokens, err := globusauth.AllTokens(profile)
 			if err != nil {
 				return fmt.Errorf("not logged in: %w", err)
 			}
+			if len(tokens) == 0 {
+				fmt.Println("No stored tokens.")
+				return nil
+			}
 
-			// Print token information
-			printTokenInfo(tokenInfo)
+			for _, td := range tokens {
+				fmt.Printf("\nResource Server: %s\n", td.ResourceServer)
+				fmt.Printf("  Expires At: %s\n", td.ExpiresAt.Format(time.RFC3339))
+				fmt.Printf("  Expires In: %s\n", time.Until(td.ExpiresAt).Round(time.Second))
+				if td.Scope != "" {
+					fmt.Printf("  Scopes: %s\n", td.Scope)
+				}
+				fmt.Printf("  Has Refresh Token: %t\n", td.RefreshToken != "")
+			}
 			return nil
 		},
 	}
+}
+
+// newRevokeAuthClient builds an auth client authenticated with client Basic
+// auth, used for the token revocation endpoint.
+func newRevokeAuthClient(ctx context.Context) (*auth.Client, error) {
+	clientCfg, err := config.LoadClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load client configuration: %w", err)
+	}
+	clientID := clientCfg.ClientID
+	if clientID == "" {
+		clientID = globusauth.DefaultClientID
+	}
+	return auth.NewClient(ctx, &core.Config{
+		Authorizer: authorizers.NewBasicAuthAuthorizer(clientID, clientCfg.ClientSecret),
+	})
 }
 
 // tokensRevokeCmd returns the tokens revoke command
@@ -70,61 +99,50 @@ func tokensRevokeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "revoke",
 		Short: "Revoke a token",
-		Long: `Revoke a Globus Auth token.
+		Long: `Revoke Globus Auth tokens.
 
-This command revokes either your access token, refresh token, or both,
-invalidating them with Globus Auth.`,
+This command revokes the access token, refresh token, or all tokens for the
+Auth resource server, invalidating them with Globus Auth. Use 'globus logout'
+to revoke and remove tokens for every service.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Get the current profile
 			profile := viper.GetString("profile")
 			fmt.Printf("Using profile: %s\n", profile)
 
-			// Load the token
-			tokenInfo, err := loadToken(profile)
+			if tokenType == "all" {
+				return logout(cmd)
+			}
+
+			// Load the stored auth token.
+			td, err := globusauth.TokenFor(profile, globusauth.ServiceAuth)
 			if err != nil {
 				return fmt.Errorf("not logged in: %w", err)
 			}
 
-			// Load client configuration
-			clientCfg, err := config.LoadClientConfig()
-			if err != nil {
-				return fmt.Errorf("failed to load client configuration: %w", err)
-			}
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
-			// Create auth client - SDK v0.9.17 compatibility
-			authOptions := []auth.ClientOption{
-				auth.WithClientID(clientCfg.ClientID),
-				auth.WithClientSecret(clientCfg.ClientSecret),
-			}
-
-			authClient, err := auth.NewClient(authOptions...)
+			authClient, err := newRevokeAuthClient(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to create auth client: %w", err)
 			}
 
-			// Create context with timeout
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-
-			// Revoke the specified token type
 			switch tokenType {
 			case "access":
 				fmt.Println("Revoking access token...")
-				if err := authClient.RevokeToken(ctx, tokenInfo.AccessToken); err != nil {
+				if err := authClient.RevokeToken(ctx, td.AccessToken); err != nil {
 					return fmt.Errorf("failed to revoke access token: %w", err)
 				}
 				fmt.Println("Access token revoked successfully")
 			case "refresh":
-				if tokenInfo.RefreshToken == "" {
+				if td.RefreshToken == "" {
 					return fmt.Errorf("no refresh token available")
 				}
 				fmt.Println("Revoking refresh token...")
-				if err := authClient.RevokeToken(ctx, tokenInfo.RefreshToken); err != nil {
+				if err := authClient.RevokeToken(ctx, td.RefreshToken); err != nil {
 					return fmt.Errorf("failed to revoke refresh token: %w", err)
 				}
 				fmt.Println("Refresh token revoked successfully")
-			case "all":
-				return logout(cmd)
 			default:
 				return fmt.Errorf("invalid token type: %s. Must be 'access', 'refresh', or 'all'", tokenType)
 			}
@@ -146,64 +164,42 @@ func tokensIntrospectCmd() *cobra.Command {
 		Short: "Introspect the current token",
 		Long: `Introspect the current Globus Auth token.
 
-This command shows detailed information about your current access token
+This command shows detailed information about your current Auth access token
 by introspecting it with Globus Auth.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Get the current profile
 			profile := viper.GetString("profile")
 			fmt.Printf("Using profile: %s\n", profile)
 
-			// Load the token
-			tokenInfo, err := loadToken(profile)
+			// Load the stored auth token.
+			td, err := globusauth.TokenFor(profile, globusauth.ServiceAuth)
 			if err != nil {
 				return fmt.Errorf("not logged in: %w", err)
 			}
 
-			// Check if the token is valid
-			if !isTokenValid(tokenInfo) {
-				return fmt.Errorf("token is expired, please login again")
-			}
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
 
-			// Load client configuration
-			clientCfg, err := config.LoadClientConfig()
-			if err != nil {
-				return fmt.Errorf("failed to load client configuration: %w", err)
-			}
-
-			// Create auth client - SDK v0.9.17 compatibility
-			authOptions := []auth.ClientOption{
-				auth.WithClientID(clientCfg.ClientID),
-				auth.WithClientSecret(clientCfg.ClientSecret),
-			}
-
-			authClient, err := auth.NewClient(authOptions...)
+			// Introspection authenticates the client with Basic auth.
+			authClient, err := newRevokeAuthClient(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to create auth client: %w", err)
 			}
 
-			// Introspect the token
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-
-			introspection, err := authClient.IntrospectToken(ctx, tokenInfo.AccessToken)
+			introspection, err := authClient.IntrospectToken(ctx, td.AccessToken, nil)
 			if err != nil {
 				return fmt.Errorf("failed to introspect token: %w", err)
 			}
 
-			// Print token introspection - SDK v0.9.17 compatibility
-			// Field names may have changed in the TokenInfo struct
 			fmt.Println("\nToken Introspection:")
 			fmt.Printf("  Active: %t\n", introspection.Active)
 			fmt.Printf("  Scope: %s\n", introspection.Scope)
 			fmt.Printf("  Client ID: %s\n", introspection.ClientID)
 			fmt.Printf("  Username: %s\n", introspection.Username)
 			fmt.Printf("  Email: %s\n", introspection.Email)
-
-			// Updated field names for Subject in v0.9.17
-			fmt.Printf("  Subject: %s\n", introspection.Subject)
+			fmt.Printf("  Subject: %s\n", introspection.Sub)
 			fmt.Printf("  Expires At: %d\n", introspection.Exp)
 
-			// IdentitySet field in v0.9.17 replaces Audiences
 			if len(introspection.IdentitySet) > 0 {
 				fmt.Println("  Identity Set:")
 				for _, identity := range introspection.IdentitySet {
