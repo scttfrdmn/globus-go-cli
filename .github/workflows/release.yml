@@ -67,7 +67,9 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
-          version: latest
+          # Must be v2: .goreleaser.yaml is `version: 2`. The action's "latest"
+          # default locks to the v1 line, which rejects a v2 config.
+          version: '~> v2'
           args: >-
             release --clean
             ${{ steps.dockercreds.outputs.available == 'true' && ' ' || '--skip=docker' }}
