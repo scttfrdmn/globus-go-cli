@@ -68,7 +68,7 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 | Flows (create/run/list/show/update/validate/logs) | ✅ (17) | ✅ comparable | Covered |
 | Timers | ✅ (7) | ✅ (create/list/show/pause/resume/delete) | Covered |
 | `api` raw passthrough | ✅ (7 services) | ✅ (`api auth/transfer/groups/search/flows/timer/compute`) | Covered (Phase 5) |
-| `session` (consent/show/update) | ✅ (3) | Partial — `session show` (via `include=session_info`); `update`/`consent` still need a reauth/session-boundary flow | Partial (Phase 7) |
+| `session` (consent/show/update) | ✅ (3) | ✅ — `session show` (via `include=session_info`), `session update` (step-up re-auth), `session consent` (scoped consent) | Covered (Phase 8) |
 | Endpoint-manager (admin) | ✅ | ✅ (`endpoint-manager` — monitored-endpoints, task-list/show/cancel/pause/resume, pause-rule, ...) | Covered (Phase 6) |
 | Endpoint set-subscription-id / my-shared-endpoint-list | ✅ | ✅ | Covered (Phase 6) |
 | `list-commands` / `version` | ✅ | ✅ | Covered (Phase 6) |
@@ -99,10 +99,10 @@ Still available in the SDK but not yet wired:
   `SetSubscriptionID`/`MySharedEndpointList`/`GetSharedEndpointList`.
 - **Endpoint-manager admin surface** — SDK: full `EndpointManager*` family
   (monitored endpoints, admin task list/cancel/pause, pause rules).
-- **`session` show/update/consent** — the Python CLI's session commands drive a
-  high-assurance **reauthentication / session-boundary** flow. The v4 Go SDK
-  exposes `GetConsents` but no reauth/session-update endpoint, so a faithful
-  `session` is deferred pending SDK support (see Phase 6 / SDK work).
+
+`session show/update/consent` is now DONE (Phase 8): `show` reads
+`include=session_info`; `update` re-runs the login flow with
+`session_required_*` params (SDK v4.8.1-4); `consent` runs a scoped login.
 
 ### B. Gaps with no v3 SDK support (need SDK work first, or are out of scope)
 
@@ -137,17 +137,17 @@ or functions server-side — those require the Globus Compute serialization SDK)
 
 ## Summary
 
-The Go CLI covers the **core data-management workflows** (transfer, search,
-groups, flows, timers, auth) at parity with the Python CLI's most-used commands,
-plus a compute extension. After Phase 4, endpoint administration (roles,
-ACLs/permissions, update/delete), bookmarks, transfer `rename`/`stat`/`delete`,
-task `event-list`/`pause-info`/`update`, and the full group membership + policy
-surface are all wired. The remaining gaps are:
+The Go CLI is now a **functional drop-in replacement** for the Python Globus
+CLI across the full command surface, all on the v4 SDK: flat command paths,
+matching global flags and JSON output (enveloped `DATA`), per-resource-server
+GlobusApp auth, and command coverage spanning auth (incl. `session
+show/update/consent`), transfer + endpoint administration + endpoint-manager,
+streams/tunnels, groups, search, flows, timers, GCS `collection`/`gcs`, `api`
+raw passthrough, and the `list-commands`/`version` meta commands — plus a
+compute extension the Python CLI lacks.
 
-1. **GCS/collections** (`collection`, `gcs`) — Phase 5, via the v4 `gcs` service.
-2. **`api` raw passthrough** — Phase 5, a thin HTTP wrapper.
-3. **Streams/tunnels** — v4 transfer client has the methods; Phase 5 can replace
-   the "unavailable" stubs.
-4. **`session`** — needs reauth/session-boundary SDK support not yet available.
-5. **GCP (Connect Personal)** — local-agent management; not an SDK API
-   (out of scope).
+The only remaining item is **GCP (Globus Connect Personal)** — local-agent
+management with no SDK API, out of scope. Optional future polish: GCS data-plane
+file operations (e.g. `ls` over a collection's `https` scope) via the same
+consent-escalation helper, and richer per-command flag coverage to match every
+Python option.

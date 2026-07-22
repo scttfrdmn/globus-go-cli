@@ -17,8 +17,64 @@ import (
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/app"
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/login"
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/tokenstorage"
 )
+
+// SessionParams carries the Globus Auth session-enforcement (step-up auth)
+// options for SessionLogin — the parameters behind a `session update`.
+type SessionParams struct {
+	RequiredIdentities   []string
+	RequiredSingleDomain []string
+	RequiredPolicies     []string
+	RequiredMFA          bool
+	Message              string
+}
+
+// SessionLogin runs the command-line OAuth2 login flow for the given scopes and
+// (optional) session-enforcement parameters, then stores the resulting tokens
+// in the profile's store. It powers `session update` (force step-up re-auth via
+// the session params) and `session consent` (grant a specific scope). Scopes
+// must be non-empty. Returns the resource servers for which tokens were stored.
+func SessionLogin(ctx context.Context, profile, clientID, clientSecret string, scopes []string, sp *SessionParams) ([]string, error) {
+	if len(scopes) == 0 {
+		return nil, fmt.Errorf("at least one scope is required")
+	}
+	if clientID == "" {
+		clientID = DefaultClientID
+	}
+
+	mgr := login.NewCommandLineLoginFlowManager(clientID, clientSecret)
+	params := login.AuthParams{
+		Scopes:         scopes,
+		RequestRefresh: true,
+	}
+	if sp != nil {
+		params.SessionRequiredIdentities = sp.RequiredIdentities
+		params.SessionRequiredSingleDomain = sp.RequiredSingleDomain
+		params.SessionRequiredPolicies = sp.RequiredPolicies
+		params.SessionRequiredMFA = sp.RequiredMFA
+		params.SessionMessage = sp.Message
+	}
+
+	result, err := mgr.RunLoginFlow(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	store, err := Store(profile)
+	if err != nil {
+		return nil, err
+	}
+	var stored []string
+	for _, td := range result.Tokens {
+		if err := store.Store(td); err != nil {
+			return nil, fmt.Errorf("store token for %s: %w", td.ResourceServer, err)
+		}
+		stored = append(stored, td.ResourceServer)
+	}
+	return stored, nil
+}
 
 // DefaultClientID is the native (public) client used when the user has not
 // configured their own. Matches pkg/config.DefaultClientID.
