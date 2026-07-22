@@ -310,7 +310,6 @@ func cancelTask(cmd *cobra.Command, taskID string) error {
 		return fmt.Errorf("task %s is not active (status: %s), cannot cancel", taskID, task.Status)
 	}
 
-	// Cancel the task - CancelTask returns OperationResult and error in v0.9.17
 	result, err := transferClient.CancelTask(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("failed to cancel task: %w", err)
@@ -370,8 +369,11 @@ func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 					color.Green("Task %s completed successfully", taskID)
 					fmt.Printf("Transferred %d files (%d bytes)\n", task.FilesTransferred, task.BytesTransferred)
 				} else if task.Status == "FAILED" {
-					// NiceStatus not available in v0.9.17
-					color.Red("Task %s failed", taskID)
+					if task.NiceStatus != "" {
+						color.Red("Task %s failed: %s", taskID, task.NiceStatus)
+					} else {
+						color.Red("Task %s failed", taskID)
+					}
 				} else {
 					fmt.Printf("Task %s status: %s\n", taskID, task.Status)
 				}

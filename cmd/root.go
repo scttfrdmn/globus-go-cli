@@ -35,8 +35,11 @@ var (
 	mapHTTPStatus string
 )
 
-// Version is set during the build process
-var Version = "4.5.0-1"
+// Version is overridden at build time via -ldflags (see Makefile / .goreleaser:
+// it is set from `git describe --tags`). This default is only used for
+// non-release builds (e.g. `go run`/`go install` without ldflags), so it is a
+// clearly-non-release placeholder rather than a stale release number.
+var Version = "dev"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

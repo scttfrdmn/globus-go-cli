@@ -239,5 +239,3 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 
 	return nil
 }
-
-// Note: formatDuration function removed as it is no longer needed in SDK v0.9.17

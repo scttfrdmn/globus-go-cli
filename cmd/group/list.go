@@ -31,7 +31,7 @@ Examples:
   # List only groups where you are a member
   globus group list --my-groups
 
-  # List groups with specific statuses (SDK v3.65.0+ feature)
+  # List groups with specific statuses
   globus group list --include-status active --include-status pending
 
 Output Formats:

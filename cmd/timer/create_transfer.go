@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 
-// NOTE: This implementation uses direct HTTP calls to the Globus Timers v2 API
-// because the Go SDK v3.65.0-1 does not yet support transfer timers.
-// The SDK has FlowTimer helpers but no equivalent TransferTimer support.
-//
-// See SDK issue: https://github.com/scttfrdmn/globus-go-sdk/issues/16
-//
-// Once the SDK adds TransferTimer support (similar to Python SDK's TransferTimer
-// class), this implementation should be refactored to use the SDK's helper methods.
+// NOTE: This implementation uses direct HTTP calls to the Globus Timers v2 API.
+// The v4 SDK does provide CreateTransferTimer, but its schedule model takes an
+// interval in seconds, whereas this command accepts an ISO 8601 duration
+// (P1D/P1W/PT1H). Until the schedule helpers accept an ISO 8601 interval, the
+// raw request is retained; it sources its bearer token from the v4
+// per-resource-server store (see globusauth.TokenFor below).
 
 package timer
 

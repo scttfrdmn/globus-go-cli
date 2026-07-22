@@ -75,6 +75,11 @@ func TestCommandParity(t *testing.T) {
 		"group member accept", "group policies show",
 		// Other grouped services.
 		"search query", "flows list", "timer list",
+		// Search index roles + task list.
+		"search index role list", "search index role create", "search index role delete",
+		"search task list",
+		// Flows run management + validation.
+		"flows run delete", "flows run resume", "flows validate",
 		// Raw API passthrough.
 		"api transfer", "api auth",
 		// Session.
