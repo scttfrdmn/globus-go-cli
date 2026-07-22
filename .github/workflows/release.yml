@@ -30,25 +30,47 @@ jobs:
         with:
           cosign-release: 'v2.2.3'
 
+      # Docker image publishing is optional and only runs when Docker Hub
+      # credentials are configured. Without this guard a missing secret aborts
+      # the entire release (including the GitHub Release + binaries), which is
+      # what happened on v4.5.0-1 and v4.8.1-1.
+      - name: Check Docker Hub credentials
+        id: dockercreds
+        run: |
+          if [ -n "${{ secrets.DOCKER_USERNAME }}" ] && [ -n "${{ secrets.DOCKER_TOKEN }}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Docker Hub credentials not set; skipping Docker image publish."
+          fi
+
       - name: Set up QEMU
+        if: steps.dockercreds.outputs.available == 'true'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
+        if: steps.dockercreds.outputs.available == 'true'
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        if: startsWith(github.ref, 'refs/tags/')
+        if: steps.dockercreds.outputs.available == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      # Skip Docker (dockers:) and other publishers that need absent secrets
+      # when their credentials are unavailable, so the core release still
+      # succeeds. GoReleaser skips homebrew/scoop automatically when their
+      # token env vars are empty.
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean
+          args: >-
+            release --clean
+            ${{ steps.dockercreds.outputs.available == 'true' && ' ' || '--skip=docker' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
