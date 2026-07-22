@@ -30,6 +30,11 @@ jobs:
         with:
           cosign-release: 'v2.2.3'
 
+      # Required by the `sboms:` block in .goreleaser.yaml; without it the
+      # release fails at SBOM generation ("syft: executable file not found").
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0.17.0
+
       # Docker image publishing is optional and only runs when Docker Hub
       # credentials are configured. Without this guard a missing secret aborts
       # the entire release (including the GitHub Release + binaries), which is
