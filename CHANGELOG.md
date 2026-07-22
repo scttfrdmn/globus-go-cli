@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.8.1-1] - 2026-07-21
+
+Drop-in replacement release: the CLI now matches the Python Globus CLI's command
+surface and behavior, built entirely on the v4 Go SDK (v4.8.1-4). Version tracks
+the upstream Python globus-sdk the CLI builds against (4.8.1); `-1` is this
+project's patch release.
+
+### Changed — flat command structure (breaking)
+- Auth and transfer commands are now **top-level**, matching the Python CLI:
+  `globus login/logout/whoami/get-identities`, `globus ls/mkdir/rm/rename/stat/
+  delete/transfer`, `globus task ...`, `globus endpoint ...`. Nested invocations
+  (`globus auth login`, `globus transfer ls`) no longer exist.
+- `-F/--format unix|json|text`, `--jmespath/--jq`, `--map-http-status`,
+  `--quiet`, and `GLOBUS_PROFILE` now match the Python CLI's global flags.
+- `-F json` on list commands emits the enveloped `{"DATA_TYPE":...,"DATA":[...]}`
+  document, matching the Python CLI.
+
+### Added — v4 SDK migration + GlobusApp auth
+- All services build on the v4 SDK with per-resource-server GlobusApp tokens.
+  `login` uses the OAuth2 authorization-code flow; the legacy single-token
+  bridge was removed. `device` runs a real device-code flow.
+- **auth**: `session show/update/consent`, real `get-identities`.
+- **transfer**: `rename`, `stat`, `delete`, `task event-list/pause-info/update`;
+  `endpoint update/delete/role/permission`, `set-subscription-id`,
+  `my-shared-endpoint-list`; `bookmark` group; `endpoint-manager` admin group;
+  real `tunnel`/`stream-access-point` (Streams) commands.
+- **groups**: real `join/leave/invite`, `member accept/decline/approve/reject`,
+  `policies show/set`.
+- **GCS**: `collection list/show/create/update/delete` and `gcs info` +
+  `storage-gateway`/`role` subcommands, with dynamic per-endpoint consent
+  escalation.
+- **api**: raw passthrough (`globus api <service> METHOD PATH`).
+- **meta**: `list-commands`, `version`.
+- **search**: `index role list/create/delete`, `task list`. **flows**: `validate`,
+  `run delete`, `run resume` (previously placeholders).
+
+### Notes
+- Out of scope: GCP (Globus Connect Personal) — a local agent with no SDK API.
+- `docs/PYTHON_CLI_PARITY.md` tracks command coverage vs Python globus-cli 3.42.0.
+
 ## [4.5.0-1] - 2026-04-03
 
 ### Added
