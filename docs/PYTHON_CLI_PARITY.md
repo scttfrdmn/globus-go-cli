@@ -63,9 +63,9 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 | Collections / GCS management | ✅ (`collection`, `gcs`, 32 cmds) | ✅ core set — `collection list/show/create/update/delete`, `gcs info`, `gcs storage-gateway list/show`, `gcs role list/show/create/delete` | Covered (Phase 7) |
 | GCP (Connect Personal) | ✅ (6) | ❌ none | Gap (no SDK support) |
 | Streams / tunnels | ✅ (8) | ✅ (`tunnel list/show/create/update/delete/events`, `stream-access-point list/show`) | Covered (Phase 5) |
-| Search (index/query/ingest/task/role/subject) | ✅ (14) | ✅ comparable | Covered |
+| Search (index/query/ingest/task/role/subject) | ✅ (14) | ✅ comparable — incl. `index role list/create/delete` and `task list` | Covered |
 | Groups (member/role/policy/invite/join/leave) | ✅ (19) | ✅ — create/delete/list/show/update, member add/invite/list/remove/accept/decline/approve/reject, join/leave, `policies show/set` | Covered (Phase 4) |
-| Flows (create/run/list/show/update/validate/logs) | ✅ (17) | ✅ comparable | Covered |
+| Flows (create/run/list/show/update/validate/logs) | ✅ (17) | ✅ comparable — incl. `validate`, `run delete`, `run resume` | Covered |
 | Timers | ✅ (7) | ✅ (create/list/show/pause/resume/delete) | Covered |
 | `api` raw passthrough | ✅ (7 services) | ✅ (`api auth/transfer/groups/search/flows/timer/compute`) | Covered (Phase 5) |
 | `session` (consent/show/update) | ✅ (3) | ✅ — `session show` (via `include=session_info`), `session update` (step-up re-auth), `session consent` (scoped consent) | Covered (Phase 8) |

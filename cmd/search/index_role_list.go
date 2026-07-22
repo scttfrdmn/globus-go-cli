@@ -1,47 +1,59 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
-
-// NOTE: This command is a placeholder because the Go SDK v3.65.0-1 does not
-// yet support role management for Search indices. The Python SDK has role
-// management capabilities that need to be ported to the Go SDK.
-//
-// Related functionality exists in the Globus Search API but is not exposed
-// in the current SDK version.
-
 package search
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"time"
 
+	"github.com/scttfrdmn/globus-go-cli/pkg/output"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // IndexRoleListCmd represents the search index role list command
 var IndexRoleListCmd = &cobra.Command{
 	Use:   "list INDEX_ID",
-	Short: "List roles on a Globus Search index (not yet supported)",
-	Long: `List all roles and permissions on a Globus Search index.
+	Short: "List roles on a Globus Search index",
+	Long: `List all role assignments on a Globus Search index.
 
-NOTE: This command is not yet fully implemented because the Go SDK v3.65.0-1
-does not support role management operations for Search indices.
-
-The Python Globus CLI and SDK support role management, but this functionality
-has not been ported to the Go SDK yet.
-
-To manage index roles, please use:
-- The Globus web interface at https://app.globus.org
-- The Python Globus CLI: pip install globus-cli
-
-Examples (when supported):
+Examples:
   # List roles on an index
-  globus search index role list INDEX_ID`,
+  globus search index role list INDEX_ID
+
+  # List with JSON output
+  globus search index role list INDEX_ID --format json`,
 	Args: cobra.ExactArgs(1),
 	RunE: runIndexRoleList,
 }
 
 func runIndexRoleList(cmd *cobra.Command, args []string) error {
-	return fmt.Errorf("index role management is not yet available in SDK v3.65.0-1\n" +
-		"Please use the Globus web interface (https://app.globus.org) or\n" +
-		"the Python Globus CLI to manage Search index roles.\n\n" +
-		"The Go SDK will add role management support in a future release.")
+	indexID := args[0]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	searchClient, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	roles, err := searchClient.ListRoles(ctx, indexID)
+	if err != nil {
+		return fmt.Errorf("error listing roles: %w", err)
+	}
+
+	format := viper.GetString("format")
+	formatter := output.NewFormatter(format, os.Stdout)
+	if format != "text" {
+		return formatter.FormatOutput(roles, nil)
+	}
+
+	if len(roles.Roles) == 0 {
+		fmt.Println("No roles found.")
+		return nil
+	}
+	return formatter.FormatOutput(roles.Roles, []string{"ID", "RoleName", "Principal"})
 }

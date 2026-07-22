@@ -113,7 +113,6 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 		Name         string
 	}
 
-	// In SDK v0.9.17, the field is named Data instead of DATA
 	entries := make([]fileEntry, 0, len(listing.Data))
 
 	for _, item := range listing.Data {
