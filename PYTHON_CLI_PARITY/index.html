@@ -1443,8 +1443,8 @@ device-code flow and <code>identities lookup</code> performs a real <code>GetIde
 <tr>
 <td><code>session</code> (consent/show/update)</td>
 <td>✅ (3)</td>
-<td>Partial — <code>session show</code> (via <code>include=session_info</code>); <code>update</code>/<code>consent</code> still need a reauth/session-boundary flow</td>
-<td>Partial (Phase 7)</td>
+<td>✅ — <code>session show</code> (via <code>include=session_info</code>), <code>session update</code> (step-up re-auth), <code>session consent</code> (scoped consent)</td>
+<td>Covered (Phase 8)</td>
 </tr>
 <tr>
 <td>Endpoint-manager (admin)</td>
@@ -1492,11 +1492,10 @@ Python CLI, rather than a bare array. (Groups list is a bare array in both CLIs.
   <code>SetSubscriptionID</code>/<code>MySharedEndpointList</code>/<code>GetSharedEndpointList</code>.</li>
 <li><strong>Endpoint-manager admin surface</strong> — SDK: full <code>EndpointManager*</code> family
   (monitored endpoints, admin task list/cancel/pause, pause rules).</li>
-<li><strong><code>session</code> show/update/consent</strong> — the Python CLI's session commands drive a
-  high-assurance <strong>reauthentication / session-boundary</strong> flow. The v4 Go SDK
-  exposes <code>GetConsents</code> but no reauth/session-update endpoint, so a faithful
-  <code>session</code> is deferred pending SDK support (see Phase 6 / SDK work).</li>
 </ul>
+<p><code>session show/update/consent</code> is now DONE (Phase 8): <code>show</code> reads
+<code>include=session_info</code>; <code>update</code> re-runs the login flow with
+<code>session_required_*</code> params (SDK v4.8.1-4); <code>consent</code> runs a scoped login.</p>
 <h3 id="b-gaps-with-no-v3-sdk-support-need-sdk-work-first-or-are-out-of-scope">B. Gaps with no v3 SDK support (need SDK work first, or are out of scope)<a class="headerlink" href="#b-gaps-with-no-v3-sdk-support-need-sdk-work-first-or-are-out-of-scope" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong><code>api</code> raw passthrough</strong> — DONE (Phase 5). <code>globus api &lt;service&gt; METHOD PATH</code>
@@ -1527,21 +1526,19 @@ commands (Globus Compute has its own separate <code>globus-compute</code> CLI). 
 compute commands are limited by the Compute web API (no list/cancel/run of tasks
 or functions server-side — those require the Globus Compute serialization SDK).</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>The Go CLI covers the <strong>core data-management workflows</strong> (transfer, search,
-groups, flows, timers, auth) at parity with the Python CLI's most-used commands,
-plus a compute extension. After Phase 4, endpoint administration (roles,
-ACLs/permissions, update/delete), bookmarks, transfer <code>rename</code>/<code>stat</code>/<code>delete</code>,
-task <code>event-list</code>/<code>pause-info</code>/<code>update</code>, and the full group membership + policy
-surface are all wired. The remaining gaps are:</p>
-<ol>
-<li><strong>GCS/collections</strong> (<code>collection</code>, <code>gcs</code>) — Phase 5, via the v4 <code>gcs</code> service.</li>
-<li><strong><code>api</code> raw passthrough</strong> — Phase 5, a thin HTTP wrapper.</li>
-<li><strong>Streams/tunnels</strong> — v4 transfer client has the methods; Phase 5 can replace
-   the "unavailable" stubs.</li>
-<li><strong><code>session</code></strong> — needs reauth/session-boundary SDK support not yet available.</li>
-<li><strong>GCP (Connect Personal)</strong> — local-agent management; not an SDK API
-   (out of scope).</li>
-</ol>
+<p>The Go CLI is now a <strong>functional drop-in replacement</strong> for the Python Globus
+CLI across the full command surface, all on the v4 SDK: flat command paths,
+matching global flags and JSON output (enveloped <code>DATA</code>), per-resource-server
+GlobusApp auth, and command coverage spanning auth (incl. <code>session
+show/update/consent</code>), transfer + endpoint administration + endpoint-manager,
+streams/tunnels, groups, search, flows, timers, GCS <code>collection</code>/<code>gcs</code>, <code>api</code>
+raw passthrough, and the <code>list-commands</code>/<code>version</code> meta commands — plus a
+compute extension the Python CLI lacks.</p>
+<p>The only remaining item is <strong>GCP (Globus Connect Personal)</strong> — local-agent
+management with no SDK API, out of scope. Optional future polish: GCS data-plane
+file operations (e.g. <code>ls</code> over a collection's <code>https</code> scope) via the same
+consent-escalation helper, and richer per-command flag coverage to match every
+Python option.</p>
 
 
 
@@ -1564,7 +1561,7 @@ surface are all wired. The remaining gaps are:</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 21, 2026 21:57:54 UTC">July 21, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 22, 2026 01:57:34 UTC">July 22, 2026</span>
   </span>
 
     
