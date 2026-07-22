@@ -78,7 +78,7 @@ func TestCommandParity(t *testing.T) {
 		// Raw API passthrough.
 		"api transfer", "api auth",
 		// Session.
-		"session show",
+		"session show", "session update", "session consent",
 		// GCSv5 collections + manager admin.
 		"collection list", "collection show", "collection create", "collection delete",
 		"gcs info", "gcs storage-gateway list", "gcs role list", "gcs role create",
