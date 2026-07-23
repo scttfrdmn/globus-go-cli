@@ -78,7 +78,7 @@ func SessionLogin(ctx context.Context, profile, clientID, clientSecret string, s
 
 // DefaultClientID is the native (public) client used when the user has not
 // configured their own. Matches pkg/config.DefaultClientID.
-const DefaultClientID = "e6c75d97-532a-4c88-b031-f5a3014430e3"
+const DefaultClientID = "ccc07ea1-bfff-4ac0-b36e-da0141ca01c5"
 
 // Service identifies a Globus service for scope/resource-server lookup.
 type Service string

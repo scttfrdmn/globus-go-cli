@@ -16,8 +16,15 @@ type ClientConfig struct {
 	ClientSecret string `json:"client_secret" yaml:"client_secret"`
 }
 
-// DefaultClientID is the default client ID for the CLI
-const DefaultClientID = "e6c75d97-532a-4c88-b031-f5a3014430e3"
+// DefaultClientID is the default (native/public) client used when the user has
+// not configured their own via profile config or GLOBUS_CLIENT_ID.
+//
+// This is globus-go-cli's own registered native/public client. It is registered
+// for the out-of-band auth-code redirect (https://auth.globus.org/v2/web/auth-code)
+// and works with the PKCE login flow. The previous default
+// (e6c75d97-…) could not complete the manage_projects consent flow — see
+// globus-go-cli issues #30 and #32.
+const DefaultClientID = "ccc07ea1-bfff-4ac0-b36e-da0141ca01c5"
 
 // LoadClientConfig loads the client configuration
 func LoadClientConfig() (*ClientConfig, error) {
