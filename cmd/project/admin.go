@@ -94,8 +94,13 @@ func listAdmins(cmd *cobra.Command, projectID string) error {
 	identities := dedupeStrings(project.AdminIDs)
 	groups := append([]string(nil), project.AdminGroupIDs...)
 	if project.Admins != nil {
-		identities = dedupeStrings(append(identities, project.Admins.Identities...))
-		groups = dedupeStrings(append(groups, project.Admins.Groups...))
+		for _, id := range project.Admins.Identities {
+			identities = append(identities, id.ID)
+		}
+		for _, g := range project.Admins.Groups {
+			groups = append(groups, g.ID)
+		}
+		identities = dedupeStrings(identities)
 	}
 	groups = dedupeStrings(groups)
 
