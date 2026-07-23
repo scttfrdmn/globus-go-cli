@@ -80,7 +80,7 @@ func TestFlatCommandStructure(t *testing.T) {
 		"ls", "mkdir", "rm", "rename", "stat", "delete", "transfer", "task", "endpoint",
 		"bookmark", "tunnel", "stream-access-point", "endpoint-manager",
 		"group", "search", "flows", "timer", "compute", "api", "config",
-		"collection", "gcs",
+		"collection", "gcs", "project",
 		"list-commands", "version",
 	}
 	for _, name := range wantTopLevel {

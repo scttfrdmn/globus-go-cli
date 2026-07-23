@@ -73,6 +73,7 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 | Endpoint set-subscription-id / my-shared-endpoint-list | ✅ | ✅ | Covered (Phase 6) |
 | `list-commands` / `version` | ✅ | ✅ | Covered (Phase 6) |
 | Compute | ❌ (not in Python CLI) | ✅ (endpoint/function/task) | Go-only extension |
+| Project / client / credential management | ❌ (console-only in Python CLI) | ✅ (`project`, `project client`, `project credential` incl. rotation) | Go-only extension |
 
 **JSON output shape (Phase 6):** list commands emit the enveloped service
 document under `-F json` (`{"DATA_TYPE": ..., "DATA": [...]}`), matching the
@@ -134,6 +135,29 @@ The Go CLI exposes a `compute` command tree; the Python CLI has **no** compute
 commands (Globus Compute has its own separate `globus-compute` CLI). The Go
 compute commands are limited by the Compute web API (no list/cancel/run of tasks
 or functions server-side — those require the Globus Compute serialization SDK).
+
+## Project / client / credential management is a Go-only extension
+
+The Go CLI's `project` command tree manages Globus Auth **projects**, their
+registered **clients** (service accounts / app registrations), and client
+**secret credentials** — the developer-console administrative surface. The
+Python `globus-cli` has **no** commands for this (it is web-console only); the
+capability is ported from the standalone `globus-project-manager` tool onto the
+v4 SDK. Highlights:
+
+- `project list/show/create/update/delete` and `project admin list/add/remove`.
+- `project client list/show/create/update/delete` plus `update-redirect-uris`
+  and `update-metadata`.
+- `project credential list/create/delete` plus **rotation** (`rotate`,
+  `list-age`, `process-deletions`) with a transition period. The Globus Auth API
+  has no rotation primitive, so rotation state (linked new/old credentials +
+  scheduled-deletion dates) is tracked in a per-profile local file
+  `~/.globus-cli/credential-state-<profile>.json`.
+
+These commands require the `manage_projects` scope, which the standard `globus
+login` scope set omits; the CLI obtains it via a one-time consent (escalated on
+first use), stored under a dedicated token namespace so it never collides with
+the login token (both live on `auth.globus.org`).
 
 ## Summary
 

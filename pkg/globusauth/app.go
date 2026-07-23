@@ -354,6 +354,16 @@ func StoreTokens(profile string, now time.Time, tokens ...StoredToken) error {
 // scopes are keyed on a specific endpoint or collection ID rather than a
 // well-known service resource server.
 func ScopedApp(profile, clientID, clientSecret, resourceServer, scope string) (*app.UserApp, error) {
+	return ScopedAppWithNamespace(profile, clientID, clientSecret, resourceServer, scope, "globus-cli")
+}
+
+// ScopedAppWithNamespace is like ScopedApp but stores/reads the consent token
+// under a caller-chosen token-storage namespace. This matters when a dynamic
+// scope shares a resource server with the standard login token (e.g. the
+// auth.globus.org manage_projects scope vs the login's openid/profile/email
+// token): a distinct namespace keeps them from overwriting each other and
+// prevents GetAuthorizer from returning the wrong token.
+func ScopedAppWithNamespace(profile, clientID, clientSecret, resourceServer, scope, namespace string) (*app.UserApp, error) {
 	if clientID == "" {
 		clientID = DefaultClientID
 	}
@@ -361,7 +371,7 @@ func ScopedApp(profile, clientID, clientSecret, resourceServer, scope string) (*
 	if err != nil {
 		return nil, err
 	}
-	store, err := tokenstorage.NewJSONTokenStorageWithNamespace(path, "globus-cli")
+	store, err := tokenstorage.NewJSONTokenStorageWithNamespace(path, namespace)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open token storage: %w", err)
 	}
@@ -384,7 +394,14 @@ func ScopedApp(profile, clientID, clientSecret, resourceServer, scope string) (*
 // scope determines what the consent grants (an endpoint's manage_collections or
 // a collection's data_access).
 func ScopedClientConfig(ctx context.Context, profile, clientID, clientSecret, resourceServer, scope string, allowConsent bool) (*core.Config, error) {
-	userApp, err := ScopedApp(profile, clientID, clientSecret, resourceServer, scope)
+	return ScopedClientConfigWithNamespace(ctx, profile, clientID, clientSecret, resourceServer, scope, "globus-cli", allowConsent)
+}
+
+// ScopedClientConfigWithNamespace is ScopedClientConfig with an explicit
+// token-storage namespace (see ScopedAppWithNamespace for why this is needed
+// when a scope shares a resource server with the login token).
+func ScopedClientConfigWithNamespace(ctx context.Context, profile, clientID, clientSecret, resourceServer, scope, namespace string, allowConsent bool) (*core.Config, error) {
+	userApp, err := ScopedAppWithNamespace(profile, clientID, clientSecret, resourceServer, scope, namespace)
 	if err != nil {
 		return nil, err
 	}
