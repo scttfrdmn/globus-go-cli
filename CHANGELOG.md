@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.8.1-2] - 2026-07-22
+
+Adds Globus Auth project/console management and the first GCS data-plane
+command. Builds on the v4 SDK (v4.8.1-4). Version tracks upstream Python
+globus-sdk 4.8.1; `-2` is this project's patch release.
+
+### Added — project / client / credential management (Go-only extension)
+Ports the standalone `globus-project-manager` tool into the CLI. The Python
+`globus-cli` has no project-management commands (it is web-console only).
+- `project list/show/create/update/delete` and `project admin list/add/remove`
+  (admin add resolves a username to an identity).
+- `project client list/show/create/update/delete` plus `update-redirect-uris`
+  and `update-metadata` — manage a project's registered clients (service
+  accounts / app registrations).
+- `project credential list/create/delete` plus rotation: `rotate`, `list-age`,
+  `process-deletions`. Rotation creates a replacement credential with a
+  transition window; state (linked credentials + scheduled-deletion dates) is
+  tracked in a per-profile local file `~/.globus-cli/credential-state-<profile>.json`.
+- These require the `manage_projects` scope (not in the default login scope
+  set); the CLI escalates a one-time consent stored under a dedicated token
+  namespace so it never collides with the login token.
+
+### Added — GCS data-plane file read
+- `collection cat ENDPOINT_ID COLLECTION_ID PATH` reads a file over an
+  HTTPS-enabled collection's data plane, using the collection's `https` scope (a
+  separate per-collection data-access consent, escalated on first use).
+
 ## [4.8.1-1] - 2026-07-21
 
 Drop-in replacement release: the CLI now matches the Python Globus CLI's command
