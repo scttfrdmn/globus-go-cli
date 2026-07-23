@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.8.1-5] - 2026-07-23
+
+Makes the `project`/`collection`/`session` consent flows work out of the box.
+Builds on the v4 SDK (v4.8.1-6). Version tracks upstream Python globus-sdk
+4.8.1; `-5` is this project's patch release.
+
+### Fixed
+- **Auth consent now works with the shipped default client (#30, #32).** The
+  login flow now uses PKCE (via SDK v4.8.1-6), and the default client is
+  globus-go-cli's own registered native/public client
+  (`ccc07ea1-…`, registered for the `.../v2/web/auth-code` redirect). The
+  previous default could not complete the `manage_projects` consent, so
+  `project`/`collection`/`session` commands failed at the browser step out of
+  the box; they now succeed without a `GLOBUS_CLIENT_ID` override.
+- Clearer error when a consent-escalation login fails (points at the client /
+  `GLOBUS_CLIENT_ID` fix).
+
+### Added
+- `PRIVACY.md` — privacy policy (the CLI runs locally, talks only to Globus
+  services, stores tokens under `~/.globus-cli/`, sends no telemetry).
+
+### CI
+- `workflow_dispatch` added to the build/tests/security workflows so PR checks
+  can be re-run manually when GitHub Actions scheduling lags.
+
 ## [4.8.1-4] - 2026-07-23
 
 Adds Globus Connect Personal (GCP) support, completing coverage of the Python
