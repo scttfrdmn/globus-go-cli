@@ -39,6 +39,7 @@ manage_collections consent on first use (a paste-code login prompt).`,
 		collectionCreateCmd(),
 		collectionUpdateCmd(),
 		collectionDeleteCmd(),
+		collectionCatCmd(),
 	)
 
 	return collectionCmd

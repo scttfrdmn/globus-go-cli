@@ -87,6 +87,7 @@ func TestCommandParity(t *testing.T) {
 		// GCSv5 collections + manager admin.
 		"collection list", "collection show", "collection create", "collection delete",
 		"gcs info", "gcs storage-gateway list", "gcs role list", "gcs role create",
+		"collection cat",
 		// Project / client / credential management (globus-project-manager port).
 		"project list", "project create", "project admin add",
 		"project client list", "project client create",
