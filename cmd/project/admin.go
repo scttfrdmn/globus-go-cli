@@ -89,20 +89,7 @@ func listAdmins(cmd *cobra.Command, projectID string) error {
 		return fmt.Errorf("failed to get project: %w", err)
 	}
 
-	// Collect admin identity IDs from both the flat list and the expanded
-	// admins object (deduped).
-	identities := dedupeStrings(project.AdminIDs)
-	groups := append([]string(nil), project.AdminGroupIDs...)
-	if project.Admins != nil {
-		for _, id := range project.Admins.Identities {
-			identities = append(identities, id.ID)
-		}
-		for _, g := range project.Admins.Groups {
-			groups = append(groups, g.ID)
-		}
-		identities = dedupeStrings(identities)
-	}
-	groups = dedupeStrings(groups)
+	identities, groups := collectAdminIDs(project)
 
 	format := viper.GetString("format")
 	formatter := output.NewFormatter(format, cmd.OutOrStdout())
@@ -222,6 +209,26 @@ func resolveIdentityID(ctx context.Context, client *auth.Client, arg string) (st
 		return "", fmt.Errorf("no identity found for username %q", arg)
 	}
 	return identities[0].ID, nil
+}
+
+// collectAdminIDs returns a project's admin identity IDs and admin group IDs,
+// merging the flat ID lists (admin_ids/admin_group_ids) with the expanded
+// admins object (whose identities/groups are objects, not strings). Both
+// results are deduped and empty entries dropped, preserving order.
+func collectAdminIDs(project *auth.Project) (identities, groups []string) {
+	identities = dedupeStrings(project.AdminIDs)
+	groups = append([]string(nil), project.AdminGroupIDs...)
+	if project.Admins != nil {
+		for _, id := range project.Admins.Identities {
+			identities = append(identities, id.ID)
+		}
+		for _, g := range project.Admins.Groups {
+			groups = append(groups, g.ID)
+		}
+		identities = dedupeStrings(identities)
+	}
+	groups = dedupeStrings(groups)
+	return identities, groups
 }
 
 // dedupeStrings returns the input with duplicate and empty entries removed,
