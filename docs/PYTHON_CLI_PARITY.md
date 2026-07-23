@@ -200,9 +200,11 @@ timer, auth/session). Flags that the v4 SDK cannot express are intentionally
   ID; use `--subscription-id`.
 - **`session update --all`** and `session/login --no-local-server` — no
   "add every identity" primitive, and the login flow is paste-code only.
-- **`login --gcs/--flow/--timer`** and `session consent --timer-data-access` —
+- **`login --gcs/--flow`** and `session consent --timer-data-access` —
   build dynamic dependent scopes the fixed service registry doesn't model
-  (the `project`/`collection` trees use scoped consent instead).
+  (the `project`/`collection` trees use scoped consent instead). Timers is now
+  selectable via `login --scopes timers` (opt-in because its client-specific
+  scope isn't requestable by a generic client — see #40).
 - **`timer create transfer --notify/--skip-source-errors/--fail-on-quota-errors`**
   — transfer-body extras not modeled by the timers schedule/body types.
 - **`search query --bypass-visible-to/--filter-principal-sets`** and granular

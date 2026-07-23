@@ -132,10 +132,35 @@ var registry = map[Service]serviceInfo{
 	},
 }
 
-// AllServices is the set of services a full login requests scopes for.
+// AllServices is every service the CLI knows how to authorize. It is NOT the
+// default login set: ServiceTimers uses a client-specific scope
+// (.../timers.api) that a generic native/public client (including the CLI's
+// default client) is not authorized to request, so requesting it in a full
+// login makes Globus reject the whole login with UNKNOWN_SCOPE_ERROR (issue
+// #40). Use DefaultLoginServices for the out-of-box login; request Timers
+// explicitly via `login --scopes timers` when the configured client supports
+// it.
 var AllServices = []Service{
 	ServiceAuth, ServiceTransfer, ServiceGroups, ServiceSearch,
 	ServiceFlows, ServiceCompute, ServiceTimers,
+}
+
+// DefaultLoginServices is the set a plain `globus login` requests — AllServices
+// minus ServiceTimers (see AllServices for why). Every scope here is one the
+// default native client can request, so login succeeds out of the box.
+var DefaultLoginServices = []Service{
+	ServiceAuth, ServiceTransfer, ServiceGroups, ServiceSearch,
+	ServiceFlows, ServiceCompute,
+}
+
+// ServiceByName maps a service name (the registry key, e.g. "transfer",
+// "timers") to its Service. Used to resolve `login --scopes` entries.
+func ServiceByName(name string) (Service, bool) {
+	svc := Service(name)
+	if _, ok := registry[svc]; ok {
+		return svc, true
+	}
+	return "", false
 }
 
 // ResourceServer returns the resource-server identifier for a service.
@@ -191,7 +216,7 @@ func NewApp(profile, clientID, clientSecret string, services ...Service) (*app.U
 		return nil, err
 	}
 	if len(services) == 0 {
-		services = AllServices
+		services = DefaultLoginServices
 	}
 	for _, svc := range services {
 		info, ok := registry[svc]
@@ -384,6 +409,67 @@ func ScopedAppWithNamespace(profile, clientID, clientSecret, resourceServer, sco
 	}
 	userApp.AddScopeRequirements(resourceServer, scope)
 	return userApp, nil
+}
+
+// ScopedSessionConsentConfig re-drives a consent for a single (resourceServer,
+// scope) pair under a caller-chosen namespace, forcing step-up authentication
+// with the given session-enforcement parameters (e.g. session_required_policies
+// returned by a 403), then stores the resulting token in that namespace and
+// returns a *core.Config authorized with it.
+//
+// Unlike ScopedClientConfigWithNamespace (which only escalates consent when no
+// token is stored), this always runs the login flow — it is meant to be called
+// after an operation fails with a session-policy requirement, so the fresh
+// token carries the required policies in session. The token is stored in the
+// SAME namespace the scoped config reads from, so the retried operation picks
+// it up.
+func ScopedSessionConsentConfig(ctx context.Context, profile, clientID, clientSecret, resourceServer, scope, namespace string, sp *SessionParams) (*core.Config, error) {
+	if clientID == "" {
+		clientID = DefaultClientID
+	}
+
+	mgr := login.NewCommandLineLoginFlowManager(clientID, clientSecret)
+	params := login.AuthParams{
+		Scopes:         []string{scope},
+		RequestRefresh: true,
+	}
+	if sp != nil {
+		params.SessionRequiredIdentities = sp.RequiredIdentities
+		params.SessionRequiredSingleDomain = sp.RequiredSingleDomain
+		params.SessionRequiredPolicies = sp.RequiredPolicies
+		params.SessionRequiredMFA = sp.RequiredMFA
+		params.SessionMessage = sp.Message
+	}
+
+	result, err := mgr.RunLoginFlow(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("consent login failed: %w", err)
+	}
+
+	path, err := tokenStoragePath(profile)
+	if err != nil {
+		return nil, err
+	}
+	store, err := tokenstorage.NewJSONTokenStorageWithNamespace(path, namespace)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open token storage: %w", err)
+	}
+	for _, td := range result.Tokens {
+		if err := store.Store(td); err != nil {
+			return nil, fmt.Errorf("store token for %s: %w", td.ResourceServer, err)
+		}
+	}
+
+	// Build a config from the freshly stored token for the target resource server.
+	userApp, err := ScopedAppWithNamespace(profile, clientID, clientSecret, resourceServer, scope, namespace)
+	if err != nil {
+		return nil, err
+	}
+	authz, err := userApp.GetAuthorizer(ctx, resourceServer)
+	if err != nil {
+		return nil, fmt.Errorf("no token after consent for %q: %w", resourceServer, err)
+	}
+	return &core.Config{Authorizer: authz, Scopes: []string{scope}}, nil
 }
 
 // ScopedClientConfig returns a *core.Config authorized for a dynamic

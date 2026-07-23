@@ -66,13 +66,28 @@ func deviceLogin(cmd *cobra.Command) error {
 		clientID = globusauth.DefaultClientID
 	}
 
-	// Determine which scopes to request (default: all services).
-	scopes := loginScopes
-	if len(scopes) == 0 {
-		for _, svc := range globusauth.AllServices {
-			if s, ok := globusauth.Scope(svc); ok {
-				scopes = append(scopes, s)
+	// Determine which services to request tokens for. --scopes names services
+	// (auth,transfer,…,timers); the default set excludes Timers because its
+	// client-specific scope isn't requestable by a generic client (issue #40).
+	services := globusauth.DefaultLoginServices
+	if len(loginScopes) > 0 {
+		services = nil
+		var unknown []string
+		for _, name := range loginScopes {
+			if svc, ok := globusauth.ServiceByName(name); ok {
+				services = append(services, svc)
+			} else {
+				unknown = append(unknown, name)
 			}
+		}
+		if len(unknown) > 0 {
+			return fmt.Errorf("unknown service(s) in --scopes: %v (valid: auth,transfer,groups,search,flows,compute,timers)", unknown)
+		}
+	}
+	var scopes []string
+	for _, svc := range services {
+		if s, ok := globusauth.Scope(svc); ok {
+			scopes = append(scopes, s)
 		}
 	}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/auth"
 )
 
 // Flag variables for the credential subcommands. Prefixed with `cred` to avoid
@@ -185,13 +186,15 @@ func credCreate(cmd *cobra.Command, clientID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	cred, err := client.CreateClientCredential(ctx, clientID, credCreateName)
-	if err != nil {
+	var cred *auth.Credential
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		c, err := client.CreateClientCredential(ctx, clientID, credCreateName)
+		if err != nil {
+			return err
+		}
+		cred = c
+		return nil
+	}); err != nil {
 		return fmt.Errorf("failed to create credential: %w", err)
 	}
 
@@ -217,12 +220,9 @@ func credDelete(cmd *cobra.Command, clientID, credentialID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := client.DeleteClientCredential(ctx, clientID, credentialID); err != nil {
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		return client.DeleteClientCredential(ctx, clientID, credentialID)
+	}); err != nil {
 		return fmt.Errorf("failed to delete credential: %w", err)
 	}
 
