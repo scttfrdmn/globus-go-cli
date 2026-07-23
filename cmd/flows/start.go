@@ -18,6 +18,9 @@ var (
 	startInputJSON string
 	startLabel     string
 	startTags      []string
+	startManagers  []string
+	startMonitors  []string
+	startNotify    []string
 	startWait      bool
 )
 
@@ -53,6 +56,9 @@ func init() {
 	StartCmd.Flags().StringVar(&startInputJSON, "input", "", "Input as JSON string")
 	StartCmd.Flags().StringVar(&startLabel, "label", "", "Label for this run")
 	StartCmd.Flags().StringSliceVar(&startTags, "tags", []string{}, "Comma-separated tags")
+	StartCmd.Flags().StringArrayVar(&startManagers, "manager", nil, "A principal that may manage the execution of the run (repeatable)")
+	StartCmd.Flags().StringArrayVar(&startMonitors, "monitor", nil, "A principal that may monitor the execution of the run (repeatable)")
+	StartCmd.Flags().StringSliceVar(&startNotify, "activity-notification-policy", nil, "Comma-separated run statuses that trigger notifications (INACTIVE, SUCCEEDED, FAILED)")
 	StartCmd.Flags().BoolVar(&startWait, "wait", false, "Wait for flow to complete")
 }
 
@@ -106,9 +112,14 @@ func runFlowsStart(cmd *cobra.Command, args []string) error {
 	// Build run input. In v4 the flow ID is passed to RunFlow directly and the
 	// first-state input goes under Body.
 	runInput := &flows.FlowInput{
-		Body:  input,
-		Label: startLabel,
-		Tags:  startTags,
+		Body:        input,
+		Label:       startLabel,
+		Tags:        startTags,
+		RunManagers: startManagers,
+		RunMonitors: startMonitors,
+	}
+	if len(startNotify) > 0 {
+		runInput.ActivityNotificationPolicy = &flows.RunActivityNotificationPolicy{Status: startNotify}
 	}
 
 	// Start the flow (v4 RunFlow replaces the v3 RunFlow(request) form).

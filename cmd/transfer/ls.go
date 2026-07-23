@@ -19,6 +19,9 @@ var (
 	lsRecursive  bool
 	lsLongFormat bool
 	lsShowHidden bool
+	lsFilter     string
+	lsOrderBy    []string
+	lsLocalUser  string
 )
 
 // LsCmd returns the ls command
@@ -32,8 +35,10 @@ This command lists the contents of a directory on the specified Globus endpoint.
 The PATH is optional and defaults to the home directory or root of the endpoint.
 
 Examples:
-  globus transfer ls ddb59aef-6d04-11e5-ba46-22000b92c6ec
-  globus transfer ls ddb59aef-6d04-11e5-ba46-22000b92c6ec:/path/to/directory`,
+  globus ls ddb59aef-6d04-11e5-ba46-22000b92c6ec
+  globus ls ddb59aef-6d04-11e5-ba46-22000b92c6ec:/path/to/directory
+  globus ls ENDPOINT_ID:/data --filter "name:~*.txt"
+  globus ls ENDPOINT_ID:/data --orderby "name" --orderby "size DESC"`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Parse endpoint ID and path
@@ -47,6 +52,9 @@ Examples:
 	cmd.Flags().BoolVarP(&lsRecursive, "recursive", "r", false, "List directories recursively")
 	cmd.Flags().BoolVarP(&lsLongFormat, "long", "l", false, "List in long format with details")
 	cmd.Flags().BoolVarP(&lsShowHidden, "all", "a", false, "Show hidden files")
+	cmd.Flags().StringVar(&lsFilter, "filter", "", "Filter results, e.g. \"name:~*.txt\" (Globus Transfer filter syntax)")
+	cmd.Flags().StringSliceVar(&lsOrderBy, "orderby", nil, "Order results, e.g. \"name\" or \"size DESC\" (repeatable)")
+	cmd.Flags().StringVar(&lsLocalUser, "local-user", "", "Local user to map to (GCSv5 mapped collections)")
 
 	return cmd
 }
@@ -80,6 +88,9 @@ func listDirectory(cmd *cobra.Command, endpointID, path string) error {
 	// Prepare listing options
 	options := &transfer.ListDirectoryOptions{
 		ShowHidden: lsShowHidden,
+		Filter:     lsFilter,
+		OrderBy:    lsOrderBy,
+		LocalUser:  lsLocalUser,
 	}
 
 	// Get the directory listing

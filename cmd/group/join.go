@@ -12,7 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var joinIdentity string
+var (
+	joinIdentity string
+	joinRequest  bool
+)
 
 // JoinCmd represents the group join command
 var JoinCmd = &cobra.Command{
@@ -31,6 +34,7 @@ Examples:
 
 func init() {
 	JoinCmd.Flags().StringVar(&joinIdentity, "identity", "", "Identity ID to join the group as (required)")
+	JoinCmd.Flags().BoolVar(&joinRequest, "request", false, "Create a join request to be approved by a group administrator instead of joining directly")
 	_ = JoinCmd.MarkFlagRequired("identity")
 }
 
@@ -48,16 +52,25 @@ func runJoinGroup(cmd *cobra.Command, args []string) error {
 	}
 
 	// Join the group via a single batch membership action
-	// (POST /groups/{id}); the API has no dedicated join route.
-	_, err = groupsClient.BatchMembershipAction(ctx, groupID, &groups.BatchMembershipActions{
-		Join: []groups.MemberID{{IdentityID: joinIdentity}},
-	})
+	// (POST /groups/{id}); the API has no dedicated join route. With --request,
+	// submit a join request (request_join) instead of joining directly.
+	actions := &groups.BatchMembershipActions{}
+	if joinRequest {
+		actions.RequestJoin = []groups.MemberID{{IdentityID: joinIdentity}}
+	} else {
+		actions.Join = []groups.MemberID{{IdentityID: joinIdentity}}
+	}
+	_, err = groupsClient.BatchMembershipAction(ctx, groupID, actions)
 	if err != nil {
 		return fmt.Errorf("error joining group: %w", err)
 	}
 
 	// Display success message
-	fmt.Fprintf(os.Stdout, "Successfully joined group %s as identity %s.\n", groupID, joinIdentity)
+	if joinRequest {
+		fmt.Fprintf(os.Stdout, "Submitted join request for group %s as identity %s.\n", groupID, joinIdentity)
+	} else {
+		fmt.Fprintf(os.Stdout, "Successfully joined group %s as identity %s.\n", groupID, joinIdentity)
+	}
 
 	return nil
 }

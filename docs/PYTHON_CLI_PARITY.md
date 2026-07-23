@@ -174,5 +174,31 @@ compute extension the Python CLI lacks.
 The only remaining item is **GCP (Globus Connect Personal)** — local-agent
 management with no SDK API, out of scope. GCS data-plane file access is started
 (`collection cat`); more data-plane operations (e.g. HTTPS directory listing)
-could follow using the same per-collection `https`-scope consent. Optional
-future polish: richer per-command flag coverage to match every Python option.
+could follow using the same per-collection `https`-scope consent.
+
+## Per-command flag parity
+
+Each command's flags were audited against the installed Python `globus` CLI and
+the gaps closed wherever the v4 SDK backs the underlying request field (flat
+transfer ops, task, endpoint + collection/gcs admin, groups, search, flows,
+timer, auth/session). Flags that the v4 SDK cannot express are intentionally
+**not** added (no silent no-ops); the notable SDK-blocked flags are:
+
+- **Auth provisioning** — `endpoint role/permission create --provision-identity`
+  (needs Auth identity provisioning, not in the Transfer SDK).
+- **`endpoint update --managed`** — requires resolving the caller's subscription
+  ID; use `--subscription-id`.
+- **`session update --all`** and `session/login --no-local-server` — no
+  "add every identity" primitive, and the login flow is paste-code only.
+- **`login --gcs/--flow/--timer`** and `session consent --timer-data-access` —
+  build dynamic dependent scopes the fixed service registry doesn't model
+  (the `project`/`collection` trees use scoped consent instead).
+- **`timer create transfer --notify/--skip-source-errors/--fail-on-quota-errors`**
+  — transfer-body extras not modeled by the timers schedule/body types.
+- **`search query --bypass-visible-to/--filter-principal-sets`** and granular
+  `task list --filter-task-id/type/label/date` — absent from the SDK options.
+- **`flows run resume --skip-inactive-reason-check`**, `flows list --limit`
+  (marker-paginated), and cosmetic `logout --yes/--ignore-errors`.
+
+These are tracked so the absence is intentional and discoverable; each becomes
+addable if/when the SDK grows the corresponding field.

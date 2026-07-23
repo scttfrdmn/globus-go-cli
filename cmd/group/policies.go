@@ -105,6 +105,8 @@ var (
 	policiesSetJoinRequests      bool
 	policiesSetVisibility        string
 	policiesSetMembersVisibility string
+	policiesSetSignupFields      []string
+	policiesSetAuthTimeout       int
 )
 
 // policiesSetCmd updates a group's policy settings. It performs a
@@ -134,6 +136,8 @@ Examples:
 	setCmd.Flags().BoolVar(&policiesSetJoinRequests, "join-requests", false, "Allow join requests")
 	setCmd.Flags().StringVar(&policiesSetVisibility, "visibility", "", "Group visibility (authenticated, private)")
 	setCmd.Flags().StringVar(&policiesSetMembersVisibility, "members-visibility", "", "Group members visibility (members, managers)")
+	setCmd.Flags().StringSliceVar(&policiesSetSignupFields, "signup-fields", nil, "Comma-separated list of fields required from users applying for membership (empty string to require none)")
+	setCmd.Flags().IntVar(&policiesSetAuthTimeout, "authentication-timeout", 0, "Time in seconds before a user must re-authenticate to access a high-assurance group")
 
 	return setCmd
 }
@@ -170,6 +174,12 @@ func runPoliciesSet(cmd *cobra.Command, args []string) error {
 	}
 	if cmd.Flags().Changed("members-visibility") {
 		policies.GroupMembersVisibility = policiesSetMembersVisibility
+	}
+	if cmd.Flags().Changed("signup-fields") {
+		policies.SignupFields = policiesSetSignupFields
+	}
+	if cmd.Flags().Changed("authentication-timeout") {
+		policies.AuthenticationAssuranceTimeout = &policiesSetAuthTimeout
 	}
 
 	if err := groupsClient.SetGroupPolicies(ctx, groupID, policies); err != nil {

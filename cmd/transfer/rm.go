@@ -15,8 +15,14 @@ import (
 )
 
 var (
-	rmRecursive bool
-	rmForce     bool
+	rmRecursive     bool
+	rmForce         bool
+	rmIgnoreMissing bool
+	rmLabel         string
+	rmDeadline      string
+	rmLocalUser     string
+	rmEnableGlobs   bool
+	rmNotify        []string
 )
 
 // RmCmd returns the rm command
@@ -49,6 +55,12 @@ Examples:
 	// Add flags
 	cmd.Flags().BoolVarP(&rmRecursive, "recursive", "r", false, "Remove directories and their contents recursively")
 	cmd.Flags().BoolVarP(&rmForce, "force", "f", false, "Force removal without confirmation")
+	cmd.Flags().BoolVar(&rmIgnoreMissing, "ignore-missing", false, "Do not error if the path does not exist")
+	cmd.Flags().StringVar(&rmLabel, "label", "", "Set a label for this task")
+	cmd.Flags().StringVar(&rmDeadline, "deadline", "", "Deadline for the task (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&rmLocalUser, "local-user", "", "Local user to map to (GCSv5 mapped collections)")
+	cmd.Flags().BoolVar(&rmEnableGlobs, "enable-globs", false, "Interpret shell-style globs in the path")
+	cmd.Flags().StringSliceVar(&rmNotify, "notify", nil, "Notification settings: any of on, off, succeeded, failed, inactive")
 
 	return cmd
 }
@@ -121,11 +133,29 @@ func removeItem(cmd *cobra.Command, endpointID, path string) error {
 		return fmt.Errorf("failed to get submission ID: %w", err)
 	}
 
+	if rmDeadline != "" {
+		if _, derr := time.Parse("2006-01-02", rmDeadline); derr != nil {
+			return fmt.Errorf("invalid deadline format, use YYYY-MM-DD: %w", derr)
+		}
+	}
+	notifySucceeded, notifyFailed, notifyInactive, nerr := parseNotify(rmNotify)
+	if nerr != nil {
+		return nerr
+	}
+
 	deleteRequest := &transfer.Delete{
-		DATA_TYPE:    "delete",
-		SubmissionID: submissionID,
-		Endpoint:     endpointID,
-		Recursive:    rmRecursive,
+		DATA_TYPE:         "delete",
+		SubmissionID:      submissionID,
+		Endpoint:          endpointID,
+		Label:             rmLabel,
+		Recursive:         rmRecursive,
+		IgnoreMissing:     rmIgnoreMissing,
+		InterpretGlob:     rmEnableGlobs,
+		LocalUser:         rmLocalUser,
+		Deadline:          rmDeadline,
+		NotifyOnSucceeded: notifySucceeded,
+		NotifyOnFailed:    notifyFailed,
+		NotifyOnInactive:  notifyInactive,
 		Items: []transfer.DeleteItem{
 			{DATA_TYPE: "delete_item", Path: path},
 		},

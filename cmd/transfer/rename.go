@@ -10,6 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	renameLocalUser string
+)
+
 // RenameCmd returns the rename command
 func RenameCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -39,6 +43,8 @@ Examples:
 		},
 	}
 
+	cmd.Flags().StringVar(&renameLocalUser, "local-user", "", "Local user to map to (GCSv5 mapped collections)")
+
 	return cmd
 }
 
@@ -56,7 +62,7 @@ func renamePath(cmd *cobra.Command, endpointID, oldPath, newPath string) error {
 
 	// Rename the path. The v4 SDK takes endpoint/old-path/new-path/local-user
 	// positionally; local-user is optional (pass "").
-	if _, err := transferClient.Rename(ctx, endpointID, oldPath, newPath, ""); err != nil {
+	if _, err := transferClient.Rename(ctx, endpointID, oldPath, newPath, renameLocalUser); err != nil {
 		return fmt.Errorf("failed to rename: %w", err)
 	}
 

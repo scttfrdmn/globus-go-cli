@@ -15,6 +15,11 @@ import (
 var (
 	deleteRecursive     bool
 	deleteIgnoreMissing bool
+	deleteLabel         string
+	deleteDeadline      string
+	deleteLocalUser     string
+	deleteEnableGlobs   bool
+	deleteNotify        []string
 )
 
 // DeleteCmd returns the delete command
@@ -45,8 +50,13 @@ Examples:
 	}
 
 	// Add flags
-	cmd.Flags().BoolVar(&deleteRecursive, "recursive", false, "Delete directories and their contents recursively")
-	cmd.Flags().BoolVar(&deleteIgnoreMissing, "ignore-missing", false, "Do not error if the path does not exist")
+	cmd.Flags().BoolVarP(&deleteRecursive, "recursive", "r", false, "Delete directories and their contents recursively")
+	cmd.Flags().BoolVarP(&deleteIgnoreMissing, "ignore-missing", "f", false, "Do not error if the path does not exist")
+	cmd.Flags().StringVar(&deleteLabel, "label", "", "Set a label for this task")
+	cmd.Flags().StringVar(&deleteDeadline, "deadline", "", "Deadline for the task (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&deleteLocalUser, "local-user", "", "Local user to map to (GCSv5 mapped collections)")
+	cmd.Flags().BoolVar(&deleteEnableGlobs, "enable-globs", false, "Interpret shell-style globs in paths")
+	cmd.Flags().StringSliceVar(&deleteNotify, "notify", nil, "Notification settings: any of on, off, succeeded, failed, inactive")
 
 	return cmd
 }
@@ -70,12 +80,29 @@ func submitDeleteTask(cmd *cobra.Command, endpointID, path string) error {
 		return fmt.Errorf("failed to get submission ID: %w", err)
 	}
 
+	if deleteDeadline != "" {
+		if _, err := time.Parse("2006-01-02", deleteDeadline); err != nil {
+			return fmt.Errorf("invalid deadline format, use YYYY-MM-DD: %w", err)
+		}
+	}
+	notifySucceeded, notifyFailed, notifyInactive, err := parseNotify(deleteNotify)
+	if err != nil {
+		return err
+	}
+
 	deleteRequest := &transfer.Delete{
-		DATA_TYPE:     "delete",
-		SubmissionID:  submissionID,
-		Endpoint:      endpointID,
-		Recursive:     deleteRecursive,
-		IgnoreMissing: deleteIgnoreMissing,
+		DATA_TYPE:         "delete",
+		SubmissionID:      submissionID,
+		Endpoint:          endpointID,
+		Label:             deleteLabel,
+		Recursive:         deleteRecursive,
+		IgnoreMissing:     deleteIgnoreMissing,
+		InterpretGlob:     deleteEnableGlobs,
+		LocalUser:         deleteLocalUser,
+		Deadline:          deleteDeadline,
+		NotifyOnSucceeded: notifySucceeded,
+		NotifyOnFailed:    notifyFailed,
+		NotifyOnInactive:  notifyInactive,
 		Items: []transfer.DeleteItem{
 			{DATA_TYPE: "delete_item", Path: path},
 		},

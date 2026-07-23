@@ -52,6 +52,7 @@ func sessionUpdateCmd() *cobra.Command {
 		domain     string
 		policies   []string
 		mfa        bool
+		scopes     []string
 	)
 	cmd := &cobra.Command{
 		Use:   "update",
@@ -79,9 +80,11 @@ policies, or MFA. This starts a browser/paste-code login flow like 'login'.`,
 				sp.RequiredSingleDomain = []string{domain}
 			}
 
-			// Re-auth for the auth resource server (openid identity scopes).
+			// Re-auth for the auth resource server (openid identity scopes),
+			// plus any additional scopes requested with --scope.
 			scope, _ := globusauth.Scope(globusauth.ServiceAuth)
-			if _, err := globusauth.SessionLogin(cmd.Context(), profile, clientID, clientSecret, []string{scope}, sp); err != nil {
+			reqScopes := append([]string{scope}, scopes...)
+			if _, err := globusauth.SessionLogin(cmd.Context(), profile, clientID, clientSecret, reqScopes, sp); err != nil {
 				return fmt.Errorf("session update failed: %w", err)
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), "Session updated.")
@@ -92,6 +95,7 @@ policies, or MFA. This starts a browser/paste-code login flow like 'login'.`,
 	cmd.Flags().StringVar(&domain, "domain", "", "Require an identity from this single domain (mutually exclusive with --identity)")
 	cmd.Flags().StringSliceVar(&policies, "policy", nil, "Comma-separated authentication policy UUIDs to satisfy")
 	cmd.Flags().BoolVar(&mfa, "mfa", false, "Require multi-factor authentication")
+	cmd.Flags().StringArrayVar(&scopes, "scope", nil, "One or more additional scope strings to request during authentication (repeatable)")
 	return cmd
 }
 
@@ -174,9 +178,9 @@ session and when each authenticated.`,
 			sort.Strings(ids)
 
 			type row struct {
-				IdentityID     string
+				IdentityID      string
 				AuthenticatedAt string
-				MFA            bool
+				MFA             bool
 			}
 			rows := make([]row, 0, len(ids))
 			for _, id := range ids {

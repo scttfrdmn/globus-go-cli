@@ -15,11 +15,12 @@ import (
 )
 
 var (
-	runListLimit   int
-	runListOffset  int
-	runListFlowID  string
-	runListStatus  string
-	runListOrderBy string
+	runListLimit      int
+	runListOffset     int
+	runListFlowID     string
+	runListFilterRole string
+	runListStatus     string
+	runListOrderBy    string
 )
 
 // RunListCmd represents the flows run list command
@@ -56,6 +57,7 @@ func init() {
 	_ = RunListCmd.Flags().MarkDeprecated("limit", "list_runs is marker-paginated")
 	_ = RunListCmd.Flags().MarkDeprecated("offset", "list_runs is marker-paginated")
 	RunListCmd.Flags().StringVar(&runListFlowID, "flow-id", "", "Filter by flow ID")
+	RunListCmd.Flags().StringVar(&runListFilterRole, "filter-role", "", "Filter by the caller's role (run_owner, run_manager, run_monitor, flow_run_manager, flow_run_monitor)")
 	RunListCmd.Flags().StringVar(&runListStatus, "status", "", "Filter by status (ACTIVE, SUCCEEDED, FAILED, INACTIVE)")
 	// Runs are ordered by run fields (e.g. start_time); created_at is a flow
 	// field and is rejected here.
@@ -78,6 +80,9 @@ func runFlowsRunList(cmd *cobra.Command, args []string) error {
 	options := &flows.ListRunsOptions{}
 	if runListFlowID != "" {
 		options.FilterFlowID = []string{runListFlowID}
+	}
+	if runListFilterRole != "" {
+		options.FilterRoles = []string{runListFilterRole}
 	}
 
 	// List runs

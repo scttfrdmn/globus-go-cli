@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
@@ -15,8 +16,28 @@ import (
 	"github.com/spf13/viper"
 )
 
+// readJSONArg resolves a [JSON_FILE|JSON|file:JSON_FILE] argument (the form the
+// Python CLI accepts for query documents) into raw JSON bytes. A "file:" prefix
+// or an existing path is read from disk; otherwise the value is treated as
+// inline JSON.
+func readJSONArg(arg string) ([]byte, error) {
+	if strings.HasPrefix(arg, "file:") {
+		return os.ReadFile(strings.TrimPrefix(arg, "file:"))
+	}
+	trimmed := strings.TrimSpace(arg)
+	if strings.HasPrefix(trimmed, "{") || strings.HasPrefix(trimmed, "[") {
+		return []byte(arg), nil
+	}
+	if data, err := os.ReadFile(arg); err == nil {
+		return data, nil
+	}
+	// Fall back to treating the value as inline JSON.
+	return []byte(arg), nil
+}
+
 var (
 	queryString   string
+	queryDocument string
 	queryLimit    int
 	queryOffset   int
 	queryAdvanced bool
@@ -49,16 +70,19 @@ Examples:
 }
 
 func init() {
-	QueryCmd.Flags().StringVarP(&queryString, "query", "q", "", "Search query string (required)")
+	QueryCmd.Flags().StringVarP(&queryString, "query", "q", "", "Search query string")
+	QueryCmd.Flags().StringVar(&queryDocument, "query-document", "", "A complete query document (inline JSON, a path, or file:PATH). At least one of -q or --query-document is required")
 	QueryCmd.Flags().IntVar(&queryLimit, "limit", 10, "Maximum number of results to return")
 	QueryCmd.Flags().IntVar(&queryOffset, "offset", 0, "Offset for pagination")
 	QueryCmd.Flags().BoolVar(&queryAdvanced, "advanced", false, "Use advanced query syntax")
-
-	_ = QueryCmd.MarkFlagRequired("query")
 }
 
 func runSearchQuery(cmd *cobra.Command, args []string) error {
 	indexID := args[0]
+
+	if queryString == "" && queryDocument == "" {
+		return fmt.Errorf("at least one of -q/--query or --query-document must be provided")
+	}
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -70,16 +94,42 @@ func runSearchQuery(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Execute a simple search. Upstream models this as GET
-	// /v1/index/{id}/search with q/offset/limit/advanced query params
-	// (SearchGet), not a POST body — the POST Search sends a malformed body and
-	// returns HTTP 400.
-	response, err := searchClient.SearchGet(ctx, indexID, &search.SearchGetOptions{
-		Q:        queryString,
-		Offset:   queryOffset,
-		Limit:    queryLimit,
-		Advanced: queryAdvanced,
-	})
+	var response *search.SearchResults
+
+	if queryDocument != "" {
+		// A complete query document is posted via POST /index/{id}/search.
+		// Command-line options, when present, override the document's fields.
+		docData, derr := readJSONArg(queryDocument)
+		if derr != nil {
+			return fmt.Errorf("failed to read query document: %w", derr)
+		}
+		var q search.SearchQuery
+		if uerr := json.Unmarshal(docData, &q); uerr != nil {
+			return fmt.Errorf("failed to parse query document JSON: %w", uerr)
+		}
+		if cmd.Flags().Changed("query") {
+			q.Q = queryString
+		}
+		if cmd.Flags().Changed("limit") {
+			q.Limit = queryLimit
+		}
+		if cmd.Flags().Changed("offset") {
+			q.Offset = queryOffset
+		}
+		if cmd.Flags().Changed("advanced") {
+			q.AdvancedQuery = queryAdvanced
+		}
+		response, err = searchClient.Search(ctx, indexID, &q)
+	} else {
+		// A simple query string is modeled as GET /v1/index/{id}/search with
+		// q/offset/limit/advanced query params (SearchGet).
+		response, err = searchClient.SearchGet(ctx, indexID, &search.SearchGetOptions{
+			Q:        queryString,
+			Offset:   queryOffset,
+			Limit:    queryLimit,
+			Advanced: queryAdvanced,
+		})
+	}
 	if err != nil {
 		return fmt.Errorf("error executing search: %w", err)
 	}

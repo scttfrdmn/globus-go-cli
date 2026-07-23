@@ -12,6 +12,7 @@ import (
 
 var (
 	mkdirRecursive bool
+	mkdirLocalUser string
 )
 
 // MkdirCmd returns the mkdir command
@@ -43,6 +44,7 @@ Examples:
 
 	// Add flags
 	cmd.Flags().BoolVarP(&mkdirRecursive, "recursive", "p", false, "Create parent directories as needed")
+	cmd.Flags().StringVar(&mkdirLocalUser, "local-user", "", "Local user to map to (GCSv5 mapped collections)")
 
 	return cmd
 }
@@ -62,7 +64,7 @@ func createDirectory(cmd *cobra.Command, endpointID, path string) error {
 	// Create the directory. The v4 SDK takes endpoint/path/local-user
 	// positionally; the recursive flag is a client-side convenience that the
 	// operation API does not accept, so it is a no-op for now.
-	if _, err := transferClient.MakeDirectory(ctx, endpointID, path, ""); err != nil {
+	if _, err := transferClient.MakeDirectory(ctx, endpointID, path, mkdirLocalUser); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 

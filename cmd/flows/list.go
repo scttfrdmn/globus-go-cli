@@ -15,10 +15,11 @@ import (
 )
 
 var (
-	listLimit   int
-	listOffset  int
-	listFilter  string
-	listOrderBy string
+	listLimit      int
+	listOffset     int
+	listFilter     string
+	listFilterRole string
+	listOrderBy    string
 )
 
 // ListCmd represents the flows list command
@@ -53,6 +54,7 @@ func init() {
 	_ = ListCmd.Flags().MarkDeprecated("limit", "list_flows is marker-paginated")
 	_ = ListCmd.Flags().MarkDeprecated("offset", "list_flows is marker-paginated")
 	ListCmd.Flags().StringVar(&listFilter, "filter", "", "Filter flows by text")
+	ListCmd.Flags().StringVar(&listFilterRole, "filter-role", "", "Filter by the caller's role (flow_viewer, flow_starter, flow_administrator, flow_owner, run_manager, run_monitor)")
 	ListCmd.Flags().StringVar(&listOrderBy, "orderby", "created_at", "Order results by field (created_at, updated_at, title)")
 }
 
@@ -75,6 +77,9 @@ func runFlowsList(cmd *cobra.Command, args []string) error {
 	}
 	if listFilter != "" {
 		options.FilterFulltext = listFilter
+	}
+	if listFilterRole != "" {
+		options.FilterRoles = []string{listFilterRole}
 	}
 
 	// List flows

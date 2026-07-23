@@ -13,6 +13,10 @@ import (
 	"github.com/scttfrdmn/globus-go-cli/pkg/output"
 )
 
+var (
+	statLocalUser string
+)
+
 // StatCmd returns the stat command
 func StatCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -38,6 +42,8 @@ Examples:
 		},
 	}
 
+	cmd.Flags().StringVar(&statLocalUser, "local-user", "", "Local user to map to (GCSv5 mapped collections)")
+
 	return cmd
 }
 
@@ -54,7 +60,7 @@ func statPath(cmd *cobra.Command, endpointID, path string) error {
 	}
 
 	// Stat the path. GenericResponse is a map[string]interface{} passthrough.
-	resp, err := transferClient.OperationStat(ctx, endpointID, path, "")
+	resp, err := transferClient.OperationStat(ctx, endpointID, path, statLocalUser)
 	if err != nil {
 		return fmt.Errorf("failed to stat path: %w", err)
 	}

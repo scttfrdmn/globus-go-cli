@@ -40,6 +40,7 @@ var (
 	createTransferInterval          string
 	createTransferStart             string
 	createTransferStop              string
+	createTransferLabel             string
 	createTransferInclude           []string
 	createTransferExclude           []string
 )
@@ -100,6 +101,7 @@ func init() {
 	CreateTransferCmd.Flags().BoolVar(&createTransferEncryptData, "encrypt-data", false, "Encrypt data during transfer")
 	CreateTransferCmd.Flags().BoolVar(&createTransferDelete, "delete", false, "Delete extra files at destination (directory mirroring)")
 	CreateTransferCmd.Flags().StringVar(&createTransferDeadline, "deadline", "", "Task deadline (RFC3339 format)")
+	CreateTransferCmd.Flags().StringVar(&createTransferLabel, "label", "", "A label for the Transfer tasks submitted by the timer")
 	CreateTransferCmd.Flags().StringArrayVar(&createTransferInclude, "include", []string{}, "Include patterns")
 	CreateTransferCmd.Flags().StringArrayVar(&createTransferExclude, "exclude", []string{}, "Exclude patterns")
 
@@ -143,20 +145,25 @@ func runCreateTransferTimer(cmd *cobra.Command, args []string) error {
 	}
 
 	transferBody := map[string]interface{}{
-		"DATA_TYPE":             "transfer",
-		"source_endpoint":       sourceEndpoint,
-		"destination_endpoint":  destEndpoint,
-		"DATA":                  []interface{}{transferItem},
-		"sync_level":            createTransferSyncLevel,
-		"verify_checksum":       createTransferVerifyChecksum,
-		"preserve_timestamp":    createTransferPreserveTimestamp,
-		"encrypt_data":          createTransferEncryptData,
+		"DATA_TYPE":                "transfer",
+		"source_endpoint":          sourceEndpoint,
+		"destination_endpoint":     destEndpoint,
+		"DATA":                     []interface{}{transferItem},
+		"sync_level":               createTransferSyncLevel,
+		"verify_checksum":          createTransferVerifyChecksum,
+		"preserve_timestamp":       createTransferPreserveTimestamp,
+		"encrypt_data":             createTransferEncryptData,
 		"delete_destination_extra": createTransferDelete,
 	}
 
 	// Add deadline if specified
 	if createTransferDeadline != "" {
 		transferBody["deadline"] = createTransferDeadline
+	}
+
+	// Add label if specified
+	if createTransferLabel != "" {
+		transferBody["label"] = createTransferLabel
 	}
 
 	// Add filter rules if specified
@@ -203,10 +210,10 @@ func runCreateTransferTimer(cmd *cobra.Command, args []string) error {
 
 	// Build v2 transfer timer request
 	timerRequest := map[string]interface{}{
-		"name":     createTransferName,
+		"name":       createTransferName,
 		"timer_type": "transfer",
-		"schedule": schedule,
-		"body":     transferBody,
+		"schedule":   schedule,
+		"body":       transferBody,
 	}
 
 	// Marshal request to JSON
