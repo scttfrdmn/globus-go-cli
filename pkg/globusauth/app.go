@@ -413,7 +413,12 @@ func ScopedClientConfigWithNamespace(ctx context.Context, profile, clientID, cli
 		}
 		// No stored token for this resource server: escalate consent.
 		if lerr := userApp.Login(ctx); lerr != nil {
-			return nil, fmt.Errorf("consent login failed: %w", lerr)
+			return nil, fmt.Errorf("consent login failed: %w\n\n"+
+				"If the browser rejected the request with \"Invalid client_id\" or "+
+				"\"PKCE code_challenge required\", the configured client cannot complete "+
+				"this consent. Set a native/public client registered for the "+
+				"https://auth.globus.org/v2/web/auth-code redirect via GLOBUS_CLIENT_ID "+
+				"or your profile config.", lerr)
 		}
 		authz, err = userApp.GetAuthorizer(ctx, resourceServer)
 		if err != nil {
