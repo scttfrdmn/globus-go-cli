@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.8.1-4] - 2026-07-23
+
+Adds Globus Connect Personal (GCP) support, completing coverage of the Python
+Globus CLI command surface. Builds on the v4 SDK (v4.8.1-5). Version tracks
+upstream Python globus-sdk 4.8.1; `-4` is this project's patch release.
+
+### Added — Globus Connect Personal (`gcp`) + `endpoint local-id`
+Matching the Python CLI, `gcp` commands manage GCP endpoints/collections through
+the Globus service API — they do not install, start, or stop a local GCP agent.
+- `gcp create mapped DISPLAY_NAME` — registers a GCP endpoint (via
+  `transfer.CreateEndpoint`) and prints the `globus_connect_setup_key` used to
+  configure an installed agent.
+- `gcp create guest DISPLAY_NAME HOST_ENDPOINT_ID:PATH` — creates a guest
+  collection on a GCP host.
+- `gcp set-subscription-id ENDPOINT_ID SUBSCRIPTION_ID`.
+- Both `create` subcommands carry the shared endpoint/collection metadata flags
+  (description, organization, contact-*, keywords, verify, force-encryption,
+  user-message, default-directory; `mapped` adds public/private/subscription-id).
+- `endpoint local-id` — prints the local Globus Connect Personal endpoint ID by
+  reading `~/.globusonline/lta/client-id.txt` (no network).
+
+### Notes
+- Requires v4 SDK v4.8.1-5 (`transfer.CreateEndpoint`).
+
 ## [4.8.1-3] - 2026-07-23
 
 Flag parity with the Python Globus CLI across the command tree. Builds on the v4
