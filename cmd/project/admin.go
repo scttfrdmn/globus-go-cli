@@ -124,30 +124,29 @@ func addAdmin(cmd *cobra.Command, projectID, identityOrUsername string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
+	var identityID string
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		id, err := resolveIdentityID(ctx, client, identityOrUsername)
+		if err != nil {
+			return err
+		}
+		identityID = id
+
+		project, err := client.GetProject(ctx, projectID)
+		if err != nil {
+			return err
+		}
+
+		merged := dedupeStrings(append(project.AdminIDs, identityID))
+		update := &auth.ProjectUpdate{
+			DisplayName:  project.DisplayName,
+			ContactEmail: project.ContactEmail,
+			AdminIDs:     merged,
+		}
+		_, err = client.UpdateProject(ctx, projectID, update)
 		return err
-	}
-
-	identityID, err := resolveIdentityID(ctx, client, identityOrUsername)
-	if err != nil {
-		return err
-	}
-
-	project, err := client.GetProject(ctx, projectID)
-	if err != nil {
-		return fmt.Errorf("failed to get project: %w", err)
-	}
-
-	merged := dedupeStrings(append(project.AdminIDs, identityID))
-
-	update := &auth.ProjectUpdate{
-		DisplayName:  project.DisplayName,
-		ContactEmail: project.ContactEmail,
-		AdminIDs:     merged,
-	}
-	if _, err := client.UpdateProject(ctx, projectID, update); err != nil {
-		return fmt.Errorf("failed to update project admins: %w", err)
+	}); err != nil {
+		return fmt.Errorf("failed to add project admin: %w", err)
 	}
 
 	fmt.Printf("Added admin %s to project %s\n", identityID, projectID)
@@ -160,30 +159,28 @@ func removeAdmin(cmd *cobra.Command, projectID, identityID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	project, err := client.GetProject(ctx, projectID)
-	if err != nil {
-		return fmt.Errorf("failed to get project: %w", err)
-	}
-
-	reduced := make([]string, 0, len(project.AdminIDs))
-	for _, id := range project.AdminIDs {
-		if id != identityID {
-			reduced = append(reduced, id)
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		project, err := client.GetProject(ctx, projectID)
+		if err != nil {
+			return err
 		}
-	}
 
-	update := &auth.ProjectUpdate{
-		DisplayName:  project.DisplayName,
-		ContactEmail: project.ContactEmail,
-		AdminIDs:     reduced,
-	}
-	if _, err := client.UpdateProject(ctx, projectID, update); err != nil {
-		return fmt.Errorf("failed to update project admins: %w", err)
+		reduced := make([]string, 0, len(project.AdminIDs))
+		for _, id := range project.AdminIDs {
+			if id != identityID {
+				reduced = append(reduced, id)
+			}
+		}
+
+		update := &auth.ProjectUpdate{
+			DisplayName:  project.DisplayName,
+			ContactEmail: project.ContactEmail,
+			AdminIDs:     reduced,
+		}
+		_, err = client.UpdateProject(ctx, projectID, update)
+		return err
+	}); err != nil {
+		return fmt.Errorf("failed to remove project admin: %w", err)
 	}
 
 	fmt.Printf("Removed admin %s from project %s\n", identityID, projectID)

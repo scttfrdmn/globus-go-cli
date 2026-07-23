@@ -39,7 +39,7 @@ resource server so each service is authorized independently.`,
 	}
 
 	// Add login flags
-	loginCmd.Flags().StringSliceVar(&loginScopes, "scopes", []string{}, "comma-separated list of scopes to request (default: all)")
+	loginCmd.Flags().StringSliceVar(&loginScopes, "scopes", []string{}, "comma-separated services to request tokens for: auth,transfer,groups,search,flows,compute,timers (default: all except timers)")
 	loginCmd.Flags().BoolVar(&noLocalServer, "no-local-server", false, "do not start a local server for the OAuth callback")
 	loginCmd.Flags().BoolVar(&noSaveTokens, "no-save-tokens", false, "do not save tokens to disk")
 	loginCmd.Flags().BoolVar(&noOpenBrowser, "no-browser", false, "do not automatically open the browser")
@@ -70,7 +70,27 @@ func login(cmd *cobra.Command) error {
 		}
 	}
 
-	userApp, err := globusauth.NewApp(profile, clientCfg.ClientID, clientCfg.ClientSecret, globusauth.AllServices...)
+	// Resolve which services to request. Default (no --scopes) is the safe set
+	// that every scope of works with the default native client; Timers is
+	// opt-in because its client-specific scope isn't requestable by a generic
+	// client (issue #40).
+	services := globusauth.DefaultLoginServices
+	if len(loginScopes) > 0 {
+		services = nil
+		var unknown []string
+		for _, name := range loginScopes {
+			if svc, ok := globusauth.ServiceByName(name); ok {
+				services = append(services, svc)
+			} else {
+				unknown = append(unknown, name)
+			}
+		}
+		if len(unknown) > 0 {
+			return fmt.Errorf("unknown service(s) in --scopes: %v (valid: auth,transfer,groups,search,flows,compute,timers)", unknown)
+		}
+	}
+
+	userApp, err := globusauth.NewApp(profile, clientCfg.ClientID, clientCfg.ClientSecret, services...)
 	if err != nil {
 		return fmt.Errorf("failed to initialize login: %w", err)
 	}

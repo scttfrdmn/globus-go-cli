@@ -261,11 +261,6 @@ func pcCreate(cmd *cobra.Command) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	req := &auth.ClientCreate{
 		Name:         clientCreateName,
 		Project:      clientCreateProject,
@@ -279,8 +274,15 @@ func pcCreate(cmd *cobra.Command) error {
 		req.PublicClient = &public
 	}
 
-	created, err := client.CreateClient(ctx, req)
-	if err != nil {
+	var created *auth.AuthClientInfo
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		c, err := client.CreateClient(ctx, req)
+		if err != nil {
+			return err
+		}
+		created = c
+		return nil
+	}); err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
 
@@ -293,11 +295,6 @@ func pcUpdate(cmd *cobra.Command, clientID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	update := &auth.ClientUpdate{}
 	if cmd.Flags().Changed("name") {
 		update.Name = clientUpdateName
@@ -306,7 +303,10 @@ func pcUpdate(cmd *cobra.Command, clientID string) error {
 		update.Visibility = clientUpdateVisibility
 	}
 
-	if _, err := client.UpdateClient(ctx, clientID, update); err != nil {
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		_, err := client.UpdateClient(ctx, clientID, update)
+		return err
+	}); err != nil {
 		return fmt.Errorf("failed to update client: %w", err)
 	}
 
@@ -319,12 +319,9 @@ func pcDelete(cmd *cobra.Command, clientID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := client.DeleteClient(ctx, clientID); err != nil {
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		return client.DeleteClient(ctx, clientID)
+	}); err != nil {
 		return fmt.Errorf("failed to delete client: %w", err)
 	}
 
@@ -337,13 +334,11 @@ func pcUpdateRedirectURIs(cmd *cobra.Command, clientID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	update := &auth.ClientUpdate{RedirectURIs: clientRedirectURIs}
-	if _, err := client.UpdateClient(ctx, clientID, update); err != nil {
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		_, err := client.UpdateClient(ctx, clientID, update)
+		return err
+	}); err != nil {
 		return fmt.Errorf("failed to update redirect URIs: %w", err)
 	}
 
@@ -356,11 +351,6 @@ func pcUpdateMetadata(cmd *cobra.Command, clientID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	links := &auth.ClientLinksInput{}
 	if cmd.Flags().Changed("privacy-policy") {
 		links.PrivacyPolicy = clientPrivacyPolicy
@@ -370,7 +360,10 @@ func pcUpdateMetadata(cmd *cobra.Command, clientID string) error {
 	}
 
 	update := &auth.ClientUpdate{Links: links}
-	if _, err := client.UpdateClient(ctx, clientID, update); err != nil {
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		_, err := client.UpdateClient(ctx, clientID, update)
+		return err
+	}); err != nil {
 		return fmt.Errorf("failed to update client metadata: %w", err)
 	}
 

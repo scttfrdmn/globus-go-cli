@@ -199,11 +199,6 @@ func createProject(cmd *cobra.Command) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	create := &auth.ProjectCreate{
 		DisplayName:   projectDisplayName,
 		ContactEmail:  projectContactEmail,
@@ -211,8 +206,15 @@ func createProject(cmd *cobra.Command) error {
 		AdminGroupIDs: projectAdminGroups,
 	}
 
-	project, err := client.CreateProject(ctx, create)
-	if err != nil {
+	var project *auth.Project
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		p, err := client.CreateProject(ctx, create)
+		if err != nil {
+			return err
+		}
+		project = p
+		return nil
+	}); err != nil {
 		return fmt.Errorf("failed to create project: %w", err)
 	}
 
@@ -225,11 +227,6 @@ func updateProject(cmd *cobra.Command, projectID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	update := &auth.ProjectUpdate{}
 	if cmd.Flags().Changed("display-name") {
 		update.DisplayName = projectDisplayName
@@ -238,7 +235,10 @@ func updateProject(cmd *cobra.Command, projectID string) error {
 		update.ContactEmail = projectContactEmail
 	}
 
-	if _, err := client.UpdateProject(ctx, projectID, update); err != nil {
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		_, err := client.UpdateProject(ctx, projectID, update)
+		return err
+	}); err != nil {
 		return fmt.Errorf("failed to update project: %w", err)
 	}
 
@@ -251,12 +251,9 @@ func deleteProject(cmd *cobra.Command, projectID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	client, err := getClient(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := client.DeleteProject(ctx, projectID); err != nil {
+	if err := withProjectRetry(ctx, func(client *auth.Client) error {
+		return client.DeleteProject(ctx, projectID)
+	}); err != nil {
 		return fmt.Errorf("failed to delete project: %w", err)
 	}
 

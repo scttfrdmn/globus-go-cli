@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`login` no longer fails with `UNKNOWN_SCOPE_ERROR` out of the box (#40).**
+  The default login set no longer requests the Timers scope, whose
+  client-specific `.../timers.api` value a generic native/public client (the
+  CLI's default client included) can't request — which previously made Globus
+  reject the entire login. Timers is now opt-in: `login --scopes timers` (the
+  `--scopes` flag, previously a no-op, now selects services by name:
+  `auth,transfer,groups,search,flows,compute,timers`).
+- **`project` commands satisfy `session_required_policies` (#41).** Project
+  operations against a project protected by an authentication policy previously
+  failed with an unhandled 403. The CLI now detects the 403's
+  `authorization_parameters.session_required_policies`, re-drives the
+  `manage_projects` consent (in its isolated token namespace) with those
+  policies as `session_required_policies`, and retries the operation once —
+  mirroring the Python globus-cli. Applies to `project create/update/delete`,
+  `project client create/update/delete`, `project admin add/remove`, and
+  `project credential create/delete`. Unblocks registering a client in a
+  policy-protected project (epic #42).
+
 ## [4.8.1-6] - 2026-07-23
 
 ### Fixed
