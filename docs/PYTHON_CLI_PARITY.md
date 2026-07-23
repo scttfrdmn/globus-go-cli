@@ -61,7 +61,7 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 | Endpoint permissions (ACLs) | ✅ (5) | ✅ (`endpoint permission list/show/create/update/delete`) | Covered (Phase 4) |
 | Bookmarks | ✅ (5) | ✅ (`bookmark list/show/create/rename/delete`) | Covered (Phase 4) |
 | Collections / GCS management | ✅ (`collection`, `gcs`, 32 cmds) | ✅ core set — `collection list/show/create/update/delete`, `gcs info`, `gcs storage-gateway list/show`, `gcs role list/show/create/delete` | Covered (Phase 7) |
-| GCP (Connect Personal) | ✅ (6) | ❌ none | Gap (no SDK support) |
+| GCP (Connect Personal) | ✅ (6) | ✅ (`gcp create mapped/guest`, `gcp set-subscription-id`, `endpoint local-id`) | Covered — cloud-API mgmt (not local-agent control, same as Python) |
 | Streams / tunnels | ✅ (8) | ✅ (`tunnel list/show/create/update/delete/events`, `stream-access-point list/show`) | Covered (Phase 5) |
 | Search (index/query/ingest/task/role/subject) | ✅ (14) | ✅ comparable — incl. `index role list/create/delete` and `task list` | Covered |
 | Groups (member/role/policy/invite/join/leave) | ✅ (19) | ✅ — create/delete/list/show/update, member add/invite/list/remove/accept/decline/approve/reject, join/leave, `policies show/set` | Covered (Phase 4) |
@@ -127,8 +127,15 @@ Still available in the SDK but not yet wired:
   COLLECTION_ID PATH` reads a file over the collection's HTTPS data plane,
   using the collection's `https` scope (a separate per-collection data-access
   consent, escalated on first use).
-- **GCP (Globus Connect Personal)** — local-agent management; not an SDK API
-  (out of scope).
+- **GCP (Globus Connect Personal)** — DONE. Like the Python CLI, the `gcp`
+  commands manage GCP endpoints/collections through the **Globus service API**,
+  not the local agent: `gcp create mapped` registers an endpoint (via the new
+  SDK `transfer.CreateEndpoint`, SDK v4.8.1-5) and prints a setup key;
+  `gcp create guest` creates a guest collection; `gcp set-subscription-id`. The
+  one genuinely local piece, `endpoint local-id`, reads
+  `~/.globusonline/lta/client-id.txt` (no network, mirroring
+  `globus_sdk.LocalGlobusConnectPersonal`). Neither the Python CLI nor this one
+  installs/starts/stops the local GCP agent.
 
 ## Compute is a Go-only extension
 
@@ -171,10 +178,13 @@ streams/tunnels, groups, search, flows, timers, GCS `collection`/`gcs`, `api`
 raw passthrough, and the `list-commands`/`version` meta commands — plus a
 compute extension the Python CLI lacks.
 
-The only remaining item is **GCP (Globus Connect Personal)** — local-agent
-management with no SDK API, out of scope. GCS data-plane file access is started
-(`collection cat`); more data-plane operations (e.g. HTTPS directory listing)
-could follow using the same per-collection `https`-scope consent.
+The CLI now covers the full Python `globus` command surface, including GCP
+endpoint/collection management (`gcp ...`, cloud-API — matching Python, not
+local-agent control) and `endpoint local-id`. GCS data-plane file access is
+started (`collection cat`); more data-plane operations (e.g. HTTPS directory
+listing) could follow using the same per-collection `https`-scope consent.
+Installing/starting/stopping the local GCP agent is deliberately out of scope
+(the Python CLI does not do it either).
 
 ## Per-command flag parity
 

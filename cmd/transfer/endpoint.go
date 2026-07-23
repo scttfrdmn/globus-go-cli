@@ -35,6 +35,7 @@ searching, and displaying endpoint details.`,
 		endpointPermissionCmd(),
 		endpointSetSubscriptionIDCmd(),
 		endpointMySharedEndpointListCmd(),
+		endpointLocalIDCmd(),
 	)
 
 	return endpointCmd

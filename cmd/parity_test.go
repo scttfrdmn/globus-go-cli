@@ -88,6 +88,9 @@ func TestCommandParity(t *testing.T) {
 		"collection list", "collection show", "collection create", "collection delete",
 		"gcs info", "gcs storage-gateway list", "gcs role list", "gcs role create",
 		"collection cat",
+		// Globus Connect Personal (cloud-API management) + local endpoint id.
+		"gcp create mapped", "gcp create guest", "gcp set-subscription-id",
+		"endpoint local-id",
 		// Project / client / credential management (globus-project-manager port).
 		"project list", "project create", "project admin add",
 		"project client list", "project client create",

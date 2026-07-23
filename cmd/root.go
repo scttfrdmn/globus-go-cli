@@ -253,6 +253,7 @@ func addServiceCommands() {
 		getEndpointManagerCommand(),
 		getCollectionCommand(),
 		getGCSCommand(),
+		getGCPCommand(),
 		getProjectCommand(),
 		getAPICommand(),
 		getConfigCommand(),
