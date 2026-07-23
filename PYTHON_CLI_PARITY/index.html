@@ -1259,6 +1259,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#project-client-credential-management-is-a-go-only-extension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Project / client / credential management is a Go-only extension
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1470,6 +1481,12 @@ device-code flow and <code>identities lookup</code> performs a real <code>GetIde
 <td>✅ (endpoint/function/task)</td>
 <td>Go-only extension</td>
 </tr>
+<tr>
+<td>Project / client / credential management</td>
+<td>❌ (console-only in Python CLI)</td>
+<td>✅ (<code>project</code>, <code>project client</code>, <code>project credential</code> incl. rotation)</td>
+<td>Go-only extension</td>
+</tr>
 </tbody>
 </table>
 <p><strong>JSON output shape (Phase 6):</strong> list commands emit the enveloped service
@@ -1525,6 +1542,27 @@ Python CLI, rather than a bare array. (Groups list is a bare array in both CLIs.
 commands (Globus Compute has its own separate <code>globus-compute</code> CLI). The Go
 compute commands are limited by the Compute web API (no list/cancel/run of tasks
 or functions server-side — those require the Globus Compute serialization SDK).</p>
+<h2 id="project-client-credential-management-is-a-go-only-extension">Project / client / credential management is a Go-only extension<a class="headerlink" href="#project-client-credential-management-is-a-go-only-extension" title="Permanent link">&para;</a></h2>
+<p>The Go CLI's <code>project</code> command tree manages Globus Auth <strong>projects</strong>, their
+registered <strong>clients</strong> (service accounts / app registrations), and client
+<strong>secret credentials</strong> — the developer-console administrative surface. The
+Python <code>globus-cli</code> has <strong>no</strong> commands for this (it is web-console only); the
+capability is ported from the standalone <code>globus-project-manager</code> tool onto the
+v4 SDK. Highlights:</p>
+<ul>
+<li><code>project list/show/create/update/delete</code> and <code>project admin list/add/remove</code>.</li>
+<li><code>project client list/show/create/update/delete</code> plus <code>update-redirect-uris</code>
+  and <code>update-metadata</code>.</li>
+<li><code>project credential list/create/delete</code> plus <strong>rotation</strong> (<code>rotate</code>,
+  <code>list-age</code>, <code>process-deletions</code>) with a transition period. The Globus Auth API
+  has no rotation primitive, so rotation state (linked new/old credentials +
+  scheduled-deletion dates) is tracked in a per-profile local file
+  <code>~/.globus-cli/credential-state-&lt;profile&gt;.json</code>.</li>
+</ul>
+<p>These commands require the <code>manage_projects</code> scope, which the standard <code>globus
+login</code> scope set omits; the CLI obtains it via a one-time consent (escalated on
+first use), stored under a dedicated token namespace so it never collides with
+the login token (both live on <code>auth.globus.org</code>).</p>
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <p>The Go CLI is now a <strong>functional drop-in replacement</strong> for the Python Globus
 CLI across the full command surface, all on the v4 SDK: flat command paths,
@@ -1561,7 +1599,7 @@ Python option.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 22, 2026 03:06:13 UTC">July 22, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 23, 2026 00:10:02 UTC">July 23, 2026</span>
   </span>
 
     
