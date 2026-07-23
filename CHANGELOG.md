@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.8.1-8] - 2026-07-23
+
+### Fixed
+- **`project` auth-policy retry now actually fires (SDK #63).** The
+  `session_required_policies` handling added in 4.8.1-7 was correct but inert at
+  runtime: the SDK's `APIError.Details` was always nil (it re-read an
+  already-drained response body), so the CLI never saw the 403's
+  `authorization_parameters` and never re-authenticated. Pinning SDK **v4.8.1-8**
+  populates `Details` from the response body, so administering a
+  policy-protected project (e.g. `project client create` — epic #42) now
+  triggers the policy-scoped re-consent and succeeds.
+
 ## [4.8.1-7] - 2026-07-23
 
 Clears the last two out-of-box blockers in the public-client registration path

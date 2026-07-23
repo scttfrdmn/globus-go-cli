@@ -173,8 +173,8 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
-github.com/scttfrdmn/globus-go-sdk/v4 v4.8.1-7 h1:9bD3nmRehwh5AwF42Ae/jYOPoUprSru3V59B1moO9Y0=
-github.com/scttfrdmn/globus-go-sdk/v4 v4.8.1-7/go.mod h1:UrcOn5SNEZtN6z06Pllf1L63LQKsCzwer5/qIWfAfsg=
+github.com/scttfrdmn/globus-go-sdk/v4 v4.8.1-8 h1:sz55488j1xo8BsAMFvEBIOq/QSWHtdBxFxjAvXi8VUg=
+github.com/scttfrdmn/globus-go-sdk/v4 v4.8.1-8/go.mod h1:UrcOn5SNEZtN6z06Pllf1L63LQKsCzwer5/qIWfAfsg=
 github.com/spf13/afero v1.9.5 h1:stMpOSZFs//0Lv29HduCmli3GUfpFoF3Y1Q/aXj/wVM=
 github.com/spf13/afero v1.9.5/go.mod h1:UBogFpq8E9Hx+xc5CNTTEpTnuHVmXDwZcZcE1eb/UhQ=
 github.com/spf13/cast v1.5.1 h1:R+kOtfhWQE6TVQzY+4D7wJLBgkdVasCEFxSUBYBYIlA=
