@@ -1280,6 +1280,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#per-command-flag-parity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-command flag parity
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1576,8 +1587,32 @@ compute extension the Python CLI lacks.</p>
 <p>The only remaining item is <strong>GCP (Globus Connect Personal)</strong> — local-agent
 management with no SDK API, out of scope. GCS data-plane file access is started
 (<code>collection cat</code>); more data-plane operations (e.g. HTTPS directory listing)
-could follow using the same per-collection <code>https</code>-scope consent. Optional
-future polish: richer per-command flag coverage to match every Python option.</p>
+could follow using the same per-collection <code>https</code>-scope consent.</p>
+<h2 id="per-command-flag-parity">Per-command flag parity<a class="headerlink" href="#per-command-flag-parity" title="Permanent link">&para;</a></h2>
+<p>Each command's flags were audited against the installed Python <code>globus</code> CLI and
+the gaps closed wherever the v4 SDK backs the underlying request field (flat
+transfer ops, task, endpoint + collection/gcs admin, groups, search, flows,
+timer, auth/session). Flags that the v4 SDK cannot express are intentionally
+<strong>not</strong> added (no silent no-ops); the notable SDK-blocked flags are:</p>
+<ul>
+<li><strong>Auth provisioning</strong> — <code>endpoint role/permission create --provision-identity</code>
+  (needs Auth identity provisioning, not in the Transfer SDK).</li>
+<li><strong><code>endpoint update --managed</code></strong> — requires resolving the caller's subscription
+  ID; use <code>--subscription-id</code>.</li>
+<li><strong><code>session update --all</code></strong> and <code>session/login --no-local-server</code> — no
+  "add every identity" primitive, and the login flow is paste-code only.</li>
+<li><strong><code>login --gcs/--flow/--timer</code></strong> and <code>session consent --timer-data-access</code> —
+  build dynamic dependent scopes the fixed service registry doesn't model
+  (the <code>project</code>/<code>collection</code> trees use scoped consent instead).</li>
+<li><strong><code>timer create transfer --notify/--skip-source-errors/--fail-on-quota-errors</code></strong>
+  — transfer-body extras not modeled by the timers schedule/body types.</li>
+<li><strong><code>search query --bypass-visible-to/--filter-principal-sets</code></strong> and granular
+  <code>task list --filter-task-id/type/label/date</code> — absent from the SDK options.</li>
+<li><strong><code>flows run resume --skip-inactive-reason-check</code></strong>, <code>flows list --limit</code>
+  (marker-paginated), and cosmetic <code>logout --yes/--ignore-errors</code>.</li>
+</ul>
+<p>These are tracked so the absence is intentional and discoverable; each becomes
+addable if/when the SDK grows the corresponding field.</p>
 
 
 
@@ -1600,7 +1635,7 @@ future polish: richer per-command flag coverage to match every Python option.</p
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 23, 2026 00:50:24 UTC">July 23, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 23, 2026 02:41:54 UTC">July 23, 2026</span>
   </span>
 
     
