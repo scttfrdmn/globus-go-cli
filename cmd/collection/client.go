@@ -17,6 +17,7 @@ package collection
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/viper"
 
@@ -86,4 +87,38 @@ func getManagerClient(ctx context.Context, endpointID string) (*gcs.CollectionCl
 		return nil, fmt.Errorf("failed to create GCS collection client: %w", err)
 	}
 	return client, nil
+}
+
+// collectionHTTPSToken obtains a raw access token for a specific collection's
+// data-plane `https` scope, escalating consent on first use. Unlike the
+// management scope, data access is a collection scope (URL format, keyed on the
+// collection ID) — so it gets its own per-collection token namespace. Returns
+// the bare access token (no "Bearer " prefix) for the GCS Downloader.
+func collectionHTTPSToken(ctx context.Context, collectionID string) (string, error) {
+	profile := viper.GetString("profile")
+	clientCfg, err := config.LoadClientConfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to load client configuration: %w", err)
+	}
+
+	httpsScope, _ := gcs.CollectionScopes(collectionID)
+	// Namespace per collection so distinct collections' data-access consents
+	// don't overwrite each other (they share the data-access resource server
+	// pattern but are logically independent).
+	namespace := "globus-cli-gcs-https-" + collectionID
+	cfg, err := globusauth.ScopedClientConfigWithNamespace(
+		ctx, profile, clientCfg.ClientID, clientCfg.ClientSecret,
+		collectionID, httpsScope, namespace, true,
+	)
+	if err != nil {
+		return "", fmt.Errorf("could not obtain data-access consent for collection %s: %w", collectionID, err)
+	}
+	if cfg.Authorizer == nil {
+		return "", fmt.Errorf("no authorizer for collection %s data access", collectionID)
+	}
+	header, err := cfg.Authorizer.GetAuthorizationHeader(ctx)
+	if err != nil {
+		return "", fmt.Errorf("could not read data-access token: %w", err)
+	}
+	return strings.TrimPrefix(header, "Bearer "), nil
 }

@@ -123,9 +123,10 @@ Still available in the SDK but not yet wired:
      scope (`gcs.EndpointManageCollectionsScope`, SDK v4.8.1-3).
   `collection list/show/create/update/delete` and `gcs info` +
   `storage-gateway`/`role` subcommands are wired. Each takes the owning
-  `ENDPOINT_ID` as its first argument. Data-plane operations that need a
-  collection's `data_access`/`https` scope (e.g. GCS-hosted file listing) are a
-  possible future addition using the same consent-escalation helper.
+  `ENDPOINT_ID` as its first argument. `collection cat ENDPOINT_ID
+  COLLECTION_ID PATH` reads a file over the collection's HTTPS data plane,
+  using the collection's `https` scope (a separate per-collection data-access
+  consent, escalated on first use).
 - **GCP (Globus Connect Personal)** — local-agent management; not an SDK API
   (out of scope).
 
@@ -171,7 +172,7 @@ raw passthrough, and the `list-commands`/`version` meta commands — plus a
 compute extension the Python CLI lacks.
 
 The only remaining item is **GCP (Globus Connect Personal)** — local-agent
-management with no SDK API, out of scope. Optional future polish: GCS data-plane
-file operations (e.g. `ls` over a collection's `https` scope) via the same
-consent-escalation helper, and richer per-command flag coverage to match every
-Python option.
+management with no SDK API, out of scope. GCS data-plane file access is started
+(`collection cat`); more data-plane operations (e.g. HTTPS directory listing)
+could follow using the same per-collection `https`-scope consent. Optional
+future polish: richer per-command flag coverage to match every Python option.
