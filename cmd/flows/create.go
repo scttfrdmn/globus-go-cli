@@ -16,10 +16,19 @@ import (
 var (
 	createTitle          string
 	createDescription    string
+	createSubtitle       string
 	createDefinitionFile string
 	createSchemaFile     string
 	createKeywords       []string
 	createPublic         bool
+
+	createAdministrators []string
+	createStarters       []string
+	createViewers        []string
+	createRunManagers    []string
+	createRunMonitors    []string
+	createSubscriptionID string
+	createAuthPolicyID   string
 
 	// Authentication policy flags (Python SDK v4.1.0)
 	createHighAssurance   bool
@@ -57,10 +66,20 @@ Examples:
 func init() {
 	CreateCmd.Flags().StringVar(&createTitle, "title", "", "Flow title (required)")
 	CreateCmd.Flags().StringVar(&createDescription, "description", "", "Flow description")
+	CreateCmd.Flags().StringVar(&createSubtitle, "subtitle", "", "A concise summary of the flow's purpose")
 	CreateCmd.Flags().StringVar(&createDefinitionFile, "definition-file", "", "Path to flow definition JSON file (required)")
 	CreateCmd.Flags().StringVar(&createSchemaFile, "schema-file", "", "Path to input schema JSON file")
 	CreateCmd.Flags().StringSliceVar(&createKeywords, "keywords", []string{}, "Comma-separated keywords")
 	CreateCmd.Flags().BoolVar(&createPublic, "public", false, "Make flow publicly visible")
+
+	// Principal role lists (repeatable). Backed by FlowCreate.
+	CreateCmd.Flags().StringArrayVar(&createAdministrators, "administrator", nil, "A principal that may administer the flow (repeatable)")
+	CreateCmd.Flags().StringArrayVar(&createStarters, "starter", nil, "A principal that may start a run of the flow (repeatable); use \"all_authenticated_users\" for any user")
+	CreateCmd.Flags().StringArrayVar(&createViewers, "viewer", nil, "A principal that may view the flow (repeatable); use \"public\" to make it visible to everyone")
+	CreateCmd.Flags().StringArrayVar(&createRunManagers, "run-manager", nil, "A principal that may manage the flow's runs (repeatable)")
+	CreateCmd.Flags().StringArrayVar(&createRunMonitors, "run-monitor", nil, "A principal that may monitor the flow's runs (repeatable)")
+	CreateCmd.Flags().StringVar(&createSubscriptionID, "subscription-id", "", "Set a subscription_id for the flow, marking it as subscription tier")
+	CreateCmd.Flags().StringVar(&createAuthPolicyID, "authentication-policy-id", "", "A Globus Auth authentication policy ID to enforce on the flow (must require high-assurance)")
 
 	// Authentication policy flags (Python SDK v4.1.0)
 	CreateCmd.Flags().BoolVar(&createHighAssurance, "high-assurance", false, "Require high-assurance authentication for flow runs")
@@ -108,11 +127,19 @@ func runFlowsCreate(cmd *cobra.Command, args []string) error {
 
 	// Build create request
 	request := &flows.FlowCreate{
-		Title:       createTitle,
-		Description: createDescription,
-		Definition:  definition,
-		InputSchema: inputSchema,
-		Keywords:    createKeywords,
+		Title:                  createTitle,
+		Description:            createDescription,
+		Subtitle:               createSubtitle,
+		Definition:             definition,
+		InputSchema:            inputSchema,
+		Keywords:               createKeywords,
+		FlowAdministrators:     createAdministrators,
+		FlowStarters:           createStarters,
+		FlowViewers:            createViewers,
+		RunManagers:            createRunManagers,
+		RunMonitors:            createRunMonitors,
+		SubscriptionID:         createSubscriptionID,
+		AuthenticationPolicyID: createAuthPolicyID,
 	}
 
 	// Create flow

@@ -14,15 +14,16 @@ import (
 )
 
 var (
-	createFlowName      string
-	createFlowInterval  string
-	createFlowCron      string
-	createFlowInput     string
-	createFlowScope     string
-	createFlowLabel     string
-	createFlowStart     string
-	createFlowStop      string
-	createFlowTimezone  string
+	createFlowName     string
+	createFlowInterval string
+	createFlowCron     string
+	createFlowInput    string
+	createFlowScope    string
+	createFlowLabel    string
+	createFlowStart    string
+	createFlowStop     string
+	createFlowStopRuns int
+	createFlowTimezone string
 )
 
 // CreateFlowCmd represents the timer create flow command
@@ -81,6 +82,7 @@ func init() {
 	CreateFlowCmd.Flags().StringVar(&createFlowLabel, "flow-label", "", "Label for the flow run")
 	CreateFlowCmd.Flags().StringVar(&createFlowStart, "start", "", "Start time (RFC3339 format, required)")
 	CreateFlowCmd.Flags().StringVar(&createFlowStop, "stop", "", "Stop time (RFC3339 format)")
+	CreateFlowCmd.Flags().IntVar(&createFlowStopRuns, "stop-after-runs", 0, "Stop running the flow after this number of runs")
 	CreateFlowCmd.Flags().StringVar(&createFlowTimezone, "timezone", "UTC", "Deprecated: only used with the removed cron scheduling")
 
 	_ = CreateFlowCmd.MarkFlagRequired("name")
@@ -149,8 +151,13 @@ func runCreateFlowTimer(cmd *cobra.Command, args []string) error {
 		if derr != nil || d <= 0 {
 			return fmt.Errorf("invalid --interval %q: use a Go duration such as 1h, 30m, or 24h", createFlowInterval)
 		}
+		if stopTime != nil && createFlowStopRuns > 0 {
+			return fmt.Errorf("--stop and --stop-after-runs are mutually exclusive")
+		}
 		var end *timers.ScheduleEnd
-		if stopTime != nil {
+		if createFlowStopRuns > 0 {
+			end = &timers.ScheduleEnd{Condition: "iterations", Iterations: createFlowStopRuns}
+		} else if stopTime != nil {
 			end = &timers.ScheduleEnd{Condition: "time", Datetime: stopTime.Format(time.RFC3339)}
 		}
 		schedule = timers.NewRecurringSchedule(int(d.Seconds()), startTime.Format(time.RFC3339), end)

@@ -51,6 +51,10 @@ var (
 	filterMyTasksOnly  bool
 	searchText         string
 	limit              int
+
+	// Endpoint search-specific filters (globus endpoint search).
+	searchFilterScope      string
+	searchFilterEntityType string
 )
 
 // endpointListCmd returns the endpoint list command
@@ -114,6 +118,9 @@ returning matches based on the provided search text.`,
 	}
 
 	// Add flags for filtering
+	cmd.Flags().StringVar(&searchFilterScope, "filter-scope", "all", "The set of endpoints to search over (all, administered-by-me, my-endpoints, my-gcp-endpoints, recently-used, in-use, shared-by-me, shared-with-me)")
+	cmd.Flags().StringVar(&filterOwner, "filter-owner-id", "", "Filter results to endpoints owned by a specific identity (ID or username)")
+	cmd.Flags().StringVar(&searchFilterEntityType, "filter-entity-type", "", "Filter results to a specific entity type (gcp_mapped_collection, gcp_guest_collection, gcsv5_endpoint, gcsv5_mapped_collection, gcsv5_guest_collection)")
 	cmd.Flags().IntVar(&limit, "limit", 25, "Maximum number of endpoints to return")
 
 	return cmd
@@ -145,6 +152,15 @@ func listEndpoints(cmd *cobra.Command) error {
 		options.FilterScope = "recently-used"
 	} else if filterMyTasksOnly {
 		options.FilterScope = "in-use"
+	}
+
+	// endpoint search: --filter-scope (default "all" means no server filter) and
+	// --filter-entity-type. These flags are only registered on the search command.
+	if searchFilterScope != "" && searchFilterScope != "all" {
+		options.FilterScope = searchFilterScope
+	}
+	if searchFilterEntityType != "" {
+		options.FilterEntityType = searchFilterEntityType
 	}
 
 	// Search text for full text search.

@@ -60,6 +60,7 @@ func identitiesLookupCmd() *cobra.Command {
 	var username string
 	var email string
 	var id string
+	var provision bool
 
 	cmd := &cobra.Command{
 		Use:   "lookup",
@@ -97,7 +98,7 @@ provided criteria.`,
 			// Build the lookup options. ID lookups query by identity ID;
 			// username/email lookups query by username (email is a username in
 			// Globus Auth).
-			opts := &sdkauth.GetIdentitiesOptions{}
+			opts := &sdkauth.GetIdentitiesOptions{Provision: provision}
 			switch {
 			case id != "":
 				opts.IDs = []string{id}
@@ -147,6 +148,7 @@ provided criteria.`,
 	cmd.Flags().StringVar(&username, "username", "", "Look up by username")
 	cmd.Flags().StringVar(&email, "email", "", "Look up by email")
 	cmd.Flags().StringVar(&id, "id", "", "Look up by identity ID")
+	cmd.Flags().BoolVar(&provision, "provision", false, "Create identities if they do not exist (only affects username lookups)")
 
 	return cmd
 }

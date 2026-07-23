@@ -16,6 +16,7 @@ var (
 	createName        string
 	createDescription string
 	createPublic      bool
+	createParentID    string
 )
 
 // CreateCmd represents the group create command
@@ -43,6 +44,7 @@ func init() {
 	CreateCmd.Flags().StringVar(&createName, "name", "", "Name for the new group (required)")
 	CreateCmd.Flags().StringVar(&createDescription, "description", "", "Description of the group")
 	CreateCmd.Flags().BoolVar(&createPublic, "public", false, "Make the group publicly visible")
+	CreateCmd.Flags().StringVar(&createParentID, "parent-id", "", "Make the new group a subgroup of the specified parent group")
 	_ = CreateCmd.MarkFlagRequired("name")
 }
 
@@ -62,6 +64,7 @@ func runCreateGroup(cmd *cobra.Command, args []string) error {
 		Name:        createName,
 		Description: createDescription,
 		PublicGroup: createPublic,
+		ParentID:    createParentID,
 	}
 
 	// Create the group

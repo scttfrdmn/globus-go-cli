@@ -16,9 +16,19 @@ import (
 var (
 	updateTitle          string
 	updateDescription    string
+	updateSubtitle       string
 	updateDefinitionFile string
 	updateSchemaFile     string
 	updateKeywords       []string
+
+	updateOwner          string
+	updateAdministrators []string
+	updateStarters       []string
+	updateViewers        []string
+	updateRunManagers    []string
+	updateRunMonitors    []string
+	updateSubscriptionID string
+	updateAuthPolicyID   string
 
 	// Authentication policy flags (Python SDK v4.1.0)
 	updateHighAssurance   bool
@@ -57,9 +67,19 @@ Examples:
 func init() {
 	UpdateCmd.Flags().StringVar(&updateTitle, "title", "", "Flow title")
 	UpdateCmd.Flags().StringVar(&updateDescription, "description", "", "Flow description")
+	UpdateCmd.Flags().StringVar(&updateSubtitle, "subtitle", "", "A concise summary of the flow's purpose")
 	UpdateCmd.Flags().StringVar(&updateDefinitionFile, "definition-file", "", "Path to flow definition JSON file")
 	UpdateCmd.Flags().StringVar(&updateSchemaFile, "schema-file", "", "Path to input schema JSON file")
-	UpdateCmd.Flags().StringSliceVar(&updateKeywords, "keywords", []string{}, "Comma-separated keywords")
+	UpdateCmd.Flags().StringSliceVar(&updateKeywords, "keywords", []string{}, "Comma-separated list of keywords (empty string clears)")
+
+	UpdateCmd.Flags().StringVar(&updateOwner, "owner", "", "Assign ownership to your Globus Auth principal ID (you must already be a flow administrator)")
+	UpdateCmd.Flags().StringSliceVar(&updateAdministrators, "administrators", nil, "Comma-separated list of flow administrators (empty string clears)")
+	UpdateCmd.Flags().StringSliceVar(&updateStarters, "starters", nil, "Comma-separated list of flow starters (empty string clears)")
+	UpdateCmd.Flags().StringSliceVar(&updateViewers, "viewers", nil, "Comma-separated list of flow viewers (empty string clears)")
+	UpdateCmd.Flags().StringSliceVar(&updateRunManagers, "run-managers", nil, "Comma-separated list of flow run managers (empty string clears)")
+	UpdateCmd.Flags().StringSliceVar(&updateRunMonitors, "run-monitors", nil, "Comma-separated list of flow run monitors (empty string clears)")
+	UpdateCmd.Flags().StringVar(&updateSubscriptionID, "subscription-id", "", "A subscription ID to assign to the flow (a UUID or \"DEFAULT\")")
+	UpdateCmd.Flags().StringVar(&updateAuthPolicyID, "authentication-policy-id", "", "A Globus Auth authentication policy ID to enforce on the flow (must require high-assurance)")
 
 	// Retained for CLI-surface compatibility; the v4 FlowUpdate model does not
 	// carry a visibility field, so this flag is currently a no-op.
@@ -84,6 +104,36 @@ func runFlowsUpdate(cmd *cobra.Command, args []string) error {
 
 	if updateDescription != "" {
 		request.Description = updateDescription
+	}
+
+	if cmd.Flags().Changed("subtitle") {
+		request.Subtitle = updateSubtitle
+	}
+
+	if cmd.Flags().Changed("owner") {
+		request.FlowOwner = updateOwner
+	}
+
+	if cmd.Flags().Changed("administrators") {
+		request.FlowAdministrators = updateAdministrators
+	}
+	if cmd.Flags().Changed("starters") {
+		request.FlowStarters = updateStarters
+	}
+	if cmd.Flags().Changed("viewers") {
+		request.FlowViewers = updateViewers
+	}
+	if cmd.Flags().Changed("run-managers") {
+		request.RunManagers = updateRunManagers
+	}
+	if cmd.Flags().Changed("run-monitors") {
+		request.RunMonitors = updateRunMonitors
+	}
+	if cmd.Flags().Changed("subscription-id") {
+		request.SubscriptionID = updateSubscriptionID
+	}
+	if cmd.Flags().Changed("authentication-policy-id") {
+		request.AuthenticationPolicyID = updateAuthPolicyID
 	}
 
 	if updateDefinitionFile != "" {

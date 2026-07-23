@@ -17,9 +17,13 @@ import (
 )
 
 var (
-	taskWait     bool
-	taskWaitTime int
-	taskFilter   string
+	taskWait            bool
+	taskWaitTime        int
+	taskWaitPollSeconds int
+	taskWaitHeartbeat   bool
+	taskFilter          string
+	taskFilterStatus    []string
+	taskOrderBy         []string
 )
 
 // TaskCmd returns the task command
@@ -59,7 +63,9 @@ This command lists transfer tasks with filtering options.`,
 	}
 
 	// Add flags
-	cmd.Flags().StringVar(&taskFilter, "filter", "", "Filter tasks by status (active, inactive, completed, failed)")
+	cmd.Flags().StringVar(&taskFilter, "filter", "", "Filter tasks by a single status (deprecated; use --filter-status)")
+	cmd.Flags().StringSliceVar(&taskFilterStatus, "filter-status", nil, "Filter by status: ACTIVE, INACTIVE, FAILED, SUCCEEDED (repeatable)")
+	cmd.Flags().StringSliceVar(&taskOrderBy, "orderby", nil, "Order results, e.g. \"request_time DESC\" (repeatable)")
 	cmd.Flags().IntVar(&limit, "limit", 25, "Maximum number of tasks to return")
 
 	return cmd
@@ -120,6 +126,8 @@ showing progress information while waiting.`,
 
 	// Add flags
 	cmd.Flags().IntVar(&taskWaitTime, "timeout", 300, "Maximum time to wait in seconds")
+	cmd.Flags().IntVar(&taskWaitPollSeconds, "polling-interval", 5, "Seconds between task status checks")
+	cmd.Flags().BoolVarP(&taskWaitHeartbeat, "heartbeat", "H", false, "Print a dot each polling interval while waiting")
 
 	return cmd
 }
@@ -138,11 +146,15 @@ func listTasks(cmd *cobra.Command) error {
 
 	// Prepare options for listing tasks
 	options := &transfer.ListTasksOptions{
-		Limit: limit,
+		Limit:   limit,
+		OrderBy: taskOrderBy,
 	}
 
-	// Add filters based on flags (v4 accepts a list of statuses)
-	if taskFilter != "" {
+	// Status filter: prefer the multi-valued --filter-status; fall back to the
+	// deprecated single --filter.
+	if len(taskFilterStatus) > 0 {
+		options.FilterStatus = taskFilterStatus
+	} else if taskFilter != "" {
 		options.FilterStatus = []string{taskFilter}
 	}
 
@@ -339,7 +351,11 @@ func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 	defer s.Stop()
 
 	// Poll for task completion
-	pollInterval := 5 * time.Second
+	pollSeconds := taskWaitPollSeconds
+	if pollSeconds <= 0 {
+		pollSeconds = 5
+	}
+	pollInterval := time.Duration(pollSeconds) * time.Second
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
@@ -348,6 +364,10 @@ func waitForTask(cmd *cobra.Command, taskID string, timeout int) error {
 		case <-ctx.Done():
 			return fmt.Errorf("timeout waiting for task completion")
 		case <-ticker.C:
+			// With --heartbeat, emit a dot each polling interval.
+			if taskWaitHeartbeat {
+				fmt.Fprint(cmd.OutOrStdout(), ".")
+			}
 			// Get the task status
 			task, err := transferClient.GetTask(ctx, taskID)
 			if err != nil {

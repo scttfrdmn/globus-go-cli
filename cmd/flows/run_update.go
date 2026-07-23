@@ -13,8 +13,10 @@ import (
 )
 
 var (
-	runUpdateLabel string
-	runUpdateTags  []string
+	runUpdateLabel    string
+	runUpdateTags     []string
+	runUpdateManagers []string
+	runUpdateMonitors []string
 )
 
 // RunUpdateCmd represents the flows run update command
@@ -43,7 +45,9 @@ Examples:
 
 func init() {
 	RunUpdateCmd.Flags().StringVar(&runUpdateLabel, "label", "", "New label for the run")
-	RunUpdateCmd.Flags().StringSliceVar(&runUpdateTags, "tags", []string{}, "New comma-separated tags")
+	RunUpdateCmd.Flags().StringSliceVar(&runUpdateTags, "tags", []string{}, "New comma-separated tags (empty string clears)")
+	RunUpdateCmd.Flags().StringSliceVar(&runUpdateManagers, "managers", nil, "Comma-separated principals that may manage the run (empty string clears)")
+	RunUpdateCmd.Flags().StringSliceVar(&runUpdateMonitors, "monitors", nil, "Comma-separated principals that may monitor the run (empty string clears)")
 }
 
 func runFlowsRunUpdate(cmd *cobra.Command, args []string) error {
@@ -60,9 +64,18 @@ func runFlowsRunUpdate(cmd *cobra.Command, args []string) error {
 		request.Tags = runUpdateTags
 	}
 
+	if cmd.Flags().Changed("managers") {
+		request.RunManagers = runUpdateManagers
+	}
+
+	if cmd.Flags().Changed("monitors") {
+		request.RunMonitors = runUpdateMonitors
+	}
+
 	// Validate that at least one field is being updated
-	if !cmd.Flags().Changed("label") && !cmd.Flags().Changed("tags") {
-		return fmt.Errorf("at least one of --label or --tags must be specified")
+	if !cmd.Flags().Changed("label") && !cmd.Flags().Changed("tags") &&
+		!cmd.Flags().Changed("managers") && !cmd.Flags().Changed("monitors") {
+		return fmt.Errorf("at least one of --label, --tags, --managers, or --monitors must be specified")
 	}
 
 	// Create context with timeout

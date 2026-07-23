@@ -17,12 +17,36 @@ import (
 // endpoint document with only the fields the user explicitly set.
 func endpointUpdateCmd() *cobra.Command {
 	var (
-		displayName  string
-		description  string
-		organization string
-		contactEmail string
-		keywords     []string
-		public       bool
+		displayName          string
+		description          string
+		organization         string
+		department           string
+		contactEmail         string
+		contactInfo          string
+		infoLink             string
+		defaultDirectory     string
+		noDefaultDirectory   bool
+		keywords             []string
+		public               bool
+		private              bool
+		forceEncryption      bool
+		noForceEncryption    bool
+		disableVerify        bool
+		noDisableVerify      bool
+		subscriptionID       string
+		noManaged            bool
+		managed              bool
+		networkUse           string
+		maxConcurrency       int
+		preferredConcurrency int
+		maxParallelism       int
+		preferredParallelism int
+		userMessage          string
+		userMessageLink      string
+		oauthServer          string
+		myproxyServer        string
+		myproxyDN            string
+		location             string
 	)
 
 	cmd := &cobra.Command{
@@ -51,14 +75,90 @@ Only the flags you provide are sent; unset fields are left unchanged.`,
 			if cmd.Flags().Changed("organization") {
 				doc["organization"] = organization
 			}
+			if cmd.Flags().Changed("department") {
+				doc["department"] = department
+			}
 			if cmd.Flags().Changed("contact-email") {
 				doc["contact_email"] = contactEmail
+			}
+			if cmd.Flags().Changed("contact-info") {
+				doc["contact_info"] = contactInfo
+			}
+			if cmd.Flags().Changed("info-link") {
+				doc["info_link"] = infoLink
+			}
+			if cmd.Flags().Changed("default-directory") {
+				doc["default_directory"] = defaultDirectory
+			}
+			if noDefaultDirectory {
+				doc["default_directory"] = nil
 			}
 			if cmd.Flags().Changed("keywords") {
 				doc["keywords"] = keywords
 			}
+			// --public / --private
 			if cmd.Flags().Changed("public") {
 				doc["public"] = public
+			}
+			if private {
+				doc["public"] = false
+			}
+			// --force-encryption / --no-force-encryption
+			if cmd.Flags().Changed("force-encryption") {
+				doc["force_encryption"] = forceEncryption
+			}
+			if noForceEncryption {
+				doc["force_encryption"] = false
+			}
+			// --disable-verify / --no-disable-verify
+			if cmd.Flags().Changed("disable-verify") {
+				doc["disable_verify"] = disableVerify
+			}
+			if noDisableVerify {
+				doc["disable_verify"] = false
+			}
+			// Managed-endpoint / subscription handling.
+			if cmd.Flags().Changed("subscription-id") {
+				doc["subscription_id"] = subscriptionID
+			}
+			if noManaged {
+				doc["subscription_id"] = nil
+			}
+			if managed {
+				return fmt.Errorf("--managed is not supported: it requires resolving your subscription ID; use --subscription-id instead")
+			}
+			if cmd.Flags().Changed("network-use") {
+				doc["network_use"] = networkUse
+			}
+			if cmd.Flags().Changed("max-concurrency") {
+				doc["max_concurrency"] = maxConcurrency
+			}
+			if cmd.Flags().Changed("preferred-concurrency") {
+				doc["preferred_concurrency"] = preferredConcurrency
+			}
+			if cmd.Flags().Changed("max-parallelism") {
+				doc["max_parallelism"] = maxParallelism
+			}
+			if cmd.Flags().Changed("preferred-parallelism") {
+				doc["preferred_parallelism"] = preferredParallelism
+			}
+			if cmd.Flags().Changed("user-message") {
+				doc["user_message"] = userMessage
+			}
+			if cmd.Flags().Changed("user-message-link") {
+				doc["user_message_link"] = userMessageLink
+			}
+			if cmd.Flags().Changed("oauth-server") {
+				doc["oauth_server"] = oauthServer
+			}
+			if cmd.Flags().Changed("myproxy-server") {
+				doc["myproxy_server"] = myproxyServer
+			}
+			if cmd.Flags().Changed("myproxy-dn") {
+				doc["myproxy_dn"] = myproxyDN
+			}
+			if cmd.Flags().Changed("location") {
+				doc["location"] = location
 			}
 
 			resp, err := client.UpdateEndpoint(ctx, args[0], doc)
@@ -72,12 +172,36 @@ Only the flags you provide are sent; unset fields are left unchanged.`,
 		},
 	}
 
-	cmd.Flags().StringVar(&displayName, "display-name", "", "New display name")
-	cmd.Flags().StringVar(&description, "description", "", "New description")
-	cmd.Flags().StringVar(&organization, "organization", "", "New organization")
-	cmd.Flags().StringVar(&contactEmail, "contact-email", "", "New contact email")
-	cmd.Flags().StringSliceVar(&keywords, "keywords", nil, "Keywords for the endpoint")
-	cmd.Flags().BoolVar(&public, "public", false, "Whether the endpoint is public")
+	cmd.Flags().StringVar(&displayName, "display-name", "", "Name for the endpoint")
+	cmd.Flags().StringVar(&description, "description", "", "Description for the endpoint")
+	cmd.Flags().StringVar(&organization, "organization", "", "Organization for the endpoint")
+	cmd.Flags().StringVar(&department, "department", "", "Department which operates the endpoint")
+	cmd.Flags().StringVar(&contactEmail, "contact-email", "", "Contact email for the endpoint")
+	cmd.Flags().StringVar(&contactInfo, "contact-info", "", "Contact info for the endpoint")
+	cmd.Flags().StringVar(&infoLink, "info-link", "", "Link for info about the endpoint")
+	cmd.Flags().StringVar(&defaultDirectory, "default-directory", "", "Default directory when browsing or executing tasks on the endpoint")
+	cmd.Flags().BoolVar(&noDefaultDirectory, "no-default-directory", false, "Unset any default directory on the endpoint")
+	cmd.Flags().StringSliceVar(&keywords, "keywords", nil, "Comma separated list of keywords to help searches for the endpoint")
+	cmd.Flags().BoolVar(&public, "public", false, "Set the endpoint to be public")
+	cmd.Flags().BoolVar(&private, "private", false, "Set the endpoint to be private")
+	cmd.Flags().BoolVar(&forceEncryption, "force-encryption", false, "Force the endpoint to encrypt transfers")
+	cmd.Flags().BoolVar(&noForceEncryption, "no-force-encryption", false, "Do not force the endpoint to encrypt transfers")
+	cmd.Flags().BoolVar(&disableVerify, "disable-verify", false, "Set the endpoint to ignore checksum verification")
+	cmd.Flags().BoolVar(&noDisableVerify, "no-disable-verify", false, "Do not ignore checksum verification")
+	cmd.Flags().StringVar(&subscriptionID, "subscription-id", "", "Set the endpoint as managed with the given subscription ID")
+	cmd.Flags().BoolVar(&noManaged, "no-managed", false, "Unset the endpoint as a managed endpoint")
+	cmd.Flags().BoolVar(&managed, "managed", false, "Set the endpoint as a managed endpoint (requires --subscription-id)")
+	cmd.Flags().StringVar(&networkUse, "network-use", "", "Network use level (normal, minimal, aggressive, custom)")
+	cmd.Flags().IntVar(&maxConcurrency, "max-concurrency", 0, "Endpoint max concurrency; requires --network-use=custom")
+	cmd.Flags().IntVar(&preferredConcurrency, "preferred-concurrency", 0, "Endpoint preferred concurrency; requires --network-use=custom")
+	cmd.Flags().IntVar(&maxParallelism, "max-parallelism", 0, "Endpoint max parallelism; requires --network-use=custom")
+	cmd.Flags().IntVar(&preferredParallelism, "preferred-parallelism", 0, "Endpoint preferred parallelism; requires --network-use=custom")
+	cmd.Flags().StringVar(&userMessage, "user-message", "", "A message for clients to display to users when interacting with this endpoint")
+	cmd.Flags().StringVar(&userMessageLink, "user-message-link", "", "Link to additional messaging for clients to display to users")
+	cmd.Flags().StringVar(&oauthServer, "oauth-server", "", "Set the OAuth Server URI (Globus Connect Server only)")
+	cmd.Flags().StringVar(&myproxyServer, "myproxy-server", "", "Set the MyProxy Server URI (Globus Connect Server only)")
+	cmd.Flags().StringVar(&myproxyDN, "myproxy-dn", "", "Set the MyProxy Server DN (Globus Connect Server only)")
+	cmd.Flags().StringVar(&location, "location", "", "Manually set the endpoint's LATITUDE,LONGITUDE (Globus Connect Server only)")
 
 	return cmd
 }
@@ -180,6 +304,8 @@ func endpointRoleCreateCmd() *cobra.Command {
 		principal     string
 		principalType string
 		role          string
+		identity      string
+		group         string
 	)
 
 	cmd := &cobra.Command{
@@ -188,7 +314,10 @@ func endpointRoleCreateCmd() *cobra.Command {
 		Long: `Assign a role to a principal on a Globus endpoint.
 
 The --role value is one of administrator, access_manager, activity_manager,
-or activity_monitor.`,
+or activity_monitor.
+
+Specify the security principal with exactly one of --identity, --group, or the
+lower-level --principal/--principal-type pair.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -197,6 +326,19 @@ or activity_monitor.`,
 			client, err := getClient(ctx)
 			if err != nil {
 				return err
+			}
+
+			// Resolve the principal from --identity/--group (Python-compatible)
+			// or the explicit --principal/--principal-type pair.
+			if identity != "" {
+				principal = identity
+				principalType = "identity"
+			} else if group != "" {
+				principal = group
+				principalType = "group"
+			}
+			if principal == "" {
+				return fmt.Errorf("one of --identity, --group, or --principal is required")
 			}
 
 			doc := map[string]interface{}{
@@ -214,10 +356,11 @@ or activity_monitor.`,
 		},
 	}
 
+	cmd.Flags().StringVar(&identity, "identity", "", "Identity ID to use as the security principal")
+	cmd.Flags().StringVar(&group, "group", "", "Group ID to use as the security principal")
 	cmd.Flags().StringVar(&principal, "principal", "", "Principal (identity or group ID) to assign the role to")
 	cmd.Flags().StringVar(&principalType, "principal-type", "identity", "Principal type (identity or group)")
 	cmd.Flags().StringVar(&role, "role", "", "Role name (administrator, access_manager, activity_manager, activity_monitor)")
-	_ = cmd.MarkFlagRequired("principal")
 	_ = cmd.MarkFlagRequired("role")
 
 	return cmd
@@ -317,10 +460,17 @@ func endpointPermissionShowCmd() *cobra.Command {
 
 func endpointPermissionCreateCmd() *cobra.Command {
 	var (
-		permissions   string
-		principal     string
-		principalType string
-		path          string
+		permissions      string
+		principal        string
+		principalType    string
+		path             string
+		identity         string
+		group            string
+		allAuthenticated bool
+		anonymous        bool
+		notifyEmail      string
+		notifyMessage    string
+		expirationDate   string
 	)
 
 	cmd := &cobra.Command{
@@ -328,7 +478,9 @@ func endpointPermissionCreateCmd() *cobra.Command {
 		Short: "Create an access rule on an endpoint",
 		Long: `Create an access rule (ACL) granting permissions on a path.
 
-The --principal-type value is one of identity, group,
+Specify the security principal with exactly one of --identity, --group,
+--all-authenticated, --anonymous, or the lower-level --principal/--principal-type
+pair. The --principal-type value is one of identity, group,
 all_authenticated_users, or anonymous.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -340,12 +492,38 @@ all_authenticated_users, or anonymous.`,
 				return err
 			}
 
+			// Resolve the principal from the Python-compatible convenience flags
+			// or the explicit --principal/--principal-type pair.
+			switch {
+			case identity != "":
+				principal = identity
+				principalType = "identity"
+			case group != "":
+				principal = group
+				principalType = "group"
+			case allAuthenticated:
+				principal = ""
+				principalType = "all_authenticated_users"
+			case anonymous:
+				principal = ""
+				principalType = "anonymous"
+			}
+
 			doc := map[string]interface{}{
 				"DATA_TYPE":      "access",
 				"principal_type": principalType,
 				"principal":      principal,
 				"path":           path,
 				"permissions":    permissions,
+			}
+			if cmd.Flags().Changed("notify-email") {
+				doc["notify_email"] = notifyEmail
+			}
+			if cmd.Flags().Changed("notify-message") {
+				doc["notify_message"] = notifyMessage
+			}
+			if cmd.Flags().Changed("expiration-date") {
+				doc["expiration_date"] = expirationDate
 			}
 
 			resp, err := client.AddEndpointACLRule(ctx, args[0], doc)
@@ -356,10 +534,17 @@ all_authenticated_users, or anonymous.`,
 		},
 	}
 
-	cmd.Flags().StringVar(&permissions, "permissions", "", `Permissions to grant (e.g. "r" or "rw")`)
+	cmd.Flags().StringVar(&permissions, "permissions", "", `Permissions to add: "r" (Read-Only) or "rw" (Read/Write)`)
+	cmd.Flags().StringVar(&identity, "identity", "", "Identity ID to use as the security principal")
+	cmd.Flags().StringVar(&group, "group", "", "Group ID to use as the security principal")
+	cmd.Flags().BoolVar(&allAuthenticated, "all-authenticated", false, "Allow anyone access, as long as they log in")
+	cmd.Flags().BoolVar(&anonymous, "anonymous", false, "Allow anyone access, even without logging in")
 	cmd.Flags().StringVar(&principal, "principal", "", "Principal (identity or group ID) to grant access to")
 	cmd.Flags().StringVar(&principalType, "principal-type", "identity", "Principal type (identity, group, all_authenticated_users, anonymous)")
 	cmd.Flags().StringVar(&path, "path", "", "Path the rule applies to")
+	cmd.Flags().StringVar(&notifyEmail, "notify-email", "", "An email address to notify that the permission has been added")
+	cmd.Flags().StringVar(&notifyMessage, "notify-message", "", "A custom message to add to email notifications")
+	cmd.Flags().StringVar(&expirationDate, "expiration-date", "", "Expiration date for the permission in ISO 8601 format")
 	_ = cmd.MarkFlagRequired("permissions")
 	_ = cmd.MarkFlagRequired("path")
 
@@ -367,7 +552,10 @@ all_authenticated_users, or anonymous.`,
 }
 
 func endpointPermissionUpdateCmd() *cobra.Command {
-	var permissions string
+	var (
+		permissions    string
+		expirationDate string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "update ENDPOINT_ID RULE_ID",
@@ -386,6 +574,9 @@ func endpointPermissionUpdateCmd() *cobra.Command {
 				"DATA_TYPE":   "access",
 				"permissions": permissions,
 			}
+			if cmd.Flags().Changed("expiration-date") {
+				doc["expiration_date"] = expirationDate
+			}
 
 			resp, err := client.UpdateEndpointACLRule(ctx, args[0], args[1], doc)
 			if err != nil {
@@ -395,7 +586,8 @@ func endpointPermissionUpdateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&permissions, "permissions", "", `New permissions (e.g. "r" or "rw")`)
+	cmd.Flags().StringVar(&permissions, "permissions", "", `Permissions to add: "r" (Read-Only) or "rw" (Read/Write)`)
+	cmd.Flags().StringVar(&expirationDate, "expiration-date", "", "Expiration date for the permission in ISO 8601 format")
 	_ = cmd.MarkFlagRequired("permissions")
 
 	return cmd
