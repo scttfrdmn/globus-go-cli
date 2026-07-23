@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.8.1-6] - 2026-07-23
+
+### Fixed
+- **`project list`/`show` now decode projects with an expanded `admins` object
+  (SDK #61).** The SDK typed `admins.identities`/`admins.groups` as `[]string`,
+  but the Globus Auth Projects API returns them as arrays of objects, so any
+  project carrying `admins` failed to decode right after auth — blocking the
+  whole `project` command tree (including `project client create`). Fixed by
+  pinning SDK **v4.8.1-7** (adds `ProjectAdminIdentity`/`ProjectAdminGroup`) and
+  reading admin identity/group IDs from the object fields in `project admin`.
+
 ## [4.8.1-5] - 2026-07-23
 
 Makes the `project`/`collection`/`session` consent flows work out of the box.
