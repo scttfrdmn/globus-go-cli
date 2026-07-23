@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.8.1-7] - 2026-07-23
+
+Clears the last two out-of-box blockers in the public-client registration path
+(epic #42): full `login` and administering policy-protected projects.
+
 ### Fixed
 - **`login` no longer fails with `UNKNOWN_SCOPE_ERROR` out of the box (#40).**
   The default login set no longer requests the Timers scope, whose
@@ -25,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `project client create/update/delete`, `project admin add/remove`, and
   `project credential create/delete`. Unblocks registering a client in a
   policy-protected project (epic #42).
+
+### Internal
+- Added unit coverage for the `project admin` ID flattening (`collectAdminIDs`)
+  introduced in 4.8.1-6.
 
 ## [4.8.1-6] - 2026-07-23
 
