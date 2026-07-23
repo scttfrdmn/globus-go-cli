@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.8.1-3] - 2026-07-23
+
+Flag parity with the Python Globus CLI across the command tree. Builds on the v4
+SDK (v4.8.1-4). Version tracks upstream Python globus-sdk 4.8.1; `-3` is this
+project's patch release.
+
+### Added — per-command flags matching the Python `globus` CLI
+Audited every command's flags against the reference Python CLI and added the
+missing ones wherever the v4 SDK backs the underlying request field. Highlights:
+- **transfer file ops**: `ls` `--filter`/`--orderby`/`--local-user`; `transfer`
+  `--encrypt-data`, `--notify`, `--skip-source-errors`, `--fail-on-quota-errors`,
+  `--delete-destination-extra`, `--external-checksum`, `--checksum-algorithm`,
+  `--source-local-user`/`--dest-local-user`; `rm`/`delete` `--label`,
+  `--deadline`, `--notify`, `--ignore-missing`, `--enable-globs`, `--local-user`;
+  `mkdir`/`rename`/`stat` `--local-user`; `task list` `--filter-status`/
+  `--orderby`; `task wait` `--polling-interval`/`-H,--heartbeat`.
+- **endpoint / collection / gcs**: endpoint search filters; the full
+  `endpoint update` field set; role/permission `--identity`/`--group`/
+  `--all-authenticated`/`--anonymous`/notify/expiration; the full
+  `CollectionDocument` field set on `collection create`/`update`.
+- **groups/search/flows/timer/auth**: group `--parent-id`/`--request`/policy
+  fields; `search query --query-document`; flows administrators/starters/viewers/
+  run-managers/monitors + subtitle/subscription/auth-policy/owner; timer
+  `--stop-after-runs`/`--label`; `get-identities --provision`;
+  `whoami --linked-identities`; `session update --scope`.
+
+### Notes
+- Flags the v4 SDK cannot express are intentionally **not** added as no-ops; the
+  SDK-blocked flags are listed in `docs/PYTHON_CLI_PARITY.md`.
+
 ## [4.8.1-2] - 2026-07-22
 
 Adds Globus Auth project/console management and the first GCS data-plane
