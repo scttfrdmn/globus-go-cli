@@ -17,7 +17,12 @@ import (
 // the per-resource-server GlobusApp token store. It replaces the previous
 // per-command recipe of loading the legacy token file and wrapping a static
 // authorizer. On a missing/expired token it returns an error advising login.
-func getClient(ctx context.Context) (*transfer.Client, error) {
+//
+// It is a variable so tests can substitute a client pointed at a mock server.
+var getClient = defaultClient
+
+// defaultClient is the production getClient.
+func defaultClient(ctx context.Context) (*transfer.Client, error) {
 	profile := viper.GetString("profile")
 
 	clientCfg, err := config.LoadClientConfig()

@@ -5,6 +5,8 @@ package transfer
 import (
 	"context"
 	"fmt"
+	"io"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,22 +16,31 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/transfer"
 )
 
-// sapLimit is the --limit flag value for stream-access-point list.
+// sapLimit is the --limit flag value for stream access point list.
 var sapLimit int
 
-// StreamAccessPointCmd returns the stream-access-point subcommand group.
-//
-// Globus Streams access points (Python SDK v4.3.0+) are backed by the v4
-// Transfer client. A stream access point exposes a collection path for use as a
-// listener or initiator endpoint of a Globus Streams tunnel.
+// streamsAccessPointCmd returns "streams access-point", matching the Python
+// CLI's "show" plus this CLI's "list" extension.
+func streamsAccessPointCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "access-point",
+		Short: "Inspect Globus Streams access points",
+	}
+	cmd.AddCommand(streamAccessPointShowCmd(), streamAccessPointListCmd())
+	return cmd
+}
+
+// StreamAccessPointCmd returns the legacy top-level "stream-access-point"
+// group, kept for compatibility. Prefer "globus streams access-point".
 func StreamAccessPointCmd() *cobra.Command {
 	sapCmd := &cobra.Command{
 		Use:   "stream-access-point",
-		Short: "Commands for Globus Streams access points",
+		Short: "Commands for Globus Streams access points (use 'streams access-point')",
 		Long: `Commands for working with Globus Streams access points.
 
-A stream access point exposes a collection path for use as the listener or
-initiator endpoint of a Globus Streams tunnel.`,
+This group predates "globus streams access-point", which matches the Python
+Globus CLI; prefer that.`,
+		Deprecated: "use 'globus streams access-point' instead",
 	}
 
 	sapCmd.AddCommand(
@@ -39,12 +50,11 @@ initiator endpoint of a Globus Streams tunnel.`,
 	return sapCmd
 }
 
-// streamAccessPointShowCmd returns the stream-access-point show command.
+// streamAccessPointShowCmd returns the stream access point show command.
 func streamAccessPointShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show ACCESS_POINT_ID",
-		Short: "Show details of a Globus Streams access point",
-		Long:  `Show detailed information about a specific Globus Streams access point.`,
+		Use:   "show STREAM_ACCESS_POINT_ID",
+		Short: "Show the attributes of a stream access point",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -64,25 +74,36 @@ func streamAccessPointShowCmd() *cobra.Command {
 			if formatter.Format == output.FormatJSON || formatter.Format == output.FormatUnix {
 				return formatter.FormatOutput(sap, nil)
 			}
-
-			fmt.Println("Stream Access Point Details:")
-			fmt.Printf("  ID:           %s\n", sap.ID)
-			fmt.Printf("  Tunnel ID:    %s\n", sap.TunnelID)
-			fmt.Printf("  Endpoint ID:  %s\n", sap.EndpointID)
-			fmt.Printf("  Path:         %s\n", sap.Path)
-			fmt.Printf("  Access URL:   %s\n", sap.AccessURL)
-
+			renderAccessPoint(cmd.OutOrStdout(), sap)
 			return nil
 		},
 	}
 }
 
-// streamAccessPointListCmd returns the stream-access-point list command.
+// renderAccessPoint prints the Python CLI's access point STANDARD_FIELDS,
+// plus the host endpoint this CLI has always shown.
+func renderAccessPoint(w io.Writer, sap *transfer.StreamAccessPoint) {
+	printRecord(w, [][2]string{
+		{"ID", sap.ID},
+		{"Display Name", sap.DisplayName},
+		{"Contact Email", sap.ContactEmail},
+		{"Contact Info", sap.ContactInfo},
+		{"Department", sap.Department},
+		{"Description", sap.Description},
+		{"Info Link", sap.InfoLink},
+		{"Organization", sap.Organization},
+		{"Host Endpoint", sap.EndpointID},
+	})
+}
+
+// streamAccessPointListCmd returns the stream access point list command
+// (a Go CLI extension; the Python CLI has no list).
 func streamAccessPointListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List Globus Streams access points",
 		Long:  `List Globus Streams access points visible to the current user.`,
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
@@ -104,21 +125,27 @@ func streamAccessPointListCmd() *cobra.Command {
 			}
 
 			type sapRow struct {
-				ID         string
-				TunnelID   string
-				EndpointID string
-				Path       string
+				ID           string
+				DisplayName  string
+				Organization string
+				Domain       string
+				HostEndpoint string
 			}
 			rows := make([]sapRow, 0, len(resp.Data))
 			for _, s := range resp.Data {
+				domain := ""
+				if s.TLSFTPServer != "" {
+					domain = endpointDomain(s.TLSFTPServer, "")
+				}
 				rows = append(rows, sapRow{
-					ID:         s.ID,
-					TunnelID:   s.TunnelID,
-					EndpointID: s.EndpointID,
-					Path:       s.Path,
+					ID:           s.ID,
+					DisplayName:  strings.TrimSpace(s.DisplayName),
+					Organization: s.Organization,
+					Domain:       domain,
+					HostEndpoint: s.EndpointID,
 				})
 			}
-			return formatter.FormatOutput(rows, []string{"ID", "TunnelID", "EndpointID", "Path"})
+			return formatter.FormatOutput(rows, []string{"ID", "DisplayName", "Organization", "Domain", "HostEndpoint"})
 		},
 	}
 

@@ -3,25 +3,23 @@
 
 # Globus Go CLI
 
-A command-line interface for Globus services, built in Go using the [Globus Go SDK](https://github.com/scttfrdmn/globus-go-sdk) v3.65.0-1 (production). Aligned with upstream Globus CLI v3.39.0.
+A command-line interface for Globus services, built in Go on the v4 [Globus Go SDK](https://github.com/scttfrdmn/globus-go-sdk) (v4.10.0-3, tracking Python globus-sdk 4.10.0). It aims to be a drop-in replacement for the Python [globus-cli](https://github.com/globus/globus-cli), currently compared against **globus-cli 3.44.0**.
 
-> **Note:** This CLI uses SDK v3 (production-ready). SDK v4 is available but provides minimal benefit for CLI use cases. See [SDK_VERSION_DECISION.md](SDK_VERSION_DECISION.md) for details.
->
-> **Future:** When upstream Globus v4 becomes official, this CLI will adopt a dual-version approach (parallel v3/v4 implementations) similar to the SDK. See [CLI_DUAL_VERSION_STRATEGY.md](CLI_DUAL_VERSION_STRATEGY.md).
+Versioning: the CLI version tracks the Python globus-sdk version the Go SDK ports (`4.10.0`), and the `-N` suffix is this project's release number.
 
 ## Features
 
 - Modern CLI implementation with Cobra and Viper
 - Fast and lightweight with no Python dependencies
-- **100% feature parity with Python Globus CLI v3.39.0 + additional Compute support**
-- Comprehensive coverage of Globus services:
-  - ✅ Auth (100% - authentication and identity management)
-  - ✅ Transfer (100% - file transfer operations)
-  - ✅ Groups (80% - full functionality, role management pending SDK)
-  - ✅ Timers (100% - scheduled task management)
-  - ✅ Search (100% - index and document management, 18 commands)
-  - ✅ Flows (100% - workflow automation, 15 commands)
-  - ✅ Compute (100% - **exclusive to Go CLI**, not in Python CLI, 14 commands)
+- The Python CLI's flat command layout, global flags (`-F json|text|unix`, `--jmespath`, `--map-http-status`) and enveloped JSON output
+- Coverage of Globus services. See [docs/PYTHON_CLI_PARITY.md](docs/PYTHON_CLI_PARITY.md) for the command-by-command comparison and the open gaps:
+  - Auth: `login`, `logout`, `whoami`, `get-identities`, `session`
+  - Transfer: `ls`, `transfer`, `delete`, `task`, `endpoint`, `bookmark`, `endpoint-manager`, `streams`
+  - Globus Connect Server (`collection`, `gcs`) and Globus Connect Personal (`gcp`)
+  - Groups, Search, Timers
+  - Flows, including `flows web-input` and `flows registered-api`
+  - `api` raw passthrough
+  - Go-only extensions: `compute`, plus `project` (Auth project, client and credential management)
 - Multiple output formats (text, JSON, CSV)
 - Interactive features with progress visualization
 - Multiple configuration profiles
@@ -255,7 +253,7 @@ For information about the release process, see [RELEASE_PROCESS.md](RELEASE_PROC
 
 ## Release Notes
 
-- [Release v3.39.0-1](RELEASE_NOTES_V3.39.0-1.md) - Latest release (aligned with upstream CLI v3.39.0)
+- [GitHub Releases](https://github.com/scttfrdmn/globus-go-cli/releases) - Published releases
 - [Changelog](CHANGELOG.md) - Full history of changes
 
 ## License

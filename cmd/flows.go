@@ -45,6 +45,8 @@ Examples:
 	flowsCmd.AddCommand(flows.StartCmd)
 	flowsCmd.AddCommand(flows.ValidateCmd)
 	flowsCmd.AddCommand(flows.GetRunCmd())
+	flowsCmd.AddCommand(flows.WebInputCmd())
+	flowsCmd.AddCommand(flows.RegisteredAPICmd())
 
 	return flowsCmd
 }

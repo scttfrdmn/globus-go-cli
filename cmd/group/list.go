@@ -77,12 +77,14 @@ func runListGroups(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 
-		fmt.Printf("%-36s  %-40s  %-8s  %-8s\n", "ID", "Name", "Members", "Admin")
-		fmt.Printf("%s  %s  %s  %s\n",
+		fmt.Printf("%-36s  %-40s  %-7s  %-8s  %-8s  %s\n", "ID", "Name", "Type", "Members", "Admin", "Subscription ID")
+		fmt.Printf("%s  %s  %s  %s  %s  %s\n",
 			"------------------------------------",
 			"----------------------------------------",
+			"-------",
 			"--------",
-			"--------")
+			"--------",
+			"------------------------------------")
 
 		for _, group := range groupList {
 			name := group.Name
@@ -95,18 +97,20 @@ func runListGroups(cmd *cobra.Command, args []string) error {
 				admin = "Yes"
 			}
 
-			fmt.Printf("%-36s  %-40s  %-8d  %-8s\n",
+			fmt.Printf("%-36s  %-40s  %-7s  %-8d  %-8s  %s\n",
 				group.ID,
 				name,
+				group.GroupType,
 				group.MemberCount,
-				admin)
+				admin,
+				group.SubscriptionID)
 		}
 
 		fmt.Printf("\nTotal: %d group(s)\n", len(groupList))
 	} else {
 		// JSON or CSV output
 		formatter := output.NewFormatter(format, os.Stdout)
-		headers := []string{"ID", "Name", "Description", "MemberCount", "IsGroupAdmin", "IsMember"}
+		headers := []string{"ID", "Name", "Description", "GroupType", "MemberCount", "IsGroupAdmin", "IsMember", "SubscriptionID"}
 		if err := formatter.FormatOutput(groupList, headers); err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}

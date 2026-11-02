@@ -5,6 +5,7 @@ package transfer
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -193,15 +194,36 @@ func listEndpoints(cmd *cobra.Command) error {
 		Owner     string
 		Activated bool
 		Public    bool
+		Domain    string
 	}
 	rows := make([]endpointRow, 0, len(endpoints.Data))
 	for _, e := range endpoints.Data {
 		rows = append(rows, endpointRow{
 			ID: e.ID, Name: e.DisplayName, Owner: e.Owner,
 			Activated: e.Activated, Public: e.Public,
+			Domain: endpointDomain(e.TLSFTPServer, e.GCSManagerURL),
 		})
 	}
-	return formatter.FormatOutput(rows, []string{"ID", "Name", "Owner", "Activated", "Public"})
+	return formatter.FormatOutput(rows, []string{"ID", "Name", "Owner", "Activated", "Public", "Domain"})
+}
+
+// endpointDomain derives the Domain shown by "endpoint search/show", as the
+// Python CLI does since 3.42.0: a GCS collection's domain comes from its
+// tlsftp_server (tlsftp://DOMAIN:PORT), a GCS endpoint's from its
+// gcs_manager_url (https://DOMAIN). Other entity types have no domain and
+// render as "None", matching Python.
+func endpointDomain(tlsftpServer, gcsManagerURL string) string {
+	if tlsftpServer != "" {
+		host := strings.TrimPrefix(tlsftpServer, "tlsftp://")
+		if i := strings.IndexByte(host, ':'); i >= 0 {
+			host = host[:i]
+		}
+		return host
+	}
+	if gcsManagerURL != "" {
+		return strings.TrimPrefix(gcsManagerURL, "https://")
+	}
+	return "None"
 }
 
 // showEndpoint shows details for a specific endpoint
@@ -237,6 +259,7 @@ func showEndpoint(cmd *cobra.Command, endpointID string) error {
 		fmt.Printf("  ID:             %s\n", endpoint.ID)
 		fmt.Printf("  Display Name:   %s\n", endpoint.DisplayName)
 		fmt.Printf("  Owner:          %s\n", endpoint.Owner)
+		fmt.Printf("  Domain:         %s\n", endpointDomain(endpoint.TLSFTPServer, endpoint.GCSManagerURL))
 		fmt.Printf("  Description:    %s\n", endpoint.Description)
 		fmt.Printf("  Activated:      %t\n", endpoint.Activated)
 		fmt.Printf("  Public:         %t\n", endpoint.Public)

@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Catch-up with Go SDK v4.10.0-2 (Python globus-sdk 4.10.0) and Python
+globus-cli 3.40–3.44 (milestone `v4.10.0-1`).
+
+### Added
+- **`flows web-input list/show/respond`** (Python CLI 3.43.0, #47): list,
+  inspect and answer the prompts a running flow raises. `list` takes
+  `--filter-role`, `--filter-state`, `--filter-flow-id`, `--filter-run-id`,
+  `--orderby FIELD:ASC|DESC` and `--limit`, and follows marker pagination.
+- **`flows registered-api list/show`** (Python CLI 3.42.0, #48), with
+  `--filter-role`, `--orderby` and `--limit`.
+- **Domain** column/field in `endpoint search` and `endpoint show` (Python CLI
+  3.42.0, #51), derived from `tlsftp_server` / `gcs_manager_url` as Python
+  does.
+- **`streams` command group** (Python CLI 3.41/3.42, #49):
+  `streams tunnel create/list/show/update/stop/delete/events` and
+  `streams access-point show` (plus a `list`), with the Python argument shapes.
+  For example, `streams tunnel create INITIATOR_STREAM_AP_ID
+  LISTENER_STREAM_AP_ID [--label] [--lifetime-minutes] [--restartable]`.
+  `stop` is new: it stops a tunnel but keeps its data.
+- **Type** and **Subscription ID** columns in `group list` (Python CLI 3.42.0, #51).
+- `api timers` alias for `api timer` (the Python CLI's name, #58).
+
+### Fixed
+- **`api transfer` paths now resolve like the Python CLI (#50).** PATH is
+  relative to `/v0.10`, so `globus api transfer GET /endpoint_search` works.
+  Paths starting with `/v2/` (Streams) and paths that already start with
+  `/v0.10` are sent unchanged. Previously every unversioned path 404'd.
+- **`ls` on non-empty directories and `tunnel events`** decode real
+  responses again, via SDK v4.10.0-2 (SDK #65, #66).
+- **Tunnel and stream access point output is no longer blank.** `tunnel
+  show/list` and `stream-access-point show` printed empty fields because the
+  SDK dropped most of the JSON:API document. SDK v4.10.0-3 decodes them
+  (SDK #82), and the output now uses Python's fields: label, state, status,
+  and the listener/initiator access points, IPs and ports.
+
+### Changed
+- SDK pinned to **v4.10.0-3** (#46; v4.10.0-3 adds SDK #82 and #84).
+- The top-level `tunnel` and `stream-access-point` groups are deprecated in
+  favour of `streams tunnel` / `streams access-point`. They keep working
+  (with their flag-based `create`) and print a deprecation notice.
+- README and `docs/PYTHON_CLI_PARITY.md` now compare against Python
+  globus-cli 3.44.0 and list the remaining gaps as issues (#53).
+
 ## [4.8.1-8] - 2026-07-23
 
 ### Fixed

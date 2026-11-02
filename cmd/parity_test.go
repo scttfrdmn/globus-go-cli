@@ -80,6 +80,13 @@ func TestCommandParity(t *testing.T) {
 		"search task list",
 		// Flows run management + validation.
 		"flows run delete", "flows run resume", "flows validate",
+		// Python globus-cli 3.42/3.43 flows additions.
+		"flows web-input list", "flows web-input show", "flows web-input respond",
+		"flows registered-api list", "flows registered-api show",
+		// Python globus-cli 3.41 streams group.
+		"streams tunnel create", "streams tunnel list", "streams tunnel show",
+		"streams tunnel update", "streams tunnel stop", "streams tunnel delete",
+		"streams tunnel events", "streams access-point show",
 		// Raw API passthrough.
 		"api transfer", "api auth",
 		// Session.

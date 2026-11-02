@@ -15,18 +15,21 @@ under `auth`/`transfer` groups. So `globus login`, `globus logout`,
 `group`, `search`, `flows`, and `timer` remain command groups (the Python CLI
 groups these too); `compute` is a Go-only extension group.
 
-- **Python globus-cli compared:** 3.42.0 (latest at time of writing), 164 commands.
-- **Go CLI:** ~112 command paths across auth, transfer, search, groups, flows,
+- **Python globus-cli compared:** 3.44.0 (latest as of 2026-11-01). Its
+  `list-commands` lists 167 leaf commands; 49 of them are not yet in the Go CLI
+  (62 before the 4.10.0-1 work).
+  See the [Open gaps vs 3.44.0](#open-gaps-vs-python-globus-cli-3440) section below.
+- **Go CLI:** 245 command paths (groups included) across auth, transfer, search, groups, flows,
   compute, timer, config.
 
 Note the version numbers are independent: the Go CLI tracks the Globus **SDK**,
-while the Python **CLI** versions separately (3.42.0).
+while the Python **CLI** versions separately (3.44.0).
 
 ## SDK backing: v4 migration (Phase 2b)
 
 The backable service command groups — **transfer, groups, search, flows,
-compute, timer** — now build on the **v4 Go SDK** (`globus-go-sdk/v4`, tracking
-Python globus-sdk 4.8.1) with per-resource-server GlobusApp tokens, replacing
+compute, timer** — now build on the **v4 Go SDK** (`globus-go-sdk/v4`, now v4.10.0-3 tracking
+Python globus-sdk 4.10.0) with per-resource-server GlobusApp tokens, replacing
 the previous v3 SDK + single-combined-token model. Each package has a
 `client.go` `getClient(ctx)` helper over `pkg/globusauth`.
 
@@ -62,10 +65,10 @@ device-code flow and `identities lookup` performs a real `GetIdentities` call
 | Bookmarks | ✅ (5) | ✅ (`bookmark list/show/create/rename/delete`) | Covered (Phase 4) |
 | Collections / GCS management | ✅ (`collection`, `gcs`, 32 cmds) | ✅ core set — `collection list/show/create/update/delete`, `gcs info`, `gcs storage-gateway list/show`, `gcs role list/show/create/delete` | Covered (Phase 7) |
 | GCP (Connect Personal) | ✅ (6) | ✅ (`gcp create mapped/guest`, `gcp set-subscription-id`, `endpoint local-id`) | Covered — cloud-API mgmt (not local-agent control, same as Python) |
-| Streams / tunnels | ✅ (8) | ✅ (`tunnel list/show/create/update/delete/events`, `stream-access-point list/show`) | Covered (Phase 5) |
+| Streams / tunnels | ✅ (8, under `streams`) | ✅ `streams tunnel create/list/show/update/stop/delete/events`, `streams access-point show` (+ Go-only `list`), with the Python argument shapes. The older top-level `tunnel` / `stream-access-point` groups still work but are deprecated | Covered |
 | Search (index/query/ingest/task/role/subject) | ✅ (14) | ✅ comparable — incl. `index role list/create/delete` and `task list` | Covered |
 | Groups (member/role/policy/invite/join/leave) | ✅ (19) | ✅ — create/delete/list/show/update, member add/invite/list/remove/accept/decline/approve/reject, join/leave, `policies show/set` | Covered (Phase 4) |
-| Flows (create/run/list/show/update/validate/logs) | ✅ (17) | ✅ comparable — incl. `validate`, `run delete`, `run resume` | Covered |
+| Flows (create/run/list/show/update/validate/logs) | ✅ (22) | ✅ comparable — incl. `validate`, `run delete`, `run resume`, `web-input list/show/respond` (3.43), `registered-api list/show` (3.42) | Covered |
 | Timers | ✅ (7) | ✅ (create/list/show/pause/resume/delete) | Covered |
 | `api` raw passthrough | ✅ (7 services) | ✅ (`api auth/transfer/groups/search/flows/timer/compute`) | Covered (Phase 5) |
 | `session` (consent/show/update) | ✅ (3) | ✅ — `session show` (via `include=session_info`), `session update` (step-up re-auth), `session consent` (scoped consent) | Covered (Phase 8) |
@@ -167,10 +170,38 @@ login` scope set omits; the CLI obtains it via a one-time consent (escalated on
 first use), stored under a dedicated token namespace so it never collides with
 the login token (both live on `auth.globus.org`).
 
+## Open gaps vs Python globus-cli 3.44.0
+
+From a `globus list-commands` diff against an installed globus-cli 3.44.0.
+Each gap is a GitHub issue:
+
+- **GCS trees** (`gcs collection ...`, `gcs endpoint ...`, `collection role ...`,
+  `collection create guest|mapped`, `endpoint storage-gateway list`): #55.
+- **User credentials** (`gcs/endpoint user-credential ...`): #56.
+- **Group/GCP subscription commands and aliases** (`group get-by-subscription`,
+  `get-subscription-info`, `set-subscription-admin-verified`,
+  `group invite accept|decline`, `group set-policies`,
+  `gcp set-subscription-admin-verified`, `gcp update guest|mapped`): #57.
+- **Misc** (`task generate-submission-id`, `search delete-by-query`,
+  `cli-profile-list`, `update`, `api gcs`): #58. (`api timers` is now an alias of `api timer`.)
+- **Output** — folded tables on narrow TTYs (`GLOBUS_CLI_FOLD_TABLES`, 3.42/3.43):
+  #54.
+- **Flows login scope** — Python 3.41 requests the Flows `all` scope; the Go
+  CLI still requests `manage_flows` pending a live-login check: #52.
+
+Upstream 3.40–3.44 changes already matched: `flows create/update
+--authentication-policy-id` (3.40), `session update --scope` (3.40),
+`api transfer` `/v0.10` prefixing with `/v2/` paths left alone (3.42),
+Domain in `endpoint search/show` and Subscription ID in `group list` (3.42),
+the `streams` group (3.41/3.42), and fish completion (3.44, via
+`globus completion fish`). The Python 3.41 timer-name and 3.43
+`get-identities` case-folding fixes don't apply here: the Go CLI requires
+`timer create --name` and prints identities as returned by Auth.
+
 ## Summary
 
-The Go CLI is now a **functional drop-in replacement** for the Python Globus
-CLI across the full command surface, all on the v4 SDK: flat command paths,
+The Go CLI is a **functional drop-in replacement** for the most-used parts of
+the Python CLI (see the open gaps above), all on the v4 SDK: flat command paths,
 matching global flags and JSON output (enveloped `DATA`), per-resource-server
 GlobusApp auth, and command coverage spanning auth (incl. `session
 show/update/consent`), transfer + endpoint administration + endpoint-manager,
@@ -178,7 +209,7 @@ streams/tunnels, groups, search, flows, timers, GCS `collection`/`gcs`, `api`
 raw passthrough, and the `list-commands`/`version` meta commands — plus a
 compute extension the Python CLI lacks.
 
-The CLI now covers the full Python `globus` command surface, including GCP
+The CLI covers the core Python `globus` command surface, including GCP
 endpoint/collection management (`gcp ...`, cloud-API — matching Python, not
 local-agent control) and `endpoint local-id`. GCS data-plane file access is
 started (`collection cat`); more data-plane operations (e.g. HTTPS directory

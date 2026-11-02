@@ -26,5 +26,6 @@ func addTransferCommands(root *cobra.Command) {
 		transfer.BookmarkCmd(),
 		transfer.TunnelCmd(),
 		transfer.StreamAccessPointCmd(),
+		transfer.StreamsCmd(),
 	)
 }

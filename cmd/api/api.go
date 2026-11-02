@@ -32,20 +32,48 @@ import (
 // PATH is joined onto it as given.
 type serviceSpec struct {
 	name    string
+	aliases []string
 	svc     globusauth.Service
 	baseURL string
+	// resolvePath, when set, maps the user-supplied PATH onto the request
+	// path (e.g. adding Transfer's /v0.10 version prefix).
+	resolvePath func(path string) string
 }
 
 // specs is the fixed set of raw-passthrough subcommands, one per service,
 // mirroring the Python CLI (note: "groups" and "timer" naming).
 var specs = []serviceSpec{
 	{name: "auth", svc: globusauth.ServiceAuth, baseURL: "https://auth.globus.org/v2"},
-	{name: "transfer", svc: globusauth.ServiceTransfer, baseURL: "https://transfer.api.globus.org"},
+	{name: "transfer", svc: globusauth.ServiceTransfer, baseURL: "https://transfer.api.globus.org", resolvePath: transferPath},
 	{name: "groups", svc: globusauth.ServiceGroups, baseURL: "https://groups.api.globus.org/v2"},
 	{name: "search", svc: globusauth.ServiceSearch, baseURL: "https://search.api.globus.org/v1"},
 	{name: "flows", svc: globusauth.ServiceFlows, baseURL: "https://flows.globus.org"},
-	{name: "timer", svc: globusauth.ServiceTimers, baseURL: "https://timer.automate.globus.org"},
+	{name: "timer", aliases: []string{"timers"}, svc: globusauth.ServiceTimers, baseURL: "https://timer.automate.globus.org"},
 	{name: "compute", svc: globusauth.ServiceCompute, baseURL: "https://compute.api.globus.org"},
+}
+
+// transferPath resolves a Transfer PATH the way the Python CLI does: paths are
+// relative to /v0.10, except /v2/ paths (Streams tunnels and access points),
+// which are left as-is (globus-cli 3.42.0). A path that already carries the
+// /v0.10 prefix is not prefixed twice.
+func transferPath(path string) string {
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	for _, versioned := range []string{"/v2", "/v0.10"} {
+		if path == versioned || strings.HasPrefix(path, versioned+"/") {
+			return path
+		}
+	}
+	return "/v0.10" + path
+}
+
+// pathNote returns any service-specific PATH resolution note for help text.
+func pathNote(spec serviceSpec) string {
+	if spec.name == "transfer" {
+		return "\n\nTransfer paths are relative to /v0.10 (as in the Python CLI), except\npaths starting with /v2/ (Streams), which are sent unchanged."
+	}
+	return ""
 }
 
 // APICmd returns the "api" command group with one raw-passthrough subcommand
@@ -82,13 +110,14 @@ func newServiceCmd(spec serviceSpec) *cobra.Command {
 	)
 
 	c := &cobra.Command{
-		Use:   fmt.Sprintf("%s METHOD PATH", spec.name),
-		Short: fmt.Sprintf("Make a raw HTTP request to the Globus %s API", spec.name),
+		Use:     fmt.Sprintf("%s METHOD PATH", spec.name),
+		Aliases: spec.aliases,
+		Short:   fmt.Sprintf("Make a raw HTTP request to the Globus %s API", spec.name),
 		Long: fmt.Sprintf(`Make a raw, authenticated HTTP request to the Globus %s API.
 
 METHOD is an HTTP verb (GET, POST, PUT, PATCH, DELETE). PATH is the request
 path relative to %s (a leading slash is optional; any version prefix in the
-base URL is preserved). The JSON response is printed to stdout.`, spec.name, spec.baseURL),
+base URL is preserved). The JSON response is printed to stdout.%s`, spec.name, spec.baseURL, pathNote(spec)),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -139,6 +168,9 @@ base URL is preserved). The JSON response is printed to stdout.`, spec.name, spe
 			}
 			if len(query) == 0 {
 				query = nil
+			}
+			if spec.resolvePath != nil {
+				path = spec.resolvePath(path)
 			}
 
 			// Parse --body into a generic value so DoRequest JSON-encodes it.

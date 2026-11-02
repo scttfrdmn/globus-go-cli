@@ -5,6 +5,8 @@ package transfer
 import (
 	"context"
 	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -26,19 +28,57 @@ var (
 	tunnelRestartable  bool
 )
 
-// TunnelCmd returns the tunnel subcommand group.
-//
-// Globus Streams tunnels (Python SDK v4.3.0+) are backed by the v4 Transfer
-// client. A tunnel connects a listener stream access point to an initiator
-// stream access point, enabling low-latency streaming data movement.
+// tunnelStopState is the lifecycle state "streams tunnel stop" requests,
+// matching the Python CLI.
+const tunnelStopState = "STOPPING"
+
+// StreamsCmd returns the "streams" command group, matching the Python
+// globus-cli (3.41.0+): "streams tunnel ..." and "streams access-point ...".
+func StreamsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "streams",
+		Short: "Manage Globus Streams tunnels and access points",
+		Long: `Manage Globus Streams tunnels and stream access points.
+
+A tunnel connects an initiator stream access point to a listener stream access
+point, carrying streaming data between them.`,
+	}
+	cmd.AddCommand(streamsTunnelCmd(), streamsAccessPointCmd())
+	return cmd
+}
+
+// streamsTunnelCmd returns "streams tunnel" with the Python CLI's argument
+// shapes (e.g. "create INITIATOR_STREAM_AP_ID LISTENER_STREAM_AP_ID").
+func streamsTunnelCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "tunnel",
+		Short: "Manage Globus Streams tunnels",
+	}
+	cmd.AddCommand(
+		tunnelListCmd(),
+		tunnelShowCmd(),
+		streamsTunnelCreateCmd(),
+		streamsTunnelUpdateCmd(),
+		tunnelStopCmd(),
+		tunnelDeleteCmd(),
+		tunnelEventsCmd(),
+	)
+	return cmd
+}
+
+// TunnelCmd returns the legacy top-level "tunnel" group, kept for
+// compatibility with earlier releases of this CLI. New scripts should use
+// "globus streams tunnel", which matches the Python CLI.
 func TunnelCmd() *cobra.Command {
 	tunnelCmd := &cobra.Command{
 		Use:   "tunnel",
-		Short: "Commands for managing Globus Streams tunnels",
+		Short: "Commands for managing Globus Streams tunnels (use 'streams tunnel')",
 		Long: `Commands for managing Globus Streams tunnels.
 
-A tunnel connects a listener stream access point to an initiator stream access
-point, enabling streaming data movement between Globus collections.`,
+This group predates "globus streams tunnel", which matches the Python Globus
+CLI; prefer that. Note "tunnel create" takes --initiator/--listener flags,
+whereas "streams tunnel create" takes them as positional arguments.`,
+		Deprecated: "use 'globus streams tunnel' instead",
 	}
 
 	tunnelCmd.AddCommand(
@@ -46,6 +86,7 @@ point, enabling streaming data movement between Globus collections.`,
 		tunnelShowCmd(),
 		tunnelCreateCmd(),
 		tunnelUpdateCmd(),
+		tunnelStopCmd(),
 		tunnelDeleteCmd(),
 		tunnelEventsCmd(),
 	)
@@ -59,6 +100,7 @@ func tunnelListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List Globus Streams tunnels",
 		Long:  `List Globus Streams tunnels visible to the current user.`,
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
@@ -79,24 +121,23 @@ func tunnelListCmd() *cobra.Command {
 				return formatter.FormatOutput(resp, nil)
 			}
 
+			// Python CLI TUNNEL_LIST_FIELDS: ID, Label, State, Created Time.
 			type tunnelRow struct {
-				ID     string
-				Label  string
-				Status string
-				Source string
-				Owner  string
+				ID          string
+				Label       string
+				State       string
+				CreatedTime string
 			}
 			rows := make([]tunnelRow, 0, len(resp.Tunnels))
 			for _, t := range resp.Tunnels {
 				rows = append(rows, tunnelRow{
-					ID:     t.ID,
-					Label:  t.DisplayName,
-					Status: t.Status,
-					Source: t.SourceEndpointID + ":" + t.SourcePath,
-					Owner:  t.Owner,
+					ID:          t.ID,
+					Label:       t.Label,
+					State:       t.State,
+					CreatedTime: formatTime(t.CreatedAt),
 				})
 			}
-			return formatter.FormatOutput(rows, []string{"ID", "Label", "Status", "Source", "Owner"})
+			return formatter.FormatOutput(rows, []string{"ID", "Label", "State", "CreatedTime"})
 		},
 	}
 
@@ -110,7 +151,7 @@ func tunnelShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "show TUNNEL_ID",
 		Short: "Show a Globus Streams tunnel",
-		Long:  `Show detailed information about a specific Globus Streams tunnel.`,
+		Long:  `Show the attributes of a Globus Streams tunnel.`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -125,43 +166,76 @@ func tunnelShowCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to get tunnel: %w", err)
 			}
-
-			formatter := output.NewFormatter(viper.GetString("format"), cmd.OutOrStdout())
-			if formatter.Format == output.FormatJSON || formatter.Format == output.FormatUnix {
-				return formatter.FormatOutput(tunnel, nil)
-			}
-
-			fmt.Println("Tunnel Details:")
-			fmt.Printf("  ID:             %s\n", tunnel.ID)
-			fmt.Printf("  Display Name:   %s\n", tunnel.DisplayName)
-			fmt.Printf("  Status:         %s\n", tunnel.Status)
-			fmt.Printf("  Source:         %s:%s\n", tunnel.SourceEndpointID, tunnel.SourcePath)
-			fmt.Printf("  Owner:          %s\n", tunnel.Owner)
-			if tunnel.ExpiresAt != nil {
-				fmt.Printf("  Expires At:     %s\n", tunnel.ExpiresAt.Format(time.RFC3339))
-			}
-
-			return nil
+			return displayTunnel(cmd.OutOrStdout(), tunnel)
 		},
 	}
 }
 
-// tunnelCreateCmd returns the tunnel create command.
+// displayTunnel renders one tunnel: JSON/unix through the formatter, text as
+// the Python CLI's TUNNEL_STANDARD_FIELDS record.
+func displayTunnel(w io.Writer, t *transfer.Tunnel) error {
+	formatter := output.NewFormatter(viper.GetString("format"), w)
+	if formatter.Format == output.FormatJSON || formatter.Format == output.FormatUnix {
+		return formatter.FormatOutput(t, nil)
+	}
+	printRecord(w, [][2]string{
+		{"ID", t.ID},
+		{"Label", t.Label},
+		{"State", t.State},
+		{"Status", t.Status},
+		{"Listener Access Point", t.ListenerAccessPointID},
+		{"Listener IP", t.ListenerIPAddress},
+		{"Listener Port", formatIntPtr(t.ListenerPort)},
+		{"Initiator Access Point", t.InitiatorAccessPointID},
+		{"Initiator IP", t.InitiatorIPAddress},
+		{"Initiator Port", formatIntPtr(t.InitiatorPort)},
+	})
+	return nil
+}
+
+// streamsTunnelCreateCmd returns "streams tunnel create" with the Python
+// CLI's shape: INITIATOR_STREAM_AP_ID LISTENER_STREAM_AP_ID [--label]
+// [--lifetime-minutes] [--restartable].
+func streamsTunnelCreateCmd() *cobra.Command {
+	var (
+		label       string
+		lifetime    int
+		restartable bool
+	)
+	cmd := &cobra.Command{
+		Use:   "create INITIATOR_STREAM_AP_ID LISTENER_STREAM_AP_ID",
+		Short: "Create a Globus Streams tunnel",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			create := &transfer.TunnelCreate{
+				InitiatorStreamAccessPoint: args[0],
+				ListenerStreamAccessPoint:  args[1],
+				Label:                      label,
+			}
+			if cmd.Flags().Changed("lifetime-minutes") {
+				create.LifetimeMins = &lifetime
+			}
+			if restartable {
+				create.Restartable = &restartable
+			}
+			return createTunnel(cmd, create)
+		},
+	}
+	cmd.Flags().StringVar(&label, "label", "", "A friendly label to associate with the tunnel")
+	cmd.Flags().IntVar(&lifetime, "lifetime-minutes", 0, "The amount of time in minutes that the tunnel will exist")
+	cmd.Flags().BoolVar(&restartable, "restartable", false, "Restart the tunnel in the event of an error")
+	return cmd
+}
+
+// tunnelCreateCmd returns the legacy flag-based "tunnel create" command.
 func tunnelCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a Globus Streams tunnel",
 		Long: `Create a Globus Streams tunnel connecting a listener stream access
 point to an initiator stream access point.`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-
-			client, err := getClient(ctx)
-			if err != nil {
-				return err
-			}
-
 			create := &transfer.TunnelCreate{
 				ListenerStreamAccessPoint:  tunnelListener,
 				InitiatorStreamAccessPoint: tunnelInitiator,
@@ -180,14 +254,7 @@ point to an initiator stream access point.`,
 				restartable := tunnelRestartable
 				create.Restartable = &restartable
 			}
-
-			tunnel, err := client.CreateTunnel(ctx, create)
-			if err != nil {
-				return fmt.Errorf("failed to create tunnel: %w", err)
-			}
-
-			fmt.Printf("Created tunnel %s (status: %s)\n", tunnel.ID, tunnel.Status)
-			return nil
+			return createTunnel(cmd, create)
 		},
 	}
 
@@ -205,7 +272,37 @@ point to an initiator stream access point.`,
 	return cmd
 }
 
-// tunnelUpdateCmd returns the tunnel update command.
+func createTunnel(cmd *cobra.Command, create *transfer.TunnelCreate) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	client, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+	tunnel, err := client.CreateTunnel(ctx, create)
+	if err != nil {
+		return fmt.Errorf("failed to create tunnel: %w", err)
+	}
+	return displayTunnel(cmd.OutOrStdout(), tunnel)
+}
+
+// streamsTunnelUpdateCmd returns "streams tunnel update TUNNEL_ID [--label]".
+func streamsTunnelUpdateCmd() *cobra.Command {
+	var label string
+	cmd := &cobra.Command{
+		Use:   "update TUNNEL_ID",
+		Short: "Update a Globus Streams tunnel",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return updateTunnel(cmd, args[0], &transfer.TunnelUpdate{Label: label}, "update")
+		},
+	}
+	cmd.Flags().StringVar(&label, "label", "", "A friendly label to associate with the tunnel")
+	return cmd
+}
+
+// tunnelUpdateCmd returns the legacy "tunnel update" command.
 func tunnelUpdateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update TUNNEL_ID",
@@ -213,14 +310,6 @@ func tunnelUpdateCmd() *cobra.Command {
 		Long:  `Update the mutable fields of a Globus Streams tunnel.`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
-
-			client, err := getClient(ctx)
-			if err != nil {
-				return err
-			}
-
 			update := &transfer.TunnelUpdate{
 				Label:             tunnelLabel,
 				ListenerIPAddress: tunnelListenerIP,
@@ -229,13 +318,7 @@ func tunnelUpdateCmd() *cobra.Command {
 				port := tunnelListenerPort
 				update.ListenerPort = &port
 			}
-
-			if _, err := client.UpdateTunnel(ctx, args[0], update); err != nil {
-				return fmt.Errorf("failed to update tunnel: %w", err)
-			}
-
-			fmt.Printf("Updated tunnel %s\n", args[0])
-			return nil
+			return updateTunnel(cmd, args[0], update, "update")
 		},
 	}
 
@@ -244,6 +327,35 @@ func tunnelUpdateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&tunnelListenerIP, "listener-ip", "", "Listener IP address")
 
 	return cmd
+}
+
+// tunnelStopCmd returns "tunnel stop": it stops a tunnel but leaves its data
+// in the system (PATCH attributes.state=STOPPING), as in the Python CLI.
+func tunnelStopCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "stop TUNNEL_ID",
+		Short: "Stop a Globus Streams tunnel",
+		Long:  `Stop a tunnel but leave its data in the system.`,
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return updateTunnel(cmd, args[0], &transfer.TunnelUpdate{State: tunnelStopState}, "stop")
+		},
+	}
+}
+
+func updateTunnel(cmd *cobra.Command, tunnelID string, update *transfer.TunnelUpdate, verb string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	client, err := getClient(ctx)
+	if err != nil {
+		return err
+	}
+	tunnel, err := client.UpdateTunnel(ctx, tunnelID, update)
+	if err != nil {
+		return fmt.Errorf("failed to %s tunnel: %w", verb, err)
+	}
+	return displayTunnel(cmd.OutOrStdout(), tunnel)
 }
 
 // tunnelDeleteCmd returns the tunnel delete command.
@@ -266,7 +378,7 @@ func tunnelDeleteCmd() *cobra.Command {
 				return fmt.Errorf("failed to delete tunnel: %w", err)
 			}
 
-			fmt.Printf("Deleted tunnel %s\n", args[0])
+			fmt.Fprintln(cmd.OutOrStdout(), "Tunnel deleted successfully")
 			return nil
 		},
 	}
@@ -276,8 +388,8 @@ func tunnelDeleteCmd() *cobra.Command {
 func tunnelEventsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "events TUNNEL_ID",
-		Short: "Show events for a Globus Streams tunnel",
-		Long:  `Show the event history for a specific Globus Streams tunnel.`,
+		Short: "List events for a Globus Streams tunnel",
+		Long:  `Show the events that have occurred on a Globus Streams tunnel.`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -298,30 +410,57 @@ func tunnelEventsCmd() *cobra.Command {
 				return formatter.FormatOutput(resp, nil)
 			}
 
+			// Python CLI TUNNEL_EVENT_LIST_FIELDS: Code, Error, Details, Time.
 			type eventRow struct {
-				ID          string
-				Code        string
-				Description string
-				OccurredAt  string
+				Code    string
+				Error   bool
+				Details string
+				Time    string
 			}
 			rows := make([]eventRow, 0, len(resp.Events))
 			for _, e := range resp.Events {
-				occurred := ""
-				if e.OccurredAt != nil {
-					occurred = e.OccurredAt.Format(time.RFC3339)
-				}
 				rows = append(rows, eventRow{
-					ID:          e.ID,
-					Code:        e.Code,
-					Description: e.Description,
-					OccurredAt:  occurred,
+					Code:    e.Code,
+					Error:   e.IsError,
+					Details: e.DetailText,
+					Time:    formatTime(e.OccurredAt),
 				})
 			}
-			return formatter.FormatOutput(rows, []string{"ID", "Code", "Description", "OccurredAt"})
+			return formatter.FormatOutput(rows, []string{"Code", "Error", "Details", "Time"})
 		},
 	}
 
 	cmd.Flags().IntVar(&tunnelLimit, "limit", 25, "Maximum number of events to return")
 
 	return cmd
+}
+
+// printRecord prints key/value pairs as an aligned record, like the Python
+// CLI's RECORD text mode.
+func printRecord(w io.Writer, fields [][2]string) {
+	width := 0
+	for _, f := range fields {
+		if len(f[0]) > width {
+			width = len(f[0])
+		}
+	}
+	for _, f := range fields {
+		fmt.Fprintf(w, "%-*s %s\n", width+1, f[0]+":", f[1])
+	}
+}
+
+// formatTime renders t as "YYYY-MM-DD HH:MM:SS" UTC, or "" when nil.
+func formatTime(t *time.Time) string {
+	if t == nil || t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format("2006-01-02 15:04:05")
+}
+
+// formatIntPtr renders an optional integer, or "" when nil.
+func formatIntPtr(n *int) string {
+	if n == nil {
+		return ""
+	}
+	return strconv.Itoa(*n)
 }
