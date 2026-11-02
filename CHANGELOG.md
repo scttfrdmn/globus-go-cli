@@ -43,6 +43,12 @@ globus-cli 3.40–3.44 (milestone `v4.10.0-1`).
   and the listener/initiator access points, IPs and ports.
 
 ### Changed
+- **Go 1.26+ required. Releases are built with Go 1.27** (#61). CI tests 1.26
+  and 1.27, the supported releases; it previously tested 1.22/1.23 and built
+  releases with Go 1.22. The Docker image builds with `golang:1.27-alpine`.
+- **Dependencies updated** (#62): cobra 1.10, viper 1.21, fatih/color 1.19,
+  golang.org/x/{sys,term,text} current. govulncheck is clean (it previously
+  flagged GO-2026-5970, GO-2026-6629 and GO-2026-5024 in x/text and x/sys).
 - SDK pinned to **v4.10.0-3** (#46; v4.10.0-3 adds SDK #82 and #84).
 - The top-level `tunnel` and `stream-access-point` groups are deprecated in
   favour of `streams tunnel` / `streams access-point`. They keep working
