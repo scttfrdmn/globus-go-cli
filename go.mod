@@ -1,8 +1,8 @@
 module github.com/scttfrdmn/globus-go-cli
 
-go 1.22
+go 1.26
 
-toolchain go1.24.5
+toolchain go1.27.3
 
 require (
 	github.com/briandowns/spinner v1.23.0

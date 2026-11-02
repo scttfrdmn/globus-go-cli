@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 
 # Build stage
-FROM golang:1.22-alpine AS builder
+FROM golang:1.27-alpine AS builder
 
 WORKDIR /build
 
