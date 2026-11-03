@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Catch-up with Go SDK v4.10.0-2 (Python globus-sdk 4.10.0) and Python
-globus-cli 3.40–3.44 (milestone `v4.10.0-1`).
+## [4.10.0-1] - 2026-11-02
+
+Catch-up with Go SDK v4.10.0-3 (Python globus-sdk 4.10.0) and Python
+globus-cli 3.40–3.44. Version tracks Python globus-sdk 4.10.0; `-1` is this
+project's release number.
 
 ### Added
 - **`flows web-input list/show/respond`** (Python CLI 3.43.0, #47): list,
